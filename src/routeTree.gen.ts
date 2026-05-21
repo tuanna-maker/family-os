@@ -26,8 +26,8 @@ import { Route as LienHeRouteImport } from './routes/lien-he'
 import { Route as LichGiaDinhRouteImport } from './routes/lich-gia-dinh'
 import { Route as KyNiemGiaDinhRouteImport } from './routes/ky-niem-gia-dinh'
 import { Route as HomeRouteImport } from './routes/home'
-import { Route as GiaDinhRouteImport } from './routes/gia-dinh'
 import { Route as GuardRouteImport } from './routes/guard'
+import { Route as GiaDinhRouteImport } from './routes/gia-dinh'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as FamilyRouteImport } from './routes/family'
 import { Route as DuLichRouteImport } from './routes/du-lich'
@@ -44,13 +44,9 @@ import { Route as BqlRouteImport } from './routes/bql'
 import { Route as BaoAnRouteImport } from './routes/bao-an'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SecurityIndexRouteImport } from './routes/security.index'
-import { Route as GuardIndexRouteImport } from './routes/guard.index'
-import { Route as GuardPatrolRouteImport } from './routes/guard.patrol'
-import { Route as GuardScanRouteImport } from './routes/guard.scan'
-import { Route as GuardTasksRouteImport } from './routes/guard.tasks'
-import { Route as GuardMeRouteImport } from './routes/guard.me'
 import { Route as SaasIndexRouteImport } from './routes/saas.index'
 import { Route as OpsIndexRouteImport } from './routes/ops.index'
+import { Route as GuardIndexRouteImport } from './routes/guard.index'
 import { Route as FamilyIndexRouteImport } from './routes/family.index'
 import { Route as ConsoleIndexRouteImport } from './routes/console.index'
 import { Route as BqlIndexRouteImport } from './routes/bql.index'
@@ -71,6 +67,10 @@ import { Route as OpsSlaRouteImport } from './routes/ops.sla'
 import { Route as OpsOccupancyRouteImport } from './routes/ops.occupancy'
 import { Route as OpsFeeRouteImport } from './routes/ops.fee'
 import { Route as OpsComplaintsRouteImport } from './routes/ops.complaints'
+import { Route as GuardTasksRouteImport } from './routes/guard.tasks'
+import { Route as GuardScanRouteImport } from './routes/guard.scan'
+import { Route as GuardPatrolRouteImport } from './routes/guard.patrol'
+import { Route as GuardMeRouteImport } from './routes/guard.me'
 import { Route as ChiTieuScanRouteImport } from './routes/chi-tieu_.scan'
 import { Route as ChamSocOngBaNhatKyRouteImport } from './routes/cham-soc-ong-ba.nhat-ky'
 import { Route as CaiDatThongBaoRouteImport } from './routes/cai-dat.thong-bao'
@@ -188,6 +188,11 @@ const HomeRoute = HomeRouteImport.update({
   path: '/home',
   getParentRoute: () => rootRouteImport,
 } as any)
+const GuardRoute = GuardRouteImport.update({
+  id: '/guard',
+  path: '/guard',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const GiaDinhRoute = GiaDinhRouteImport.update({
   id: '/gia-dinh',
   path: '/gia-dinh',
@@ -196,11 +201,6 @@ const GiaDinhRoute = GiaDinhRouteImport.update({
 const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
   id: '/forgot-password',
   path: '/forgot-password',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const GuardRoute = GuardRouteImport.update({
-  id: '/guard',
-  path: '/guard',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FamilyRoute = FamilyRouteImport.update({
@@ -278,31 +278,6 @@ const SecurityIndexRoute = SecurityIndexRouteImport.update({
   path: '/',
   getParentRoute: () => SecurityRoute,
 } as any)
-const GuardMeRoute = GuardMeRouteImport.update({
-  id: '/me',
-  path: '/me',
-  getParentRoute: () => GuardRoute,
-} as any)
-const GuardTasksRoute = GuardTasksRouteImport.update({
-  id: '/tasks',
-  path: '/tasks',
-  getParentRoute: () => GuardRoute,
-} as any)
-const GuardScanRoute = GuardScanRouteImport.update({
-  id: '/scan',
-  path: '/scan',
-  getParentRoute: () => GuardRoute,
-} as any)
-const GuardPatrolRoute = GuardPatrolRouteImport.update({
-  id: '/patrol',
-  path: '/patrol',
-  getParentRoute: () => GuardRoute,
-} as any)
-const GuardIndexRoute = GuardIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => GuardRoute,
-} as any)
 const SaasIndexRoute = SaasIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -312,6 +287,11 @@ const OpsIndexRoute = OpsIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => OpsRoute,
+} as any)
+const GuardIndexRoute = GuardIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => GuardRoute,
 } as any)
 const FamilyIndexRoute = FamilyIndexRouteImport.update({
   id: '/',
@@ -412,6 +392,26 @@ const OpsComplaintsRoute = OpsComplaintsRouteImport.update({
   id: '/complaints',
   path: '/complaints',
   getParentRoute: () => OpsRoute,
+} as any)
+const GuardTasksRoute = GuardTasksRouteImport.update({
+  id: '/tasks',
+  path: '/tasks',
+  getParentRoute: () => GuardRoute,
+} as any)
+const GuardScanRoute = GuardScanRouteImport.update({
+  id: '/scan',
+  path: '/scan',
+  getParentRoute: () => GuardRoute,
+} as any)
+const GuardPatrolRoute = GuardPatrolRouteImport.update({
+  id: '/patrol',
+  path: '/patrol',
+  getParentRoute: () => GuardRoute,
+} as any)
+const GuardMeRoute = GuardMeRouteImport.update({
+  id: '/me',
+  path: '/me',
+  getParentRoute: () => GuardRoute,
 } as any)
 const ChiTieuScanRoute = ChiTieuScanRouteImport.update({
   id: '/chi-tieu_/scan',
@@ -634,15 +634,15 @@ export interface FileRoutesByFullPath {
   '/cai-dat/thong-bao': typeof CaiDatThongBaoRoute
   '/cham-soc-ong-ba/nhat-ky': typeof ChamSocOngBaNhatKyRoute
   '/chi-tieu/scan': typeof ChiTieuScanRoute
+  '/guard/me': typeof GuardMeRoute
+  '/guard/patrol': typeof GuardPatrolRoute
+  '/guard/scan': typeof GuardScanRoute
+  '/guard/tasks': typeof GuardTasksRoute
   '/ops/complaints': typeof OpsComplaintsRoute
   '/ops/fee': typeof OpsFeeRoute
   '/ops/occupancy': typeof OpsOccupancyRoute
   '/ops/sla': typeof OpsSlaRoute
   '/ops/work-orders': typeof OpsWorkOrdersRoute
-  '/guard/me': typeof GuardMeRoute
-  '/guard/patrol': typeof GuardPatrolRoute
-  '/guard/scan': typeof GuardScanRoute
-  '/guard/tasks': typeof GuardTasksRoute
   '/saas/audit': typeof SaasAuditRoute
   '/saas/billing': typeof SaasBillingRoute
   '/saas/cai-dat': typeof SaasCaiDatRoute
@@ -658,10 +658,10 @@ export interface FileRoutesByFullPath {
   '/bql/': typeof BqlIndexRoute
   '/console/': typeof ConsoleIndexRoute
   '/family/': typeof FamilyIndexRoute
+  '/guard/': typeof GuardIndexRoute
   '/ops/': typeof OpsIndexRoute
   '/saas/': typeof SaasIndexRoute
   '/security/': typeof SecurityIndexRoute
-  '/guard/': typeof GuardIndexRoute
   '/console/metrics/$key': typeof ConsoleMetricsKeyRoute
 }
 export interface FileRoutesByTo {
@@ -678,7 +678,6 @@ export interface FileRoutesByTo {
   '/du-lich': typeof DuLichRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/gia-dinh': typeof GiaDinhRoute
-  '/guard': typeof GuardRouteWithChildren
   '/home': typeof HomeRoute
   '/ky-niem-gia-dinh': typeof KyNiemGiaDinhRoute
   '/lich-gia-dinh': typeof LichGiaDinhRoute
@@ -723,15 +722,15 @@ export interface FileRoutesByTo {
   '/cai-dat/thong-bao': typeof CaiDatThongBaoRoute
   '/cham-soc-ong-ba/nhat-ky': typeof ChamSocOngBaNhatKyRoute
   '/chi-tieu/scan': typeof ChiTieuScanRoute
+  '/guard/me': typeof GuardMeRoute
+  '/guard/patrol': typeof GuardPatrolRoute
+  '/guard/scan': typeof GuardScanRoute
+  '/guard/tasks': typeof GuardTasksRoute
   '/ops/complaints': typeof OpsComplaintsRoute
   '/ops/fee': typeof OpsFeeRoute
   '/ops/occupancy': typeof OpsOccupancyRoute
   '/ops/sla': typeof OpsSlaRoute
   '/ops/work-orders': typeof OpsWorkOrdersRoute
-  '/guard/me': typeof GuardMeRoute
-  '/guard/patrol': typeof GuardPatrolRoute
-  '/guard/scan': typeof GuardScanRoute
-  '/guard/tasks': typeof GuardTasksRoute
   '/saas/audit': typeof SaasAuditRoute
   '/saas/billing': typeof SaasBillingRoute
   '/saas/cai-dat': typeof SaasCaiDatRoute
@@ -747,6 +746,7 @@ export interface FileRoutesByTo {
   '/bql': typeof BqlIndexRoute
   '/console': typeof ConsoleIndexRoute
   '/family': typeof FamilyIndexRoute
+  '/guard': typeof GuardIndexRoute
   '/ops': typeof OpsIndexRoute
   '/saas': typeof SaasIndexRoute
   '/security': typeof SecurityIndexRoute
@@ -818,15 +818,15 @@ export interface FileRoutesById {
   '/cai-dat/thong-bao': typeof CaiDatThongBaoRoute
   '/cham-soc-ong-ba/nhat-ky': typeof ChamSocOngBaNhatKyRoute
   '/chi-tieu_/scan': typeof ChiTieuScanRoute
+  '/guard/me': typeof GuardMeRoute
+  '/guard/patrol': typeof GuardPatrolRoute
+  '/guard/scan': typeof GuardScanRoute
+  '/guard/tasks': typeof GuardTasksRoute
   '/ops/complaints': typeof OpsComplaintsRoute
   '/ops/fee': typeof OpsFeeRoute
   '/ops/occupancy': typeof OpsOccupancyRoute
   '/ops/sla': typeof OpsSlaRoute
   '/ops/work-orders': typeof OpsWorkOrdersRoute
-  '/guard/me': typeof GuardMeRoute
-  '/guard/patrol': typeof GuardPatrolRoute
-  '/guard/scan': typeof GuardScanRoute
-  '/guard/tasks': typeof GuardTasksRoute
   '/saas/audit': typeof SaasAuditRoute
   '/saas/billing': typeof SaasBillingRoute
   '/saas/cai-dat': typeof SaasCaiDatRoute
@@ -842,10 +842,10 @@ export interface FileRoutesById {
   '/bql/': typeof BqlIndexRoute
   '/console/': typeof ConsoleIndexRoute
   '/family/': typeof FamilyIndexRoute
+  '/guard/': typeof GuardIndexRoute
   '/ops/': typeof OpsIndexRoute
   '/saas/': typeof SaasIndexRoute
   '/security/': typeof SecurityIndexRoute
-  '/guard/': typeof GuardIndexRoute
   '/console/metrics/$key': typeof ConsoleMetricsKeyRoute
 }
 export interface FileRouteTypes {
@@ -867,6 +867,7 @@ export interface FileRouteTypes {
     | '/family'
     | '/forgot-password'
     | '/gia-dinh'
+    | '/guard'
     | '/home'
     | '/ky-niem-gia-dinh'
     | '/lich-gia-dinh'
@@ -914,6 +915,10 @@ export interface FileRouteTypes {
     | '/cai-dat/thong-bao'
     | '/cham-soc-ong-ba/nhat-ky'
     | '/chi-tieu/scan'
+    | '/guard/me'
+    | '/guard/patrol'
+    | '/guard/scan'
+    | '/guard/tasks'
     | '/ops/complaints'
     | '/ops/fee'
     | '/ops/occupancy'
@@ -934,6 +939,7 @@ export interface FileRouteTypes {
     | '/bql/'
     | '/console/'
     | '/family/'
+    | '/guard/'
     | '/ops/'
     | '/saas/'
     | '/security/'
@@ -997,6 +1003,10 @@ export interface FileRouteTypes {
     | '/cai-dat/thong-bao'
     | '/cham-soc-ong-ba/nhat-ky'
     | '/chi-tieu/scan'
+    | '/guard/me'
+    | '/guard/patrol'
+    | '/guard/scan'
+    | '/guard/tasks'
     | '/ops/complaints'
     | '/ops/fee'
     | '/ops/occupancy'
@@ -1017,6 +1027,7 @@ export interface FileRouteTypes {
     | '/bql'
     | '/console'
     | '/family'
+    | '/guard'
     | '/ops'
     | '/saas'
     | '/security'
@@ -1039,6 +1050,7 @@ export interface FileRouteTypes {
     | '/family'
     | '/forgot-password'
     | '/gia-dinh'
+    | '/guard'
     | '/home'
     | '/ky-niem-gia-dinh'
     | '/lich-gia-dinh'
@@ -1086,6 +1098,10 @@ export interface FileRouteTypes {
     | '/cai-dat/thong-bao'
     | '/cham-soc-ong-ba/nhat-ky'
     | '/chi-tieu_/scan'
+    | '/guard/me'
+    | '/guard/patrol'
+    | '/guard/scan'
+    | '/guard/tasks'
     | '/ops/complaints'
     | '/ops/fee'
     | '/ops/occupancy'
@@ -1106,6 +1122,7 @@ export interface FileRouteTypes {
     | '/bql/'
     | '/console/'
     | '/family/'
+    | '/guard/'
     | '/ops/'
     | '/saas/'
     | '/security/'
@@ -1283,18 +1300,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof HomeRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/gia-dinh': {
-      id: '/gia-dinh'
-      path: '/gia-dinh'
-      fullPath: '/gia-dinh'
-      preLoaderRoute: typeof GiaDinhRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/guard': {
       id: '/guard'
       path: '/guard'
       fullPath: '/guard'
       preLoaderRoute: typeof GuardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/gia-dinh': {
+      id: '/gia-dinh'
+      path: '/gia-dinh'
+      fullPath: '/gia-dinh'
+      preLoaderRoute: typeof GiaDinhRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/forgot-password': {
@@ -1409,41 +1426,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SecurityIndexRouteImport
       parentRoute: typeof SecurityRoute
     }
-    '/guard/': {
-      id: '/guard/'
-      path: '/'
-      fullPath: '/guard/'
-      preLoaderRoute: typeof GuardIndexRouteImport
-      parentRoute: typeof GuardRoute
-    }
-    '/guard/patrol': {
-      id: '/guard/patrol'
-      path: '/patrol'
-      fullPath: '/guard/patrol'
-      preLoaderRoute: typeof GuardPatrolRouteImport
-      parentRoute: typeof GuardRoute
-    }
-    '/guard/scan': {
-      id: '/guard/scan'
-      path: '/scan'
-      fullPath: '/guard/scan'
-      preLoaderRoute: typeof GuardScanRouteImport
-      parentRoute: typeof GuardRoute
-    }
-    '/guard/tasks': {
-      id: '/guard/tasks'
-      path: '/tasks'
-      fullPath: '/guard/tasks'
-      preLoaderRoute: typeof GuardTasksRouteImport
-      parentRoute: typeof GuardRoute
-    }
-    '/guard/me': {
-      id: '/guard/me'
-      path: '/me'
-      fullPath: '/guard/me'
-      preLoaderRoute: typeof GuardMeRouteImport
-      parentRoute: typeof GuardRoute
-    }
     '/saas/': {
       id: '/saas/'
       path: '/'
@@ -1457,6 +1439,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/ops/'
       preLoaderRoute: typeof OpsIndexRouteImport
       parentRoute: typeof OpsRoute
+    }
+    '/guard/': {
+      id: '/guard/'
+      path: '/'
+      fullPath: '/guard/'
+      preLoaderRoute: typeof GuardIndexRouteImport
+      parentRoute: typeof GuardRoute
     }
     '/family/': {
       id: '/family/'
@@ -1597,6 +1586,34 @@ declare module '@tanstack/react-router' {
       fullPath: '/ops/complaints'
       preLoaderRoute: typeof OpsComplaintsRouteImport
       parentRoute: typeof OpsRoute
+    }
+    '/guard/tasks': {
+      id: '/guard/tasks'
+      path: '/tasks'
+      fullPath: '/guard/tasks'
+      preLoaderRoute: typeof GuardTasksRouteImport
+      parentRoute: typeof GuardRoute
+    }
+    '/guard/scan': {
+      id: '/guard/scan'
+      path: '/scan'
+      fullPath: '/guard/scan'
+      preLoaderRoute: typeof GuardScanRouteImport
+      parentRoute: typeof GuardRoute
+    }
+    '/guard/patrol': {
+      id: '/guard/patrol'
+      path: '/patrol'
+      fullPath: '/guard/patrol'
+      preLoaderRoute: typeof GuardPatrolRouteImport
+      parentRoute: typeof GuardRoute
+    }
+    '/guard/me': {
+      id: '/guard/me'
+      path: '/me'
+      fullPath: '/guard/me'
+      preLoaderRoute: typeof GuardMeRouteImport
+      parentRoute: typeof GuardRoute
     }
     '/chi-tieu_/scan': {
       id: '/chi-tieu_/scan'
@@ -1898,6 +1915,24 @@ const FamilyRouteChildren: FamilyRouteChildren = {
 const FamilyRouteWithChildren =
   FamilyRoute._addFileChildren(FamilyRouteChildren)
 
+interface GuardRouteChildren {
+  GuardMeRoute: typeof GuardMeRoute
+  GuardPatrolRoute: typeof GuardPatrolRoute
+  GuardScanRoute: typeof GuardScanRoute
+  GuardTasksRoute: typeof GuardTasksRoute
+  GuardIndexRoute: typeof GuardIndexRoute
+}
+
+const GuardRouteChildren: GuardRouteChildren = {
+  GuardMeRoute: GuardMeRoute,
+  GuardPatrolRoute: GuardPatrolRoute,
+  GuardScanRoute: GuardScanRoute,
+  GuardTasksRoute: GuardTasksRoute,
+  GuardIndexRoute: GuardIndexRoute,
+}
+
+const GuardRouteWithChildren = GuardRoute._addFileChildren(GuardRouteChildren)
+
 interface OpsRouteChildren {
   OpsComplaintsRoute: typeof OpsComplaintsRoute
   OpsFeeRoute: typeof OpsFeeRoute
@@ -1947,25 +1982,6 @@ const SaasRouteChildren: SaasRouteChildren = {
 }
 
 const SaasRouteWithChildren = SaasRoute._addFileChildren(SaasRouteChildren)
-
-interface GuardRouteChildren {
-  GuardMeRoute: typeof GuardMeRoute
-  GuardTasksRoute: typeof GuardTasksRoute
-  GuardScanRoute: typeof GuardScanRoute
-  GuardPatrolRoute: typeof GuardPatrolRoute
-  GuardIndexRoute: typeof GuardIndexRoute
-}
-
-const GuardRouteChildren: GuardRouteChildren = {
-  GuardMeRoute: GuardMeRoute,
-  GuardTasksRoute: GuardTasksRoute,
-  GuardScanRoute: GuardScanRoute,
-  GuardPatrolRoute: GuardPatrolRoute,
-  GuardIndexRoute: GuardIndexRoute,
-}
-
-const GuardRouteWithChildren =
-  GuardRoute._addFileChildren(GuardRouteChildren)
 
 interface SecurityRouteChildren {
   SecurityIndexRoute: typeof SecurityIndexRoute
@@ -2042,3 +2058,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

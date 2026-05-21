@@ -370,7 +370,7 @@ function Field({
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
           autoComplete={autoComplete}
-          className="flex-1 bg-transparent text-sm font-medium outline-none placeholder:text-muted-foreground/60"
+          className="flex-1 bg-transparent text-base font-medium outline-none placeholder:text-muted-foreground/60"
         />
         {trailing}
       </div>

@@ -10,7 +10,6 @@ import {
 import { useEffect, type ReactNode } from "react";
 import { toast, Toaster } from "sonner";
 import { AuthProvider } from "@/hooks/use-auth";
-import { AuthDebugPanel } from "@/components/debug/AuthDebugPanel";
 import { EasyReadProvider } from "@/hooks/use-easy-read";
 import { ThemeProvider } from "@/hooks/use-theme";
 import { MockAuthProvider } from "@/contexts/MockAuthContext";
@@ -139,7 +138,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   head: () => ({
     meta: [
       { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1" },
+      {
+        name: "viewport",
+        content: "width=device-width, initial-scale=1, viewport-fit=cover",
+      },
       { title: "Lovable App" },
       { name: "description", content: "Lovable Generated Project" },
       { name: "author", content: "Lovable" },
@@ -225,7 +227,6 @@ function RootComponent() {
                 <Outlet />
                 <RouterErrorWatcher />
                 <Toaster richColors closeButton position="top-center" />
-                <AuthDebugPanel />
               </EasyReadProvider>
             </ThemeProvider>
           </TenantProvider>
