@@ -1,0 +1,41 @@
+{
+  "name": "stos-monorepo",
+  "private": true,
+  "type": "module",
+  "workspaces": ["apps/*", "packages/*"],
+  "scripts": {
+    "dev:family": "npm run dev -w @apps/family",
+    "dev:guard": "npm run dev -w @apps/guard",
+    "migrate:copy": "node scripts/migrate-monorepo.mjs",
+    "migrate:api": "node scripts/convert-api.mjs",
+    "assets:family": "node scripts/generate-cap-resources.mjs family",
+    "assets:guard": "node scripts/generate-cap-resources.mjs guard",
+    "build:family": "npm run build -w @apps/family && npm run cap:sync -w @apps/family",
+    "build:guard": "npm run build -w @apps/guard && npm run cap:sync -w @apps/guard",
+    "build": "npm run build:family && npm run build:guard",
+    "routes:family": "npx @tanstack/router-cli generate --cwd apps/family --routesDirectory ./src/routes --generatedRouteTree ./src/routeTree.gen.ts",
+    "routes:guard": "npx @tanstack/router-cli generate --cwd apps/guard --routesDirectory ./src/routes --generatedRouteTree ./src/routeTree.gen.ts",
+    "android:family": "npm run build:family && node scripts/android-build.mjs family assembleRelease",
+    "android:guard": "npm run build:guard && node scripts/android-build.mjs guard assembleRelease",
+    "android:family:debug": "npm run build:family && node scripts/android-build.mjs family assembleDebug",
+    "android:guard:debug": "npm run build:guard && node scripts/android-build.mjs guard assembleDebug",
+    "ios:family": "npm run build:family && npm run cap:open:ios -w @apps/family",
+    "ios:guard": "npm run build:guard && npm run cap:open:ios -w @apps/guard",
+    "native:setup": "node scripts/setup-native.mjs",
+    "gradle:wrapper": "node scripts/bootstrap-gradle-wrapper.mjs",
+    "test": "npm run test:family && npm run test:guard",
+    "test:family": "npm run test:coverage -w @apps/family",
+    "test:guard": "npm run test:coverage -w @apps/guard",
+    "test:e2e": "playwright test",
+    "typecheck": "npm run typecheck -w @apps/family && npm run typecheck -w @apps/guard",
+    "audit:deps": "npm audit --audit-level=high"
+  },
+  "packageManager": "bun@1.2.0",
+  "engines": {
+    "node": ">=20.19.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.52.0",
+    "sharp": "^0.34.2"
+  }
+}

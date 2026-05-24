@@ -1,0 +1,15 @@
+{
+  "name": "@shared/utils",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./formatters": "./src/formatters/index.ts",
+    "./logger": "./src/logger.ts"
+  },
+  "dependencies": {
+    "clsx": "^2.1.1",
+    "tailwind-merge": "^3.5.0"
+  }
+}

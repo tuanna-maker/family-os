@@ -1,0 +1,22 @@
+{
+  "name": "@shared/supabase",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./client": "./src/client.ts",
+    "./auth": "./src/auth.ts",
+    "./types": "./src/types.ts"
+  },
+  "dependencies": {
+    "@capacitor/preferences": "^6.0.0",
+    "@supabase/supabase-js": "^2.105.4"
+  },
+  "peerDependencies": {
+    "@capacitor/core": "^6.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@capacitor/core": { "optional": true }
+  }
+}

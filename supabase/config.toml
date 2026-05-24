@@ -1,0 +1,17 @@
+# STOS Family OS — Supabase local / deploy config
+# Deploy Edge Functions: see DEPLOY_EDGE_FUNCTIONS.md (Lovable)
+
+project_id = "bigarvjahnxiuovepaxm"
+
+[functions.log-ingest]
+verify_jwt = false
+
+[functions.health-check]
+verify_jwt = false
+
+[functions.metrics-aggregate]
+verify_jwt = false
+
+# Optional — deploy when OpenAI secret is configured
+[functions.scan-receipt]
+verify_jwt = true
