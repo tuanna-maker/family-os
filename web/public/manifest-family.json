@@ -1,0 +1,17 @@
+{
+  "name": "STOS Life",
+  "short_name": "STOS Life",
+  "description": "Ứng dụng Gia đình STOS Life",
+  "start_url": "/login?source=pwa-family",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0b0f1a",
+  "theme_color": "#2563eb",
+  "lang": "vi",
+  "icons": [
+    { "src": "/icons/family-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/family-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/family-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

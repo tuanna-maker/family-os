@@ -20,18 +20,7 @@ dist-ssr
 .wrangler/
 .dev.vars
 
-# Env templates
-!.env.example
-
-# Test artifacts
-**/tests/coverage/
-playwright-report/
-test-results/
-
-# Capacitor / native build
-**/android/.gradle/
-**/android/app/build/
-**/ios/App/Pods/
+# Editor directories and files
 .vscode/*
 !.vscode/extensions.json
 .idea
