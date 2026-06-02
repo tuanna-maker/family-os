@@ -44,7 +44,11 @@ export function BottomNav() {
   };
 
   return (
-    <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 mx-auto max-w-md">
+    <nav
+      className="md:hidden fixed bottom-0 inset-x-0 z-40 mx-auto max-w-md"
+      style={{ paddingBottom: "max(0px, env(safe-area-inset-bottom))" }}
+      aria-label="Điều hướng chính"
+    >
       <div className="mx-3 mb-3 rounded-3xl border border-border bg-card/90 backdrop-blur-xl shadow-[var(--shadow-pop)]">
         <ul className="grid grid-cols-5">
           {tabs.map(({ to, label, icon: Icon }) => {
@@ -56,8 +60,9 @@ export function BottomNav() {
                   to={to}
                   onClick={handleTap(to)}
                   aria-current={active ? "page" : undefined}
+                  aria-label={label}
                   className={cn(
-                    "flex flex-col items-center justify-center gap-1 py-2.5 text-[10px] font-medium",
+                    "flex flex-col items-center justify-center gap-0.5 min-h-14 py-2 text-[11px] font-medium touch-manipulation",
                     "transition-colors duration-200 ease-out",
                     "active:scale-[0.96] transition-transform",
                     isFeatured
@@ -82,7 +87,7 @@ export function BottomNav() {
                   ) : (
                     <div
                       className={cn(
-                        "h-9 w-9 grid place-items-center rounded-2xl",
+                        "h-10 w-10 grid place-items-center rounded-2xl",
                         "transition-all duration-300 ease-out",
                         active && "bg-tint-blue scale-105",
                       )}

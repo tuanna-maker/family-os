@@ -6,7 +6,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./formatters": "./src/formatters/index.ts",
-    "./logger": "./src/logger.ts"
+    "./logger": "./src/logger.ts",
+    "./pii-scrub": "./src/pii-scrub.ts"
   },
   "dependencies": {
     "clsx": "^2.1.1",

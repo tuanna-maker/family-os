@@ -3,8 +3,13 @@ import { createRoot } from "react-dom/client";
 import { RouterProvider, createRouter } from "@tanstack/react-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { initLogger, logger } from "@shared/utils";
+import { supabase } from "@shared/supabase/client";
+import { SentryAppRoot } from "@shared/ui";
+import { initSentry } from "./init-sentry";
 import { routeTree } from "./routeTree.gen";
 import "./styles.css";
+
+initSentry();
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, staleTime: 30_000 } },
@@ -26,7 +31,13 @@ const loggingEnabled =
   import.meta.env.PROD || import.meta.env.VITE_ENABLE_LOGGING === "true";
 
 if (loggingEnabled) {
-  initLogger({ app: "family", ingestUrl: "/functions/v1/log-ingest" });
+  initLogger({
+    app: "family",
+    getAccessToken: async () => {
+      const { data } = await supabase.auth.getSession();
+      return data.session?.access_token ?? null;
+    },
+  });
   router.subscribe("onResolved", ({ toLocation }) => {
     logger.navigation(toLocation.pathname);
   });
@@ -34,8 +45,10 @@ if (loggingEnabled) {
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <RouterProvider router={router} />
-    </QueryClientProvider>
+    <SentryAppRoot>
+      <QueryClientProvider client={queryClient}>
+        <RouterProvider router={router} />
+      </QueryClientProvider>
+    </SentryAppRoot>
   </StrictMode>,
 );

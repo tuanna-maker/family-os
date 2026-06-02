@@ -8,6 +8,9 @@ const dir = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
   root: dir,
+  define: {
+    "import.meta.env.VITE_APP_TARGET": JSON.stringify("guard"),
+  },
   resolve: {
     alias: {
       "@": path.resolve(dir, "./src"),

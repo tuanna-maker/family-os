@@ -44,6 +44,13 @@ jobs:
         run: npm ci
 
       - name: Build web + cap sync (Family)
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+          VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
+          VITE_AUTH_REDIRECT_URL: vn.unicom.stos.family://auth
+          VITE_APP_TARGET: family
+          VITE_PILOT_PREFILL: "false"
         run: npm run build:family
 
       - name: Generate native assets (Family)
@@ -91,6 +98,13 @@ jobs:
         run: npm ci
 
       - name: Build web + cap sync (Guard)
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+          VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
+          VITE_AUTH_REDIRECT_URL: vn.unicom.stos.guard://auth
+          VITE_APP_TARGET: guard
+          VITE_PILOT_PREFILL: "false"
         run: npm run build:guard
 
       - name: Generate native assets (Guard)
@@ -130,6 +144,13 @@ jobs:
         run: npm ci
 
       - name: Build web + cap sync (Family)
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+          VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
+          VITE_AUTH_REDIRECT_URL: vn.unicom.stos.family://auth
+          VITE_APP_TARGET: family
+          VITE_PILOT_PREFILL: "false"
         run: npm run build:family
 
       - name: Generate native assets (Family)
@@ -185,6 +206,13 @@ jobs:
         run: npm ci
 
       - name: Build web + cap sync (Guard)
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+          VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
+          VITE_AUTH_REDIRECT_URL: vn.unicom.stos.guard://auth
+          VITE_APP_TARGET: guard
+          VITE_PILOT_PREFILL: "false"
         run: npm run build:guard
 
       - name: Generate native assets (Guard)

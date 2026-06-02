@@ -28,7 +28,8 @@
     "test:guard": "npm run test:coverage -w @apps/guard",
     "test:e2e": "playwright test",
     "typecheck": "npm run typecheck -w @apps/family && npm run typecheck -w @apps/guard",
-    "audit:deps": "npm audit --audit-level=high"
+    "audit:deps": "npm audit --audit-level=high",
+    "verify:log-ingest": "node scripts/verify-log-ingest.mjs"
   },
   "packageManager": "bun@1.2.0",
   "engines": {

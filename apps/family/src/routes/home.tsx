@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { MobileShell } from "@shared/ui/mobile/MobileShell";
+import { MOBILE_HEADER_PT } from "@shared/ui/mobile/shellLayout";
 import {
   ShieldCheck,
   Phone,
@@ -168,7 +169,7 @@ function HomePage() {
   return (
     <MobileShell>
       {/* Header */}
-      <header className="px-4 pt-5 pb-3 flex items-center gap-3">
+      <header className={`px-4 pb-3 flex items-center gap-3 ${MOBILE_HEADER_PT}`}>
         <div className="flex items-center gap-2 shrink-0">
           <div className="h-10 w-10 rounded-2xl bg-gradient-to-br from-brand to-navy grid place-items-center shadow-[var(--shadow-soft)]">
             <ShieldCheck className="h-5 w-5 text-primary-foreground" fill="currentColor" />
@@ -177,10 +178,8 @@ function HomePage() {
             <p className="text-[15px] font-bold tracking-tight">
               STOS <span className="text-brand">Life</span>
             </p>
-            <p className="text-[8px] text-muted-foreground leading-tight">
-              Operating System
-              <br />
-              for Residential Life
+            <p className="text-[11px] text-muted-foreground leading-snug">
+              Operating System for Residential Life
             </p>
           </div>
         </div>
@@ -194,7 +193,7 @@ function HomePage() {
           type="button"
           onClick={toggle}
           aria-label={theme === "dark" ? "Chuyển sang chế độ sáng" : "Chuyển sang chế độ tối"}
-          className="h-9 w-9 rounded-full bg-card border border-border grid place-items-center text-foreground active:scale-95 transition"
+          className="h-11 w-11 rounded-full bg-card border border-border grid place-items-center text-foreground active:scale-95 transition touch-manipulation"
         >
           {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
         </button>

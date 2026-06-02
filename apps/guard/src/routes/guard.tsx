@@ -15,7 +15,7 @@ export const Route = createFileRoute("/guard")({
       .in("role", ["super_admin", "security_admin", "security_staff"]);
     if (!roles || roles.length === 0) throw redirect({ to: "/login" });
   },
-  head: () => ({ meta: [{ title: "App Bảo vệ — STOS Life" }] }),
+  head: () => ({ meta: [{ title: "App Bảo vệ — STOS Guard" }] }),
   component: GuardLayout,
 });
 
@@ -37,9 +37,13 @@ function GuardLayout() {
   return (
     <div className="dark">
       <div className="min-h-screen bg-background text-foreground">
-        <div className="mx-auto max-w-md min-h-screen pb-24 relative">
+        <div className="mx-auto max-w-md min-h-dvh pb-[calc(6rem+env(safe-area-inset-bottom,0px))] relative">
           <Outlet />
-          <nav className="fixed bottom-0 inset-x-0 z-40 mx-auto max-w-md">
+          <nav
+            className="fixed bottom-0 inset-x-0 z-40 mx-auto max-w-md"
+            style={{ paddingBottom: "max(0px, env(safe-area-inset-bottom))" }}
+            aria-label="Điều hướng bảo vệ"
+          >
             <div className="mx-3 mb-3 rounded-3xl border border-border bg-card/95 backdrop-blur-xl shadow-2xl">
               <ul className="grid grid-cols-4">
                 {tabs.map(({ to, label, icon: Icon, badge, exact }) => {
@@ -50,11 +54,11 @@ function GuardLayout() {
                         to={to as any}
 
                         className={cn(
-                          "flex flex-col items-center justify-center gap-1 py-2.5 text-[10px] font-medium relative",
+                          "flex flex-col items-center justify-center gap-0.5 min-h-14 py-2 text-[11px] font-medium relative touch-manipulation active:scale-[0.96] transition-transform",
                           active ? "text-brand" : "text-muted-foreground",
                         )}
                       >
-                        <div className="relative">
+                        <div className="relative h-10 w-10 grid place-items-center">
                           <Icon className="h-5 w-5" strokeWidth={active ? 2.4 : 2} />
                           {badge ? (
                             <span className="absolute -top-1.5 -right-2 min-w-[16px] h-4 px-1 rounded-full bg-emergency text-white text-[9px] font-bold grid place-items-center">

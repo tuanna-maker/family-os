@@ -182,6 +182,14 @@
     color: var(--color-foreground);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
+    text-size-adjust: 100%;
+  }
+  body {
+    overscroll-behavior-y: none;
+  }
+  button, a, [role="button"] {
+    touch-action: manipulation;
   }
 }
 

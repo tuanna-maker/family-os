@@ -33,6 +33,8 @@
     "@shared/supabase": "*",
     "@shared/ui": "*",
     "@shared/utils": "*",
+    "@sentry/capacitor": "^1.4.0",
+    "@sentry/react": "^9.30.0",
     "@tanstack/react-query": "^5.83.0",
     "@tanstack/react-router": "^1.168.25",
     "js-sha256": "^0.11.1",

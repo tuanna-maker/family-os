@@ -2,6 +2,8 @@ import { Link } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
 import type { ReactNode } from "react";
 
+import { MOBILE_HEADER_PT } from "../mobile/shellLayout";
+
 type Props = {
   title: string;
   subtitle?: string;
@@ -19,11 +21,11 @@ type Props = {
  */
 export function PageHeader({ title, subtitle, eyebrow, emoji, back = "/", right }: Props) {
   return (
-    <header className="px-5 pt-6 pb-3 flex items-center gap-3">
+    <header className={`px-5 pb-3 flex items-center gap-3 ${MOBILE_HEADER_PT}`}>
       {back !== false && (
         <Link
           to={back}
-          className="h-9 w-9 rounded-2xl bg-card border border-border grid place-items-center shrink-0"
+          className="h-11 w-11 rounded-2xl bg-card border border-border grid place-items-center shrink-0 touch-manipulation active:scale-95 transition-transform"
           aria-label="Quay lại"
         >
           <ArrowLeft className="h-4 w-4" />
@@ -31,7 +33,7 @@ export function PageHeader({ title, subtitle, eyebrow, emoji, back = "/", right 
       )}
       <div className="flex-1 min-w-0">
         {eyebrow && (
-          <p className="text-[10px] uppercase tracking-wider text-brand font-semibold">
+          <p className="text-[11px] uppercase tracking-wider text-brand font-semibold">
             {eyebrow}
           </p>
         )}

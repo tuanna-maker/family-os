@@ -5,7 +5,8 @@ import { supabase } from "@shared/supabase/client";
 import { useAuth } from "@shared/ui/hooks/use-auth";
 import { getMyContext } from "@/api/auth";
 import { resolveLoginEmail, checkUsernameAvailable } from "@/api/username";
-import { resolveDestinationPure } from "@shared/utils";
+import { resolveDestinationPure, getPilotLoginDefaults } from "@shared/utils";
+import { PilotDemoBanner } from "@shared/ui";
 import { listPublicProjects } from "@shared/supabase";
 import {
   Loader2,
@@ -64,11 +65,12 @@ function LoginPage() {
   });
   const projects = projectsQuery.data?.projects ?? [];
 
+  const pilotDefaults = getPilotLoginDefaults();
   const [mode, setMode] = useState<AuthMode>("signin");
-  const [identifier, setIdentifier] = useState(""); // signin: username hoặc email
-  const [email, setEmail] = useState("");           // signup
-  const [username, setUsername] = useState("");     // signup
-  const [password, setPassword] = useState("");
+  const [identifier, setIdentifier] = useState(pilotDefaults.identifier);
+  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState(pilotDefaults.password);
   const [name, setName] = useState("");           // Tên chủ hộ
   const [buildingName, setBuildingName] = useState(""); // Tên chung cư
   const [apartmentNo, setApartmentNo] = useState("");   // Số căn hộ
@@ -255,7 +257,7 @@ function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex bg-background relative">
+    <div className="min-h-dvh flex bg-background relative">
       {(resolving || (session && !loading && !busy && source !== "landing")) && (
         <div className="fixed inset-0 z-50 bg-background/85 backdrop-blur-sm grid place-items-center">
           <div className="flex flex-col items-center gap-3 text-sm text-muted-foreground">
@@ -309,7 +311,7 @@ function LoginPage() {
       </div>
 
       {/* Right form panel */}
-      <div className="flex-1 flex items-center justify-center px-4 py-10 sm:px-8">
+      <div className="flex-1 flex items-center justify-center px-5 py-8 sm:px-8 pt-[max(2rem,env(safe-area-inset-top))] pb-[max(2rem,env(safe-area-inset-bottom))]">
         <div className="w-full max-w-md">
           <Link to="/" className="flex lg:hidden items-center gap-3 mb-8">
             <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-brand to-pink grid place-items-center text-2xl shadow-[var(--shadow-pop)]">
@@ -332,6 +334,11 @@ function LoginPage() {
                 ? "Đăng nhập để tiếp tục với gia đình của bạn."
                 : "Chỉ mất một phút để bắt đầu."}
             </p>
+            {mode === "signin" && pilotDefaults.label && (
+              <div className="pt-2">
+                <PilotDemoBanner roleLabel={pilotDefaults.label} appName="STOS Life" />
+              </div>
+            )}
           </div>
 
           <div className="flex rounded-xl bg-muted p-1 text-sm mb-5">
@@ -345,7 +352,7 @@ function LoginPage() {
                   setInfo("");
                   setFieldErrors({});
                 }}
-                className={`flex-1 py-2 rounded-lg font-medium transition ${
+                className={`flex-1 min-h-11 py-2 rounded-lg font-medium transition touch-manipulation ${
                   mode === m
                     ? "bg-card shadow-sm text-foreground"
                     : "text-muted-foreground hover:text-foreground"
@@ -436,7 +443,7 @@ function LoginPage() {
                 }}
                 placeholder="nguyenvana hoặc ban@vidu.vn"
                 error={fieldErrors.identifier}
-                autoComplete="username"
+                autoComplete={pilotDefaults.identifier ? "off" : "username"}
                 readOnly={busy || resolving}
               />
             ) : (
@@ -468,7 +475,9 @@ function LoginPage() {
               }}
               placeholder="Ít nhất 6 ký tự"
               error={fieldErrors.password}
-              autoComplete={mode === "signin" ? "current-password" : "new-password"}
+              autoComplete={
+                pilotDefaults.password && mode === "signin" ? "off" : mode === "signin" ? "current-password" : "new-password"
+              }
               readOnly={busy || resolving}
               trailing={
                 <button
@@ -515,7 +524,7 @@ function LoginPage() {
             <button
               type="submit"
               disabled={busy}
-              className="w-full h-11 rounded-xl bg-gradient-to-br from-brand to-pink text-white font-semibold disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-[var(--shadow-pop)] hover:opacity-95 active:scale-[0.99] transition"
+              className="w-full min-h-12 h-12 rounded-xl bg-gradient-to-br from-brand to-pink text-white font-semibold text-base disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-[var(--shadow-pop)] hover:opacity-95 active:scale-[0.98] transition touch-manipulation"
             >
               {busy && <Loader2 className="h-4 w-4 animate-spin" />}
               {mode === "signin" ? "Đăng nhập" : "Tạo tài khoản"}
@@ -595,7 +604,7 @@ function Field({
         {label}
       </span>
       <div
-        className={`mt-1 flex items-center gap-2 h-11 rounded-xl bg-muted/40 border px-3 transition focus-within:bg-card focus-within:ring-2 focus-within:ring-brand/50 ${
+        className={`mt-1 flex items-center gap-2 h-12 rounded-xl bg-muted/40 border px-3 transition focus-within:bg-card focus-within:ring-2 focus-within:ring-brand/50 ${
           error ? "border-emergency/50" : "border-transparent"
         }`}
       >
@@ -644,7 +653,7 @@ function SelectField({
         {label}
       </span>
       <div
-        className={`mt-1 flex items-center gap-2 h-11 rounded-xl bg-muted/40 border px-3 transition focus-within:bg-card focus-within:ring-2 focus-within:ring-brand/50 ${
+        className={`mt-1 flex items-center gap-2 h-12 rounded-xl bg-muted/40 border px-3 transition focus-within:bg-card focus-within:ring-2 focus-within:ring-brand/50 ${
           error ? "border-emergency/50" : "border-transparent"
         } ${disabled ? "opacity-60" : ""}`}
       >
