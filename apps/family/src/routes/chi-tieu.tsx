@@ -9,7 +9,7 @@ import { Camera, Sparkles, Trash2, Loader2, Plus } from "lucide-react";
 import { supabase } from "@shared/supabase/client";
 import { getMyContext } from "@/api/auth";
 import { listExpenses, deleteExpense, createExpense } from "@/api/expenses";
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from "@shared/ui/ui/drawer";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@shared/ui/ui/dialog";
 import { Input } from "@shared/ui/ui/input";
 import { Label } from "@shared/ui/ui/label";
 import { Button } from "@shared/ui/ui/button";
@@ -167,11 +167,11 @@ function ExpensesPage() {
           <button onClick={() => setOpenAdd(true)} className="h-8 px-3 rounded-full bg-brand text-white text-xs font-semibold flex items-center gap-1.5 active:scale-95 transition">
             <Plus className="h-3.5 w-3.5" /> Thêm
           </button>
-          <Drawer open={openAdd} onOpenChange={setOpenAdd}>
-            <DrawerContent>
-              <DrawerHeader>
-                <DrawerTitle>Thêm khoản chi</DrawerTitle>
-              </DrawerHeader>
+          <Dialog open={openAdd} onOpenChange={setOpenAdd}>
+            <DialogContent className="max-w-md w-[90vw] mx-auto rounded-2xl">
+              <DialogHeader>
+                <DialogTitle>Thêm khoản chi</DialogTitle>
+              </DialogHeader>
               <form onSubmit={handleAdd} className="p-4 space-y-4">
                 <div className="space-y-2">
                   <Label>Tên khoản chi</Label>
@@ -196,8 +196,8 @@ function ExpensesPage() {
                   {addM.isPending ? "Đang lưu..." : "Lưu khoản chi"}
                 </Button>
               </form>
-            </DrawerContent>
-          </Drawer>
+            </DialogContent>
+          </Dialog>
         </div>
 
         <RoundedCard className="p-0 divide-y divide-border">
