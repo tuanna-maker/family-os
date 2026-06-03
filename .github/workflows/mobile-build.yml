@@ -1,0 +1,251 @@
+name: Mobile Build
+
+on:
+  push:
+    tags:
+      - "family-v*"
+      - "guard-v*"
+  workflow_dispatch:
+    inputs:
+      app:
+        description: "App to build (family | guard | both)"
+        required: true
+        default: both
+        type: choice
+        options:
+          - family
+          - guard
+          - both
+
+jobs:
+  build-android-family:
+    if: >-
+      startsWith(github.ref, 'refs/tags/family-v') ||
+      (github.event_name == 'workflow_dispatch' &&
+       (github.event.inputs.app == 'family' || github.event.inputs.app == 'both'))
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build web + cap sync (Family)
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+          VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
+          VITE_AUTH_REDIRECT_URL: vn.unicom.stos.family://auth
+          VITE_APP_TARGET: family
+          VITE_PILOT_PREFILL: "false"
+        run: npm run build:family
+
+      - name: Generate native assets (Family)
+        run: |
+          npm run assets:family
+          npm run cap:assets -w @apps/family
+          node scripts/patch-native-permissions.mjs family
+          npm run cap:sync -w @apps/family
+
+      - name: Bootstrap Gradle wrapper
+        run: node scripts/bootstrap-gradle-wrapper.mjs
+
+      - name: Assemble release APK (Family)
+        run: node scripts/android-build.mjs family assembleRelease
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: family-release-apk
+          path: apps/family/android/app/build/outputs/apk/release/app-release.apk
+          if-no-files-found: error
+
+  build-android-guard:
+    if: >-
+      startsWith(github.ref, 'refs/tags/guard-v') ||
+      (github.event_name == 'workflow_dispatch' &&
+       (github.event.inputs.app == 'guard' || github.event.inputs.app == 'both'))
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build web + cap sync (Guard)
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+          VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
+          VITE_AUTH_REDIRECT_URL: vn.unicom.stos.guard://auth
+          VITE_APP_TARGET: guard
+          VITE_PILOT_PREFILL: "false"
+        run: npm run build:guard
+
+      - name: Generate native assets (Guard)
+        run: |
+          npm run assets:guard
+          npm run cap:assets -w @apps/guard
+          node scripts/patch-native-permissions.mjs guard
+          npm run cap:sync -w @apps/guard
+
+      - name: Bootstrap Gradle wrapper
+        run: node scripts/bootstrap-gradle-wrapper.mjs
+
+      - name: Assemble release APK (Guard)
+        run: node scripts/android-build.mjs guard assembleRelease
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: guard-release-apk
+          path: apps/guard/android/app/build/outputs/apk/release/app-release.apk
+          if-no-files-found: error
+
+  build-ios-family:
+    if: >-
+      startsWith(github.ref, 'refs/tags/family-v') ||
+      (github.event_name == 'workflow_dispatch' &&
+       (github.event.inputs.app == 'family' || github.event.inputs.app == 'both'))
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build web + cap sync (Family)
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+          VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
+          VITE_AUTH_REDIRECT_URL: vn.unicom.stos.family://auth
+          VITE_APP_TARGET: family
+          VITE_PILOT_PREFILL: "false"
+        run: npm run build:family
+
+      - name: Generate native assets (Family)
+        run: |
+          npm run assets:family
+          npm run cap:assets -w @apps/family
+          node scripts/patch-native-permissions.mjs family
+          npm run cap:sync -w @apps/family
+
+      - name: Import signing certificate
+        env:
+          APPLE_DEVELOPER_CERTIFICATE: ${{ secrets.APPLE_DEVELOPER_CERTIFICATE }}
+          APPLE_DEVELOPER_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_DEVELOPER_CERTIFICATE_PASSWORD }}
+        run: |
+          if [ -z "$APPLE_DEVELOPER_CERTIFICATE" ]; then
+            echo "APPLE_DEVELOPER_CERTIFICATE secret not set — archive only, no export."
+            exit 0
+          fi
+          echo "$APPLE_DEVELOPER_CERTIFICATE" | base64 --decode > certificate.p12
+          security create-keychain -p actions build.keychain
+          security default-keychain -s build.keychain
+          security unlock-keychain -p actions build.keychain
+          security import certificate.p12 -k build.keychain -P "$APPLE_DEVELOPER_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+
+      - name: Archive iOS (Family)
+        working-directory: apps/family/ios/App
+        run: |
+          xcodebuild -workspace App.xcworkspace -scheme App -configuration Release \
+            -archivePath "$RUNNER_TEMP/family.xcarchive" archive \
+            CODE_SIGNING_ALLOWED=NO
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: family-ios-archive
+          path: ${{ runner.temp }}/family.xcarchive
+          if-no-files-found: warn
+
+  build-ios-guard:
+    if: >-
+      startsWith(github.ref, 'refs/tags/guard-v') ||
+      (github.event_name == 'workflow_dispatch' &&
+       (github.event.inputs.app == 'guard' || github.event.inputs.app == 'both'))
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build web + cap sync (Guard)
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+          VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
+          VITE_AUTH_REDIRECT_URL: vn.unicom.stos.guard://auth
+          VITE_APP_TARGET: guard
+          VITE_PILOT_PREFILL: "false"
+        run: npm run build:guard
+
+      - name: Generate native assets (Guard)
+        run: |
+          npm run assets:guard
+          npm run cap:assets -w @apps/guard
+          node scripts/patch-native-permissions.mjs guard
+          npm run cap:sync -w @apps/guard
+
+      - name: Import signing certificate
+        env:
+          APPLE_DEVELOPER_CERTIFICATE: ${{ secrets.APPLE_DEVELOPER_CERTIFICATE }}
+          APPLE_DEVELOPER_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_DEVELOPER_CERTIFICATE_PASSWORD }}
+        run: |
+          if [ -z "$APPLE_DEVELOPER_CERTIFICATE" ]; then
+            echo "APPLE_DEVELOPER_CERTIFICATE secret not set — archive only, no export."
+            exit 0
+          fi
+          echo "$APPLE_DEVELOPER_CERTIFICATE" | base64 --decode > certificate.p12
+          security create-keychain -p actions build.keychain
+          security default-keychain -s build.keychain
+          security unlock-keychain -p actions build.keychain
+          security import certificate.p12 -k build.keychain -P "$APPLE_DEVELOPER_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+
+      - name: Archive iOS (Guard)
+        working-directory: apps/guard/ios/App
+        run: |
+          xcodebuild -workspace App.xcworkspace -scheme App -configuration Release \
+            -archivePath "$RUNNER_TEMP/guard.xcarchive" archive \
+            CODE_SIGNING_ALLOWED=NO
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: guard-ios-archive
+          path: ${{ runner.temp }}/guard.xcarchive
+          if-no-files-found: warn

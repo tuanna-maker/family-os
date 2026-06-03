@@ -1,0 +1,55 @@
+name: Test
+
+on:
+  pull_request:
+  push:
+    branches: [main, develop]
+
+jobs:
+  lint-typecheck-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm audit --audit-level=high
+
+  vitest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      - run: npm run test -w @apps/family
+      - run: npm run test -w @apps/guard
+      - run: npm run test:coverage -w @apps/family
+      - run: npm run test:coverage -w @apps/guard
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage-reports
+          path: |
+            apps/family/tests/coverage
+            apps/guard/tests/coverage
+
+  playwright:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run build -w @apps/family && npm run build -w @apps/guard
+      - run: npx playwright test --grep-invert "E2E_LIVE"
+        env:
+          CI: "true"
