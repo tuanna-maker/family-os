@@ -22,6 +22,7 @@ import {
   FileHeart,
   Brain,
   ChevronRight,
+  ChevronDown,
   Calendar,
 } from "lucide-react";
 import { MobileShell } from "@shared/ui/mobile/MobileShell";
@@ -29,6 +30,7 @@ import { supabase } from "@shared/supabase/client";
 import { useFamilyContext } from "@/hooks/use-family-context";
 import { listHealth } from "@/api/health";
 import { cn } from "@shared/utils";
+import { CollapsibleSection } from "@shared/ui/common/CollapsibleSection";
 
 export const Route = createFileRoute("/suc-khoe")({
   head: () => ({ meta: [{ title: "Sức khỏe gia đình — STOS Life" }] }),
@@ -225,111 +227,128 @@ function HealthOverview() {
         {/* Upcoming appts + Meds */}
         <section className="px-4 mt-6 grid grid-cols-2 gap-3">
           <div className="rounded-3xl bg-card border border-border p-4">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-[13px] font-bold">Lịch khám sắp tới</h3>
-              <Link to="/suc-khoe/quan-ly" className="text-[10px] font-semibold text-brand">Xem tất cả</Link>
-            </div>
-            <ul className="space-y-3">
-              {(upcomingAppts.length > 0 ? upcomingAppts : SAMPLE_APPTS).map((a, i) => (
-                <li key={a.id ?? i} className="flex items-start gap-2.5">
-                  <img src={MEMBER_AVATAR[a.member_name] ?? FAMILY_MEMBERS[0].img} alt="" className="h-9 w-9 rounded-full object-cover shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[12px] font-bold leading-tight truncate">{(a as any).title ?? "Khám tổng quát định kỳ"}</p>
-                    <p className="text-[10px] text-muted-foreground mt-0.5 flex items-center gap-1">👤 {a.member_name}</p>
-                    <p className="text-[10px] text-muted-foreground mt-0.5">{formatApptShort(a.scheduled_at)}</p>
-                    {a.location && <p className="text-[10px] text-muted-foreground truncate">{a.location}</p>}
-                  </div>
-                  <ChevronRight className="h-3.5 w-3.5 text-muted-foreground mt-2 shrink-0" />
-                </li>
-              ))}
-            </ul>
+            <CollapsibleSection
+              title="Lịch khám sắp tới"
+              titleClassName="text-[13px] font-bold"
+              defaultOpen
+              action={<Link to="/suc-khoe/quan-ly" className="text-[10px] font-semibold text-brand">Xem tất cả</Link>}
+              className="h-full"
+            >
+              <ul className="space-y-3 mt-3">
+                {(upcomingAppts.length > 0 ? upcomingAppts : SAMPLE_APPTS).map((a, i) => (
+                  <li key={a.id ?? i} className="flex items-start gap-2.5">
+                    <img src={MEMBER_AVATAR[a.member_name] ?? FAMILY_MEMBERS[0].img} alt="" className="h-9 w-9 rounded-full object-cover shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[12px] font-bold leading-tight truncate">{(a as any).title ?? "Khám tổng quát định kỳ"}</p>
+                      <p className="text-[10px] text-muted-foreground mt-0.5 flex items-center gap-1">👤 {a.member_name}</p>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">{formatApptShort(a.scheduled_at)}</p>
+                      {a.location && <p className="text-[10px] text-muted-foreground truncate">{a.location}</p>}
+                    </div>
+                    <ChevronRight className="h-3.5 w-3.5 text-muted-foreground mt-2 shrink-0" />
+                  </li>
+                ))}
+              </ul>
+            </CollapsibleSection>
           </div>
+          
           <div className="rounded-3xl bg-card border border-border p-4">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-[13px] font-bold">Nhắc uống thuốc</h3>
-              <Link to="/suc-khoe/quan-ly" className="text-[10px] font-semibold text-brand">Xem tất cả</Link>
-            </div>
-            <ul className="space-y-3">
-              {(meds.length > 0 ? meds : SAMPLE_MEDS).map((m, i) => (
-                <li key={m.id ?? i} className="flex items-start gap-2.5">
-                  <img src={MEMBER_AVATAR[m.member_name] ?? FAMILY_MEMBERS[0].img} alt="" className="h-9 w-9 rounded-full object-cover shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[12px] font-bold leading-tight truncate">{m.member_name}</p>
-                    <p className="text-[10px] text-muted-foreground truncate">{m.medicine}</p>
-                    <p className="text-[10px] text-muted-foreground truncate">{m.dosage}{m.notes ? ` • ${m.notes}` : ""}</p>
-                  </div>
-                  <div className="text-right shrink-0">
-                    <p className="text-[13px] font-bold text-success leading-none">{(m.time_of_day ?? "08:00").slice(0,5)}</p>
-                    <p className="text-[9px] text-muted-foreground mt-1">Còn {medCountdown(m.time_of_day)}</p>
-                  </div>
-                </li>
-              ))}
-            </ul>
+            <CollapsibleSection
+              title="Nhắc uống thuốc"
+              titleClassName="text-[13px] font-bold"
+              defaultOpen
+              action={<Link to="/suc-khoe/quan-ly" className="text-[10px] font-semibold text-brand">Xem tất cả</Link>}
+              className="h-full"
+            >
+              <ul className="space-y-3 mt-3">
+                {(meds.length > 0 ? meds : SAMPLE_MEDS).map((m, i) => (
+                  <li key={m.id ?? i} className="flex items-start gap-2.5">
+                    <img src={MEMBER_AVATAR[m.member_name] ?? FAMILY_MEMBERS[0].img} alt="" className="h-9 w-9 rounded-full object-cover shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[12px] font-bold leading-tight truncate">{m.member_name}</p>
+                      <p className="text-[10px] text-muted-foreground truncate">{m.medicine}</p>
+                      <p className="text-[10px] text-muted-foreground truncate">{m.dosage}{m.notes ? ` • ${m.notes}` : ""}</p>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <p className="text-[13px] font-bold text-success leading-none">{(m.time_of_day ?? "08:00").slice(0,5)}</p>
+                      <p className="text-[9px] text-muted-foreground mt-1">Còn {medCountdown(m.time_of_day)}</p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </CollapsibleSection>
           </div>
         </section>
 
-        {/* AI Insight */}
         <section className="px-4 mt-6">
-          <div className="rounded-3xl bg-tint-purple/40 border border-[oklch(0.65_0.2_295/0.3)] p-4 relative">
+          <div className="rounded-3xl bg-tint-purple/40 border border-[oklch(0.65_0.2_295/0.3)] p-4">
             <div className="flex items-start gap-3">
               <div className="h-11 w-11 rounded-2xl bg-[oklch(0.65_0.2_295)]/30 grid place-items-center shrink-0">
                 <Brain className="h-6 w-6 text-[oklch(0.65_0.2_295)]" />
               </div>
               <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between">
-                  <p className="text-[14px] font-bold text-[oklch(0.65_0.2_295)]">AI Health Insight</p>
-                  <button className="text-[10px] font-semibold text-[oklch(0.65_0.2_295)] border border-[oklch(0.65_0.2_295/0.4)] rounded-full px-2.5 py-1 flex items-center gap-1">
-                    Xem chi tiết <ChevronRight className="h-3 w-3" />
-                  </button>
-                </div>
-                <ul className="mt-2 space-y-1.5">
-                  {INSIGHTS.map((i, k) => (
-                    <li key={k} className="text-[11px] leading-snug">
-                      <span className="mr-1.5">{i.emoji}</span>{i.text}
-                    </li>
-                  ))}
-                </ul>
+                <CollapsibleSection
+                  title="AI Health Insight"
+                  titleClassName="text-[14px] font-bold text-[oklch(0.65_0.2_295)]"
+                  defaultOpen
+                  action={
+                    <button className="text-[10px] font-semibold text-[oklch(0.65_0.2_295)] border border-[oklch(0.65_0.2_295/0.4)] rounded-full px-2.5 py-1 flex items-center gap-1">
+                      Xem chi tiết <ChevronRight className="h-3 w-3" />
+                    </button>
+                  }
+                >
+                  <ul className="mt-2 space-y-1.5">
+                    {INSIGHTS.map((i, k) => (
+                      <li key={k} className="text-[11px] leading-snug">
+                        <span className="mr-1.5">{i.emoji}</span>{i.text}
+                      </li>
+                    ))}
+                  </ul>
+                </CollapsibleSection>
               </div>
             </div>
           </div>
         </section>
 
-        {/* Hồ sơ sức khỏe */}
         <section className="px-4 mt-6">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-[15px] font-bold tracking-tight">Hồ sơ sức khỏe</h3>
-            <Link to="/suc-khoe/quan-ly" className="text-[12px] font-semibold text-brand">Xem tất cả</Link>
-          </div>
-          <div className="grid grid-cols-5 gap-2">
-            {RECORDS.map((r) => (
-              <Link key={r.label} to="/suc-khoe/quan-ly" className="block rounded-2xl bg-card border border-border p-2.5 text-center">
-                <div className="h-10 grid place-items-center">
-                  <r.icon className="h-6 w-6 text-[oklch(0.65_0.2_295)]" strokeWidth={2.2} />
-                </div>
-                <p className="text-[10px] font-semibold leading-tight mt-1">{r.label}</p>
-                <p className="text-[9px] text-muted-foreground mt-0.5 leading-tight">{r.detail}</p>
-              </Link>
-            ))}
-          </div>
+          <CollapsibleSection
+            title="Hồ sơ sức khỏe"
+            titleClassName="text-[15px] font-bold tracking-tight"
+            defaultOpen
+            action={<Link to="/suc-khoe/quan-ly" className="text-[12px] font-semibold text-brand">Xem tất cả</Link>}
+          >
+            <div className="grid grid-cols-5 gap-2 mt-3">
+              {RECORDS.map((r) => (
+                <Link key={r.label} to="/suc-khoe/quan-ly" className="block rounded-2xl bg-card border border-border p-2.5 text-center">
+                  <div className="h-10 grid place-items-center">
+                    <r.icon className="h-6 w-6 text-[oklch(0.65_0.2_295)]" strokeWidth={2.2} />
+                  </div>
+                  <p className="text-[10px] font-semibold leading-tight mt-1">{r.label}</p>
+                  <p className="text-[9px] text-muted-foreground mt-0.5 leading-tight">{r.detail}</p>
+                </Link>
+              ))}
+            </div>
+          </CollapsibleSection>
         </section>
 
-        {/* Recent activity */}
         <section className="px-4 mt-6 pb-4">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-[15px] font-bold tracking-tight">Hoạt động gần đây</h3>
-            <button className="text-[12px] font-semibold text-brand">Xem tất cả</button>
-          </div>
-          <ul className="space-y-2.5">
-            {ACTIVITY.map((a, i) => (
-              <li key={i} className="flex items-center gap-3 rounded-2xl bg-card border border-border px-3 py-2.5">
-                <div className={cn("h-8 w-8 rounded-xl grid place-items-center shrink-0", a.tint)}>
-                  <a.icon className={cn("h-4 w-4", a.color)} />
-                </div>
-                <p className="flex-1 text-[12px]">{a.text}</p>
-                <p className="text-[11px] text-muted-foreground shrink-0">{a.time}</p>
-              </li>
-            ))}
-          </ul>
+          <CollapsibleSection
+            title="Hoạt động gần đây"
+            titleClassName="text-[15px] font-bold tracking-tight"
+            defaultOpen
+            action={<button className="text-[12px] font-semibold text-brand">Xem tất cả</button>}
+          >
+            <ul className="space-y-2.5 mt-3">
+              {ACTIVITY.map((a, i) => (
+                <li key={i} className="flex items-center gap-3 rounded-2xl bg-card border border-border px-3 py-2.5">
+                  <div className={cn("h-8 w-8 rounded-xl grid place-items-center shrink-0", a.tint)}>
+                    <a.icon className={cn("h-4 w-4", a.color)} />
+                  </div>
+                  <p className="flex-1 text-[12px]">{a.text}</p>
+                  <p className="text-[11px] text-muted-foreground shrink-0">{a.time}</p>
+                </li>
+              ))}
+            </ul>
+          </CollapsibleSection>
         </section>
       </MobileShell>
   );

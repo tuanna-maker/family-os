@@ -52,7 +52,7 @@ type Dlg =
   | null;
 
 function ChildrenPage() {
-  const { familyId } = useFamilyContext();
+  const { familyId, isLoading: isFamLoading } = useFamilyContext();
           const qc = useQueryClient();
 
   const q = useQuery({
@@ -97,10 +97,11 @@ function ChildrenPage() {
     <MobileShell>
       <PageHeader eyebrow="Family Core" title="Đồng hành cùng con" subtitle={q.data ? `${q.data.children.length} bé` : ""} emoji="🎒" />
 
-      {q.isLoading && <section className="px-4"><LoadingState /></section>}
+      {(isFamLoading || q.isLoading) && <section className="px-4"><LoadingState /></section>}
       {q.isError && <section className="px-4"><ErrorState message={(q.error as Error).message} /></section>}
+      {!isFamLoading && !familyId && <section className="px-4"><EmptyState title="Lỗi dữ liệu gia đình" description="Không tìm thấy thông tin gia đình của bạn." /></section>}
 
-      {q.data && (
+      {q.data && familyId && (
         <>
           {/* CHILDREN */}
           <section className="px-4 mt-2">

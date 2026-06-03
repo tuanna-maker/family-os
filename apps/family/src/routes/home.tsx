@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import securityHero from "../../../../src/assets/security-hero.jpg";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { MobileShell } from "@shared/ui/mobile/MobileShell";
@@ -11,6 +12,7 @@ import {
   Flame,
   Building2,
   ChevronRight,
+  ChevronLeft,
   Clock,
   Sun,
   Moon,
@@ -169,35 +171,37 @@ function HomePage() {
   return (
     <MobileShell>
       {/* Header */}
-      <header className={`px-4 pb-3 flex items-center gap-3 ${MOBILE_HEADER_PT}`}>
-        <div className="flex items-center gap-2 shrink-0">
-          <div className="h-10 w-10 rounded-2xl bg-gradient-to-br from-brand to-navy grid place-items-center shadow-[var(--shadow-soft)]">
+      <header className={`px-4 pb-3 flex items-center gap-2 ${MOBILE_HEADER_PT}`}>
+        <div className="flex items-center gap-2 shrink min-w-0">
+          <div className="h-10 w-10 rounded-2xl bg-gradient-to-br from-brand to-navy grid place-items-center shadow-[var(--shadow-soft)] shrink-0">
             <ShieldCheck className="h-5 w-5 text-primary-foreground" fill="currentColor" />
           </div>
-          <div className="leading-tight">
-            <p className="text-[15px] font-bold tracking-tight">
+          <div className="leading-tight truncate">
+            <p className="text-lg font-bold tracking-tight">
               STOS <span className="text-brand">Life</span>
             </p>
-            <p className="text-[11px] text-muted-foreground leading-snug">
+            <p className="text-[11px] text-muted-foreground leading-snug truncate max-w-[100px]">
               Operating System for Residential Life
             </p>
           </div>
         </div>
         <div className="flex-1 min-w-0 text-right">
-          <p className="text-[11px] text-muted-foreground">Xin chào,</p>
-          <p className="text-[14px] font-bold tracking-tight truncate">
+          <p className="text-xs text-muted-foreground">Xin chào,</p>
+          <p className="text-sm font-bold tracking-tight truncate">
             {family.name} <span>👋</span>
           </p>
         </div>
-        <button
-          type="button"
-          onClick={toggle}
-          aria-label={theme === "dark" ? "Chuyển sang chế độ sáng" : "Chuyển sang chế độ tối"}
-          className="h-11 w-11 rounded-full bg-card border border-border grid place-items-center text-foreground active:scale-95 transition touch-manipulation"
-        >
-          {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-        </button>
-        <NotificationBell unread={unread} />
+        <div className="flex items-center gap-1 shrink-0">
+          <button
+            type="button"
+            onClick={toggle}
+            aria-label={theme === "dark" ? "Chuyển sang chế độ sáng" : "Chuyển sang chế độ tối"}
+            className="h-10 w-10 rounded-full bg-card border border-border grid place-items-center text-foreground active:scale-95 transition touch-manipulation"
+          >
+            {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+          </button>
+          <NotificationBell unread={unread} />
+        </div>
       </header>
 
       {/* Hero security */}
@@ -211,11 +215,11 @@ function HomePage() {
           <div className="absolute inset-0 bg-gradient-to-r from-sidebar via-sidebar/85 to-sidebar/10" />
 
           <div className="relative p-5">
-            <div className="flex items-center gap-2 text-white/80 text-[10px] font-bold uppercase tracking-wider">
+            <div className="flex items-center gap-2 text-white/80 text-xs font-bold uppercase tracking-wider">
               <ShieldCheck className="h-3.5 w-3.5" />
               Dịch vụ bảo an gia đình
             </div>
-            <h1 className="mt-2 text-[22px] font-bold leading-tight max-w-[260px]">
+            <h1 className="mt-2 text-2xl font-bold leading-tight max-w-[260px]">
               An toàn gia đình
               <br />
               là ưu tiên hàng đầu
@@ -238,8 +242,8 @@ function HomePage() {
                   <Phone className="h-5 w-5" fill="currentColor" />
                 </div>
                 <div className="leading-tight">
-                  <p className="text-[15px] font-bold">Gọi hỗ trợ ngay</p>
-                  <p className="text-[10px] text-white/80">Nhấn để gọi đội ngũ bảo an</p>
+                  <p className="text-lg font-bold">Gọi hỗ trợ ngay</p>
+                  <p className="text-xs text-white/80">Nhấn để gọi đội ngũ bảo an</p>
                 </div>
               </Link>
               <Link
@@ -250,8 +254,8 @@ function HomePage() {
                   <MessageSquare className="h-5 w-5" />
                 </div>
                 <div className="leading-tight">
-                  <p className="text-[15px] font-bold">Nhắn tin cho bảo an</p>
-                  <p className="text-[10px] text-white/70">Trao đổi – Yêu cầu</p>
+                  <p className="text-lg font-bold">Nhắn tin cho bảo an</p>
+                  <p className="text-xs text-white/70">Trao đổi – Yêu cầu</p>
                 </div>
               </Link>
             </div>
@@ -259,7 +263,7 @@ function HomePage() {
             {/* status pill */}
             <div className="mt-5 inline-flex items-center gap-1.5 rounded-full bg-white/12 backdrop-blur-sm border border-white/20 px-3 py-1.5">
               <span className="h-2 w-2 rounded-full bg-success animate-pulse" />
-              <span className="text-[11px] font-semibold">Hỗ trợ 24/7</span>
+              <span className="text-sm font-semibold">Hỗ trợ 24/7</span>
             </div>
           </div>
         </div>
@@ -286,9 +290,9 @@ function HomePage() {
               )}
             </div>
             <div className="leading-tight">
-              <p className="text-[11px] text-muted-foreground">Tình trạng an toàn</p>
-              <p className={cn("text-[14px] font-bold", securityStyle.headline)}>{securityHeadline}</p>
-              <p className="text-[10px] text-muted-foreground mt-0.5">{securityUpdated}</p>
+              <p className="text-sm text-muted-foreground">Tình trạng an toàn</p>
+              <p className={cn("text-base font-bold", securityStyle.headline)}>{securityHeadline}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{securityUpdated}</p>
             </div>
           </div>
           <div className="h-10 w-px bg-border shrink-0" />
@@ -301,14 +305,14 @@ function HomePage() {
                   <div className={cn("h-9 w-9 rounded-xl grid place-items-center shrink-0 relative", style.chip)}>
                     <Icon className={cn("h-4 w-4", style.text)} />
                     {c.count > 0 && (
-                      <span className={cn("absolute -top-1 -right-1 min-w-[16px] h-[16px] px-1 rounded-full text-[9px] font-bold grid place-items-center text-white", style.dot)}>
+                      <span className={cn("absolute -top-1 -right-1 min-w-[16px] h-[16px] px-1 rounded-full text-xs font-bold grid place-items-center text-white", style.dot)}>
                         {c.count}
                       </span>
                     )}
                   </div>
                   <div className="leading-tight">
-                    <p className="text-[11px] font-semibold truncate max-w-[90px]">{c.label}</p>
-                    <p className={cn("text-[10px]", c.tone === "success" ? "text-muted-foreground" : style.text)}>{c.value}</p>
+                    <p className="text-sm font-semibold truncate max-w-[90px]">{c.label}</p>
+                    <p className={cn("text-xs", c.tone === "success" ? "text-muted-foreground" : style.text)}>{c.value}</p>
                   </div>
                 </div>
               );
@@ -322,8 +326,8 @@ function HomePage() {
       {/* Dịch vụ bảo an grid */}
       <section className="px-4 mt-6">
         <div className="rounded-3xl bg-card border border-border p-4">
-          <h2 className="text-[15px] font-bold tracking-tight mb-3">Dịch vụ bảo an</h2>
-          <div className="grid grid-cols-3 gap-3">
+          <h2 className="text-lg font-bold tracking-tight mb-3">Dịch vụ bảo an</h2>
+          <div className="grid grid-cols-3 gap-x-3 gap-y-5">
             {services.map((s) => (
               <Link key={s.id} to={s.to} className="flex flex-col items-center gap-2 group">
                 <div
@@ -333,19 +337,19 @@ function HomePage() {
                   )}
                 >
                   {s.id === "sos" ? (
-                    <div className="h-10 w-10 rounded-full bg-emergency grid place-items-center text-white text-[11px] font-black">
+                    <div className="h-10 w-10 rounded-full bg-emergency grid place-items-center text-white text-sm font-black">
                       SOS
                     </div>
                   ) : (
                     <s.Icon className={cn("h-7 w-7", s.color)} strokeWidth={2.2} />
                   )}
                 </div>
-                <p className="text-[11px] font-semibold text-center leading-tight">
+                <p className="text-[13px] font-semibold text-center leading-tight">
                   {s.label}
                   {s.sub && (
                     <>
                       <br />
-                      <span className="font-medium">{s.sub}</span>
+                      <span className="font-medium text-[12px]">{s.sub}</span>
                     </>
                   )}
                 </p>
@@ -359,8 +363,8 @@ function HomePage() {
       <section className="px-4 mt-4">
         <div className="rounded-3xl bg-card border border-border p-4">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-[15px] font-bold tracking-tight">Gia đình hôm nay</h2>
-            <Link to="/gia-dinh" className="text-[12px] font-semibold text-brand flex items-center gap-0.5">
+            <h2 className="text-lg font-bold tracking-tight">Gia đình hôm nay</h2>
+            <Link to="/gia-dinh" className="text-sm font-semibold text-brand flex items-center gap-0.5">
               Xem tất cả <ChevronRight className="h-3 w-3" />
             </Link>
           </div>
@@ -373,12 +377,12 @@ function HomePage() {
             </div>
           ) : todayMembers.length === 0 ? (
             <div className="py-6 text-center">
-              <p className="text-[12px] text-muted-foreground">
+              <p className="text-sm text-muted-foreground">
                 Chưa có thành viên nào trong gia đình.
               </p>
               <Link
                 to="/gia-dinh"
-                className="mt-2 inline-block text-[12px] font-semibold text-brand"
+                className="mt-2 inline-block text-sm font-semibold text-brand"
               >
                 Thêm thành viên →
               </Link>
@@ -397,8 +401,8 @@ function HomePage() {
       <section className="px-4 mt-4">
         <div className="rounded-3xl bg-card border border-border p-4">
           <div className="flex items-center justify-between mb-2">
-            <h2 className="text-[15px] font-bold tracking-tight">Hoạt động gần đây</h2>
-            <Link to="/thong-bao" className="text-[12px] font-semibold text-brand flex items-center gap-0.5">
+            <h2 className="text-lg font-bold tracking-tight">Hoạt động gần đây</h2>
+            <Link to="/thong-bao" className="text-sm font-semibold text-brand flex items-center gap-0.5">
               Xem tất cả <ChevronRight className="h-3 w-3" />
             </Link>
           </div>
@@ -414,11 +418,11 @@ function HomePage() {
               ))}
             </ul>
           ) : activitiesQuery.isError ? (
-            <p className="py-4 text-center text-[12px] text-muted-foreground">
+            <p className="py-4 text-center text-sm text-muted-foreground">
               Không tải được hoạt động. Vui lòng thử lại.
             </p>
           ) : activities.length === 0 ? (
-            <p className="py-4 text-center text-[12px] text-muted-foreground">
+            <p className="py-4 text-center text-sm text-muted-foreground">
               Chưa có hoạt động nào.
             </p>
           ) : (
@@ -432,16 +436,16 @@ function HomePage() {
                         <v.Icon className={cn("h-4 w-4", v.color)} />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-[12.5px] font-semibold leading-snug truncate">
+                        <p className="text-sm font-semibold leading-snug truncate">
                           {a.title}
                         </p>
                         {a.body && (
-                          <p className="text-[11px] text-muted-foreground leading-snug truncate">
+                          <p className="text-sm text-muted-foreground leading-snug truncate">
                             {a.body}
                           </p>
                         )}
                       </div>
-                      <span className="text-[11px] text-muted-foreground shrink-0 whitespace-nowrap">
+                      <span className="text-sm text-muted-foreground shrink-0 whitespace-nowrap">
                         {formatActivityTime(a.created_at)}
                       </span>
                       {!a.read_at && (
@@ -457,7 +461,7 @@ function HomePage() {
                   type="button"
                   onClick={() => setPageCount((p) => p + 1)}
                   disabled={activitiesQuery.isFetching}
-                  className="mt-3 w-full flex items-center justify-center gap-1.5 rounded-2xl border border-border bg-muted/40 py-2.5 text-[12px] font-semibold text-foreground active:scale-[0.98] transition disabled:opacity-60"
+                  className="mt-3 w-full flex items-center justify-center gap-1.5 rounded-2xl border border-border bg-muted/40 py-2.5 text-sm font-semibold text-foreground active:scale-[0.98] transition disabled:opacity-60"
                 >
                   {activitiesQuery.isFetching ? (
                     <>
@@ -496,8 +500,8 @@ function FeatureBadge({
         <Icon className="h-3 w-3" />
       </div>
       <div className="leading-tight">
-        <p className="text-[9px] font-semibold">{title}</p>
-        <p className="text-[9px] text-white/70">{sub}</p>
+        <p className="text-xs font-semibold">{title}</p>
+        <p className="text-xs text-white/70">{sub}</p>
       </div>
     </div>
   );
@@ -531,7 +535,7 @@ function FamilyMemberRow({ member }: { member: FamilyTodayMember }) {
         ) : (
           <div
             className={cn(
-              "h-11 w-11 rounded-2xl grid place-items-center font-bold text-[13px]",
+              "h-11 w-11 rounded-2xl grid place-items-center font-bold text-base",
               meta.bg,
               meta.color,
             )}
@@ -550,15 +554,15 @@ function FamilyMemberRow({ member }: { member: FamilyTodayMember }) {
 
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1.5">
-          <p className="text-[13px] font-bold truncate">{member.name}</p>
-          <span className="text-[10px] text-muted-foreground font-medium truncate">
+          <p className="text-base font-bold truncate">{member.name}</p>
+          <span className="text-xs text-muted-foreground font-medium truncate">
             · {member.role ?? meta.label}
           </span>
         </div>
         <div className="flex items-center gap-1.5 mt-0.5">
           <span
             className={cn(
-              "inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-semibold",
+              "inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-xs font-semibold",
               tone.chip,
               tone.text,
             )}
@@ -567,7 +571,7 @@ function FamilyMemberRow({ member }: { member: FamilyTodayMember }) {
             {member.status}
           </span>
           {member.detail && (
-            <span className="text-[10.5px] text-muted-foreground truncate">
+            <span className="text-xs text-muted-foreground truncate">
               {member.detail}
             </span>
           )}
@@ -575,7 +579,7 @@ function FamilyMemberRow({ member }: { member: FamilyTodayMember }) {
       </div>
 
       {dueLabel && (
-        <span className="text-[11px] font-semibold text-muted-foreground shrink-0">
+        <span className="text-sm font-semibold text-muted-foreground shrink-0">
           {dueLabel}
         </span>
       )}

@@ -43,7 +43,7 @@ const LOC_LABEL: Record<string, string> = {
 type Dlg = { type: "food"; row?: any } | { type: "shop"; row?: any } | null;
 
 function FoodPage() {
-  const { familyId } = useFamilyContext();
+  const { familyId, isLoading: isFamLoading } = useFamilyContext();
           const qc = useQueryClient();
 
   const q = useQuery({
@@ -90,10 +90,11 @@ function FoodPage() {
     <MobileShell>
       <PageHeader eyebrow="Family Core" title="Thực phẩm & Tủ lạnh" subtitle="Quản lý đồ ăn, hạn dùng, đi chợ" emoji="🥬" />
 
-      {q.isLoading && <section className="px-4"><LoadingState /></section>}
+      {(isFamLoading || q.isLoading) && <section className="px-4"><LoadingState /></section>}
       {q.isError && <section className="px-4"><ErrorState message={(q.error as Error).message} /></section>}
+      {!isFamLoading && !familyId && <section className="px-4"><EmptyState title="Lỗi dữ liệu gia đình" description="Không tìm thấy thông tin gia đình của bạn." /></section>}
 
-      {q.data && (
+      {q.data && familyId && (
         <>
           {/* EXPIRING ALERT */}
           {(expired.length > 0 || expiringSoon.length > 0) && (

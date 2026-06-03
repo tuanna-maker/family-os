@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
+import { ChevronRight } from "lucide-react";
 import { SecurityShell, buildingStatus, securityMeta, securityServiceGrid, securityServiceCatalog, SecurityRequestsTracker } from "@/features/security-core";
 import { createSecurityRequest } from "@/api/security";
 import { useAuth } from "@shared/ui/hooks/use-auth";
@@ -54,6 +55,7 @@ function SecurityPage() {
     <SecurityShell
       title="Có việc gì, cứ gọi em"
       subtitle={`Đội bảo an phản hồi trung bình trong ${securityMeta.responseTimeMinutes} phút`}
+      back="/home"
     >
       <section className="px-4 mt-4">
         <button
@@ -106,47 +108,13 @@ function SecurityPage() {
         </div>
 
         {securityServiceCatalog.map((group) => {
-          const GroupIcon = group.icon;
           return (
-            <div
-              key={group.id}
-              className="rounded-3xl bg-card border border-border overflow-hidden"
-            >
-              <div className="flex items-start gap-3 p-4">
-                <div className={`h-10 w-10 rounded-2xl grid place-items-center shrink-0 ${group.tint}`}>
-                  <GroupIcon className={`h-5 w-5 ${group.accent}`} />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold leading-tight">{group.title}</p>
-                  <p className="text-[11px] text-muted-foreground mt-0.5">{group.subtitle}</p>
-                </div>
-              </div>
-              <ul className="divide-y divide-border">
-                {group.items.map((it) => {
-                  const ItIcon = it.icon;
-                  return (
-                    <li key={it.id}>
-                      <button
-                        onClick={() =>
-                          trigger("other", `${group.title} · ${it.label}`)
-                        }
-                        disabled={pending === "other"}
-                        className="w-full flex items-center gap-3 p-4 text-left active:bg-muted/40 transition disabled:opacity-70"
-                      >
-                        <div className={`h-9 w-9 rounded-xl grid place-items-center shrink-0 ${group.tint}`}>
-                          <ItIcon className={`h-4 w-4 ${group.accent}`} />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-[13px] font-semibold truncate">{it.label}</p>
-                          <p className="text-[11px] text-muted-foreground truncate">{it.desc}</p>
-                        </div>
-                        <span className="text-muted-foreground text-lg leading-none">›</span>
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
+            <ServiceGroup 
+              key={group.id} 
+              group={group} 
+              pending={pending} 
+              trigger={trigger} 
+            />
           );
         })}
       </section>
@@ -180,5 +148,58 @@ function SecurityPage() {
         </div>
       </section>
     </SecurityShell>
+  );
+}
+
+function ServiceGroup({ group, pending, trigger }: { group: any, pending: any, trigger: any }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const GroupIcon = group.icon;
+
+  return (
+    <div className="rounded-3xl bg-card border border-border overflow-hidden">
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full flex items-center justify-between p-4 active:bg-muted/40 transition text-left"
+      >
+        <div className="flex items-center gap-3">
+          <div className={`h-10 w-10 rounded-2xl grid place-items-center shrink-0 ${group.tint}`}>
+            <GroupIcon className={`h-5 w-5 ${group.accent}`} />
+          </div>
+          <div className="min-w-0">
+            <p className="text-sm font-semibold leading-tight">{group.title}</p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">{group.subtitle}</p>
+          </div>
+        </div>
+        <div className="text-muted-foreground shrink-0 ml-2">
+          <ChevronRight className={`h-5 w-5 transition-transform duration-200 ${isOpen ? "rotate-90" : ""}`} />
+        </div>
+      </button>
+
+      {isOpen && (
+        <ul className="divide-y divide-border border-t border-border">
+          {group.items.map((it: any) => {
+            const ItIcon = it.icon;
+            return (
+              <li key={it.id}>
+                <button
+                  onClick={() => trigger("other", `${group.title} · ${it.label}`)}
+                  disabled={pending === "other"}
+                  className="w-full flex items-center gap-3 p-4 text-left active:bg-muted/40 transition disabled:opacity-70"
+                >
+                  <div className={`h-9 w-9 rounded-xl grid place-items-center shrink-0 ${group.tint}`}>
+                    <ItIcon className={`h-4 w-4 ${group.accent}`} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[13px] font-semibold truncate">{it.label}</p>
+                    <p className="text-[11px] text-muted-foreground truncate">{it.desc}</p>
+                  </div>
+                  <span className="text-muted-foreground text-lg leading-none">›</span>
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
   );
 }

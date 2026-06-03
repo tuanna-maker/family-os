@@ -1,8 +1,10 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 import { MobileShell } from "@shared/ui/mobile/MobileShell";
 import {
   Bell,
+  ChevronLeft,
   ChevronRight,
   ChevronDown,
   Users,
@@ -137,45 +139,48 @@ function FamilyPage() {
   const nextMed = dash?.next_medicine;
   const nextAppt = dash?.next_appointment;
 
+  const router = useRouter();
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
+
+  const minSwipeDistance = 75;
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const onTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    const distance = touchStart - touchEnd;
+    const isRightSwipe = distance < -minSwipeDistance;
+    if (isRightSwipe) {
+      router.navigate({ to: "/home" });
+    }
+  };
+
   return (
-    <MobileShell>
-      {/* Top bar */}
-      <header className="px-4 pt-3 pb-2 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2 shrink-0">
-          <div className="h-10 w-10 rounded-2xl bg-brand grid place-items-center shadow-[0_4px_12px_-4px_oklch(0.55_0.2_264/0.5)]">
-            <svg viewBox="0 0 24 24" className="h-5 w-5 text-white" fill="currentColor">
-              <polygon points="12,2 14.5,8.5 21.5,9 16,13.5 18,20.5 12,16.5 6,20.5 8,13.5 2.5,9 9.5,8.5" />
-            </svg>
-          </div>
-          <div className="leading-tight">
-            <p className="text-[13px] font-bold tracking-tight">
-              STOS <span className="font-medium text-muted-foreground">Life</span>
-            </p>
-            <p className="text-[9px] text-muted-foreground">Vì cuộc sống an tâm</p>
-          </div>
-        </div>
-        <h1 className="text-[17px] font-bold tracking-tight">Gia đình tôi</h1>
-        <div className="flex items-center gap-2 shrink-0">
-          <button className="relative h-9 w-9 grid place-items-center rounded-full hover:bg-muted/60">
-            <Bell className="h-[18px] w-[18px]" />
-            <span className="absolute -top-0.5 -right-0.5 h-4 min-w-4 px-1 rounded-full bg-emergency text-white text-[9px] font-bold grid place-items-center">
-              3
-            </span>
-          </button>
-          <button className="flex items-center gap-0.5">
-            <img
-              src={AVATAR_FAMILY}
-              alt="Avatar gia đình"
-              width={36}
-              height={36}
-              loading="eager"
-              decoding="async"
-              className="h-9 w-9 rounded-full object-cover ring-2 ring-white shadow"
-            />
-            <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
-          </button>
-        </div>
-      </header>
+    <div 
+      className="h-full w-full"
+      onTouchStart={onTouchStart} 
+      onTouchMove={onTouchMove} 
+      onTouchEnd={onTouchEnd}
+    >
+      <MobileShell>
+        {/* Top bar */}
+        <header className="px-4 pt-3 pb-2 flex items-center gap-3">
+          <Link 
+            to="/home"
+            className="h-10 w-10 rounded-full bg-muted/40 flex items-center justify-center shrink-0 active:scale-95 transition"
+          >
+            <ChevronLeft className="h-6 w-6 text-foreground" />
+          </Link>
+          <h1 className="text-[22px] font-bold tracking-tight">Gia đình tôi</h1>
+        </header>
 
       {/* Hero card */}
       <section className="px-4 mt-1">
@@ -215,7 +220,7 @@ function FamilyPage() {
             </div>
           </div>
           <div className="mt-5 grid grid-cols-4 gap-3">
-            <HeroAction icon={Users} label="Thành viên" tint="bg-tint-blue" color="text-brand" to="/admin/family" />
+            <HeroAction icon={Users} label="Thành viên" tint="bg-tint-blue" color="text-brand" to="/tai-khoan" />
             <HeroAction
               icon={Calendar}
               label="Lịch gia đình"
@@ -407,14 +412,15 @@ function FamilyPage() {
         <div className="grid grid-cols-5 gap-2.5">
           <ServiceTile icon={Plane} label="Cả nhà du lịch" tint="bg-tint-blue" color="text-brand" to="/du-lich" />
           <ServiceTile icon={Home} label="Dịch vụ tại nhà" tint="bg-tint-green" color="text-success" to="/quan-ly-giup-viec" />
-          <ServiceTile icon={Car} label="Đặt xe gia đình" tint="bg-tint-orange" color="text-warning" />
+          <ServiceTile icon={Car} label="Đặt xe gia đình" tint="bg-tint-orange" color="text-warning" to="/dich-vu" />
           <ServiceTile
             icon={ShoppingCart}
             label="Mua sắm hộ"
             tint="bg-tint-purple"
             color="text-[oklch(0.65_0.2_295)]"
+            to="/dich-vu"
           />
-          <ServiceTile icon={Crown} label={"Gói dịch vụ\nưu đãi"} tint="bg-tint-orange" color="text-warning" />
+          <ServiceTile icon={Crown} label={"Gói dịch vụ\nưu đãi"} tint="bg-tint-orange" color="text-warning" to="/dich-vu" />
         </div>
       </section>
 
@@ -446,8 +452,8 @@ function FamilyPage() {
           ))}
         </div>
       </section>
-
-    </MobileShell>
+      </MobileShell>
+    </div>
   );
 }
 

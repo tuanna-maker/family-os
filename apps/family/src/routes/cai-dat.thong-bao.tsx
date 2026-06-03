@@ -14,6 +14,8 @@ import { useEasyRead } from "@shared/ui/hooks/use-easy-read";
 import { useTheme } from "@shared/ui/hooks/use-theme";
 import { requireAuth } from "@/api/require-auth";
 
+import { PageHeader } from "@shared/ui/common/PageHeader";
+
 export const Route = createFileRoute("/cai-dat/thong-bao")({
   beforeLoad: ({ location }) => requireAuth({ location }),
   head: () => ({ meta: [{ title: "Cài đặt thông báo" }] }),
@@ -27,15 +29,12 @@ function NotifSettingsPage() {
 
   return (
     <MobileShell>
-      <header className="px-5 pt-6 pb-3">
-        <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
-          Cài đặt
-        </p>
-        <h1 className="text-2xl font-bold tracking-tight">Thông báo</h1>
-        <p className="text-xs text-muted-foreground mt-1">
-          Bật/tắt theo loại và chọn khung giờ được phép gửi.
-        </p>
-      </header>
+      <PageHeader 
+        eyebrow="Cài đặt" 
+        title="Thông báo" 
+        subtitle="Bật/tắt theo loại và chọn khung giờ được phép gửi." 
+        back="/gia-dinh"
+      />
 
       <section className="px-4 space-y-3">
         <SectionHeader title="Hiển thị" />

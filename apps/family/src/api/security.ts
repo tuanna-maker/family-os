@@ -55,6 +55,8 @@ export async function createSosDispatch(data: any) {
       dispatched_by: userId,
     };
 
+    const { data: project } = await supabase.from("projects").select("id").limit(1).maybeSingle();
+
     const { data: row, error } = await supabase
       .from("security_requests")
       .insert({
@@ -64,7 +66,8 @@ export async function createSosDispatch(data: any) {
         building: zone,
         apartment: location,
         payload: payload as never,
-      })
+        ...(project ? { project_id: project.id } : {}),
+      } as any)
       .select("id, created_at")
       .single();
     if (error) throw new Error(error.message);
@@ -99,6 +102,8 @@ export async function createSosDispatch(data: any) {
 
 export async function createSecurityRequest(data: any) {
   const { supabase, userId } = await requireUser();
+  const { data: project } = await supabase.from("projects").select("id").limit(1).maybeSingle();
+
     const { data: row, error } = await supabase
       .from("security_requests")
       .insert({
@@ -107,7 +112,8 @@ export async function createSecurityRequest(data: any) {
         building: data.building ?? null,
         apartment: data.apartment ?? null,
         payload: (data.payload ?? {}) as never,
-      })
+        ...(project ? { project_id: project.id } : {}),
+      } as any)
       .select("id")
       .single();
     if (error) throw new Error(error.message);

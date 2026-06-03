@@ -2,7 +2,10 @@
   "name": "stos-monorepo",
   "private": true,
   "type": "module",
-  "workspaces": ["apps/*", "packages/*"],
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
     "dev:family": "npm run dev -w @apps/family",
     "dev:guard": "npm run dev -w @apps/guard",
@@ -38,5 +41,8 @@
   "devDependencies": {
     "@playwright/test": "^1.52.0",
     "sharp": "^0.34.2"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.107.0"
   }
 }

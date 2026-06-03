@@ -77,7 +77,7 @@ function AccountPage() {
 
   return (
     <MobileShell>
-      <PageHeader title="Tài khoản" back={false} />
+      <PageHeader title="Tài khoản" back="/gia-dinh" />
 
       <section className="px-4">
         <RoundedCard className="flex items-center gap-4">

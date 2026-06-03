@@ -4,6 +4,7 @@ import { Plus, Heart, Sparkles, Upload, Calendar, Lock, ImagePlus } from "lucide
 import { MobileShell } from "@shared/ui/mobile/MobileShell";
 import { PageHeader } from "@shared/ui/common/PageHeader";
 import { RoundedCard, SectionHeader } from "@shared/ui/common/RoundedCard";
+import { CollapsibleSection } from "@shared/ui/common/CollapsibleSection";
 import { toast } from "sonner";
 import {
   albums,
@@ -82,12 +83,12 @@ function MemoriesPage() {
           <p className="mt-1 text-lg font-bold leading-tight">Sinh nhật bé Na 5 tuổi 🎂</p>
           <p className="text-xs text-muted-foreground mt-1">42 ảnh · 23/05/2026</p>
           <div className="flex gap-2 mt-3">
-            <button className="h-8 px-3 rounded-xl bg-white text-xs font-semibold flex items-center gap-1.5">
+            <button className="h-8 px-3 rounded-xl bg-background text-foreground text-xs font-semibold flex items-center gap-1.5">
               <Heart className="h-3.5 w-3.5 text-pink" /> Yêu thích
             </button>
             <button
               onClick={() => toast("Xem album")}
-              className="h-8 px-3 rounded-xl bg-white text-xs font-semibold"
+              className="h-8 px-3 rounded-xl bg-background text-foreground text-xs font-semibold"
             >
               Xem album
             </button>
@@ -216,7 +217,7 @@ function MemoriesPage() {
               </p>
               <button
                 onClick={() => toast("Recap sẽ sẵn sàng vào 31/05")}
-                className="mt-3 h-8 px-3 rounded-xl bg-white text-xs font-semibold"
+                className="mt-3 h-8 px-3 rounded-xl bg-background text-foreground text-xs font-semibold"
               >
                 Đặt lịch nhắc
               </button>
@@ -230,11 +231,13 @@ function MemoriesPage() {
         <SectionHeader title="Dòng thời gian" subtitle="Theo tháng" />
         <div className="space-y-5">
           {grouped.map(([month, entries]) => (
-            <div key={month}>
-              <p className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground mb-2">
-                {month}
-              </p>
-              <RoundedCard className="p-0 divide-y divide-border">
+            <CollapsibleSection
+              key={month}
+              title={<p className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">{month}</p>}
+              defaultOpen
+              className=""
+            >
+              <RoundedCard className="p-0 divide-y divide-border mt-2">
                 {entries.map((t) => (
                   <div key={t.id} className="flex items-start gap-3 p-4">
                     <div className={`h-11 w-11 rounded-2xl ${toneBg[t.tone]} grid place-items-center text-xl shrink-0`}>
@@ -255,28 +258,33 @@ function MemoriesPage() {
                   </div>
                 ))}
               </RoundedCard>
-            </div>
+            </CollapsibleSection>
           ))}
         </div>
       </section>
 
       {/* Milestones */}
       <section className="px-4 mt-6">
-        <SectionHeader title="Dấu mốc gia đình" />
-        <RoundedCard className="p-0 divide-y divide-border">
-          {milestones.map((m) => (
-            <div key={m.id} className="flex items-start gap-3 p-4">
-              <div className="h-11 w-11 rounded-2xl bg-tint-pink grid place-items-center text-xl shrink-0">
-                {m.icon}
+        <CollapsibleSection
+          title="Dấu mốc gia đình"
+          titleClassName="text-[17px] font-semibold tracking-tight"
+          defaultOpen
+        >
+          <RoundedCard className="p-0 divide-y divide-border mt-3">
+            {milestones.map((m) => (
+              <div key={m.id} className="flex items-start gap-3 p-4">
+                <div className="h-11 w-11 rounded-2xl bg-tint-pink grid place-items-center text-xl shrink-0">
+                  {m.icon}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold">{m.title}</p>
+                  <p className="text-[11px] text-muted-foreground leading-snug mt-0.5">{m.description}</p>
+                  <p className="text-[10px] text-muted-foreground mt-1">{m.date}</p>
+                </div>
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold">{m.title}</p>
-                <p className="text-[11px] text-muted-foreground leading-snug mt-0.5">{m.description}</p>
-                <p className="text-[10px] text-muted-foreground mt-1">{m.date}</p>
-              </div>
-            </div>
-          ))}
-        </RoundedCard>
+            ))}
+          </RoundedCard>
+        </CollapsibleSection>
       </section>
     </MobileShell>
   );
