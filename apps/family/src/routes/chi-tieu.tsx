@@ -65,6 +65,7 @@ function ExpensesPage() {
   const del = useMutation({
     mutationFn: (id: string) => deleteExpense({ id }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["expenses", familyId] }),
+    onError: (e: Error) => toast.error(e.message),
   });
 
   const addM = useMutation({
@@ -74,7 +75,9 @@ function ExpensesPage() {
       setOpenAdd(false);
       setTitle("");
       setAmount("");
+      toast.success("Đã thêm khoản chi");
     },
+    onError: (e: Error) => toast.error(e.message),
   });
 
   const userExpenses = expensesQ.data ?? [];
