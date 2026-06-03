@@ -226,7 +226,7 @@ function ExpensesPage() {
       </Link>
 
       {openAdd && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 px-4 animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-4 animate-in fade-in duration-200">
           <div className="w-full max-w-md bg-card rounded-2xl p-5 shadow-2xl relative animate-in zoom-in-95 duration-200">
             <button 
               onClick={() => setOpenAdd(false)}
