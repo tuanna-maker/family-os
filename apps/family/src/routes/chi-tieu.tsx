@@ -170,37 +170,6 @@ function ExpensesPage() {
           <button onClick={() => setOpenAdd(true)} className="h-8 px-3 rounded-full bg-brand text-white text-xs font-semibold flex items-center gap-1.5 active:scale-95 transition">
             <Plus className="h-3.5 w-3.5" /> Thêm
           </button>
-          <Dialog open={openAdd} onOpenChange={setOpenAdd}>
-            <DialogContent className="max-w-md w-[90vw] mx-auto rounded-2xl">
-              <DialogHeader>
-                <DialogTitle>Thêm khoản chi</DialogTitle>
-              </DialogHeader>
-              <form onSubmit={handleAdd} className="p-4 space-y-4">
-                <div className="space-y-2">
-                  <Label>Tên khoản chi</Label>
-                  <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Ví dụ: Mua gạo" required />
-                </div>
-                <div className="space-y-2">
-                  <Label>Số tiền (VNĐ)</Label>
-                  <Input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="500000" required />
-                </div>
-                <div className="space-y-2">
-                  <Label>Danh mục</Label>
-                  <Select value={category} onValueChange={setCategory}>
-                    <SelectTrigger><SelectValue placeholder="Chọn danh mục" /></SelectTrigger>
-                    <SelectContent>
-                      {Object.keys(CATEGORY_META).map((c) => (
-                        <SelectItem key={c} value={c}>{CATEGORY_META[c].icon} {c}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <Button type="submit" className="w-full h-11 rounded-xl bg-brand text-white font-semibold" disabled={addM.isPending}>
-                  {addM.isPending ? "Đang lưu..." : "Lưu khoản chi"}
-                </Button>
-              </form>
-            </DialogContent>
-          </Dialog>
         </div>
 
         <RoundedCard className="p-0 divide-y divide-border">
@@ -252,8 +221,47 @@ function ExpensesPage() {
         to="/chi-tieu/scan"
         className="fixed bottom-24 right-5 z-50 h-14 px-5 rounded-2xl bg-gradient-to-br from-brand to-pink text-white shadow-[var(--shadow-pop)] flex items-center gap-2 font-semibold active:scale-95 transition"
       >
-        <Camera className="h-5 w-5" /> Quét hoá đơn
+        <Camera className="h-5 w-5" />
+        <span className="text-sm">Quét hóa đơn</span>
       </Link>
+
+      {openAdd && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 px-4 animate-in fade-in duration-200">
+          <div className="w-full max-w-md bg-card rounded-2xl p-5 shadow-2xl relative animate-in zoom-in-95 duration-200">
+            <button 
+              onClick={() => setOpenAdd(false)}
+              className="absolute right-4 top-4 h-8 w-8 grid place-items-center rounded-full bg-muted text-muted-foreground hover:bg-muted/80"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+            </button>
+            <h2 className="text-xl font-bold mb-4">Thêm khoản chi</h2>
+            <form onSubmit={handleAdd} className="space-y-4">
+              <div className="space-y-2">
+                <Label>Tên khoản chi</Label>
+                <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Ví dụ: Mua gạo" required className="h-11" />
+              </div>
+              <div className="space-y-2">
+                <Label>Số tiền (VNĐ)</Label>
+                <Input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="500000" required className="h-11" />
+              </div>
+              <div className="space-y-2">
+                <Label>Danh mục</Label>
+                <Select value={category} onValueChange={setCategory}>
+                  <SelectTrigger className="h-11"><SelectValue placeholder="Chọn danh mục" /></SelectTrigger>
+                  <SelectContent>
+                    {Object.keys(CATEGORY_META).map((c) => (
+                      <SelectItem key={c} value={c}>{CATEGORY_META[c].icon} {c}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button type="submit" className="w-full h-11 rounded-xl bg-brand text-white font-semibold mt-2" disabled={addM.isPending}>
+                {addM.isPending ? "Đang lưu..." : "Lưu khoản chi"}
+              </Button>
+            </form>
+          </div>
+        </div>
+      )}
     </MobileShell>
   );
 }
