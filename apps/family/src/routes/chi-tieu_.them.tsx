@@ -6,7 +6,7 @@ import { PageHeader } from "@shared/ui/common/PageHeader";
 import { Input } from "@shared/ui/ui/input";
 import { Label } from "@shared/ui/ui/label";
 import { Button } from "@shared/ui/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@shared/ui/ui/select";
+// removed Select
 import { toast } from "sonner";
 import { createExpense } from "@/api/expenses";
 import { getMyContext } from "@/api/auth";
@@ -96,18 +96,22 @@ function AddExpensePage() {
           </div>
           <div className="space-y-2">
             <Label>Danh mục</Label>
-            <Select value={category} onValueChange={setCategory}>
-              <SelectTrigger className="h-11">
-                <SelectValue placeholder="Chọn danh mục" />
-              </SelectTrigger>
-              <SelectContent>
+            <div className="relative">
+              <select
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                className="w-full h-11 px-3 rounded-md border border-input bg-transparent text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring appearance-none"
+              >
                 {Object.keys(CATEGORY_META).map((c) => (
-                  <SelectItem key={c} value={c}>
+                  <option key={c} value={c}>
                     {CATEGORY_META[c].icon} {c}
-                  </SelectItem>
+                  </option>
                 ))}
-              </SelectContent>
-            </Select>
+              </select>
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground">
+                <svg className="h-4 w-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+              </div>
+            </div>
           </div>
           <Button 
             type="submit" 

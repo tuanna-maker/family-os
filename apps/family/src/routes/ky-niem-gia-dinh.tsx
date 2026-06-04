@@ -57,6 +57,7 @@ function MemoriesPage() {
         title="Kỷ niệm gia đình"
         subtitle="Lưu lại từng khoảnh khắc đáng nhớ"
         emoji="📸"
+        back="/gia-dinh"
         right={
           <Link
             to="/ky-niem-gia-dinh/them"

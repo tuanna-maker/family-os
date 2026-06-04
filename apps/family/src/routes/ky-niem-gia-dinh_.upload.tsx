@@ -5,6 +5,7 @@ import { PageHeader } from "@shared/ui/common/PageHeader";
 import { Button } from "@shared/ui/ui/button";
 import { toast } from "sonner";
 import { UploadCloud } from "lucide-react";
+import { Camera } from "@capacitor/camera";
 import { timeline } from "@/features/family-core/memories/data";
 
 export const Route = createFileRoute("/ky-niem-gia-dinh_/upload")({
@@ -15,17 +16,29 @@ function UploadPhotoPage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
 
-  const handleUpload = () => {
-    setLoading(true);
-    // Fake upload delay
-    setTimeout(() => {
-      // Simulate adding to recent timeline
-      if (timeline.length > 0) {
-        timeline[0].photoCount = (timeline[0].photoCount || 0) + 1;
+  const handleUpload = async () => {
+    try {
+      const result = await Camera.pickImages({
+        quality: 90,
+        limit: 10,
+      });
+      if (result && result.photos && result.photos.length > 0) {
+        setLoading(true);
+        // Fake upload delay for realism
+        setTimeout(() => {
+          if (timeline.length > 0) {
+            timeline[0].photoCount = (timeline[0].photoCount || 0) + result.photos.length;
+          }
+          toast.success(`Đã tải lên ${result.photos.length} ảnh`);
+          navigate({ to: "/ky-niem-gia-dinh", replace: true });
+        }, 1500);
       }
-      toast.success("Tải ảnh lên thành công");
-      navigate({ to: "/ky-niem-gia-dinh", replace: true });
-    }, 1500);
+    } catch (e: any) {
+      // User cancelled or error
+      if (e.message !== "User cancelled photos app") {
+        toast.error("Không thể mở thư viện ảnh: " + e.message);
+      }
+    }
   };
 
   return (
