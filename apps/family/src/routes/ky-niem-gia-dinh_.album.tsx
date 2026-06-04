@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { albums, albumCategories, type AlbumCategory } from "@/features/family-core/memories/data";
 
-export const Route = createFileRoute("/ky-niem-gia-dinh/album")({
+export const Route = createFileRoute("/ky-niem-gia-dinh_/album")({
   component: CreateAlbumPage,
 });
 

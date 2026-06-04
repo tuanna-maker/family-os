@@ -20,7 +20,7 @@ const CATEGORY_META: Record<string, { icon: string; color: string }> = {
   "Khác": { icon: "✨", color: "#8B5CF6" },
 };
 
-export const Route = createFileRoute("/chi-tieu/them")({
+export const Route = createFileRoute("/chi-tieu_/them")({
   component: AddExpensePage,
 });
 

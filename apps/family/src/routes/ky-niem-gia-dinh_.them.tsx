@@ -8,7 +8,7 @@ import { Button } from "@shared/ui/ui/button";
 import { toast } from "sonner";
 import { timeline } from "@/features/family-core/memories/data";
 
-export const Route = createFileRoute("/ky-niem-gia-dinh/them")({
+export const Route = createFileRoute("/ky-niem-gia-dinh_/them")({
   component: AddMemoryPage,
 });
 

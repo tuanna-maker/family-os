@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { UploadCloud } from "lucide-react";
 import { timeline } from "@/features/family-core/memories/data";
 
-export const Route = createFileRoute("/ky-niem-gia-dinh/upload")({
+export const Route = createFileRoute("/ky-niem-gia-dinh_/upload")({
   component: UploadPhotoPage,
 });
 
