@@ -9,10 +9,6 @@ import { Camera, Sparkles, Trash2, Loader2, Plus } from "lucide-react";
 import { supabase } from "@shared/supabase/client";
 import { getMyContext } from "@/api/auth";
 import { listExpenses, deleteExpense, createExpense } from "@/api/expenses";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@shared/ui/ui/dialog";
-import { Input } from "@shared/ui/ui/input";
-import { Label } from "@shared/ui/ui/label";
-import { Button } from "@shared/ui/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@shared/ui/ui/select";
 import { toast } from "sonner";
 
@@ -43,10 +39,6 @@ export const Route = createFileRoute("/chi-tieu")({
 
 function ExpensesPage() {
   const qc = useQueryClient();
-  const [openAdd, setOpenAdd] = useState(false);
-  const [title, setTitle] = useState("");
-  const [amount, setAmount] = useState("");
-  const [category, setCategory] = useState("Ăn uống");
 
   const ctxQ = useQuery({
     queryKey: ["my-context"],
@@ -65,18 +57,6 @@ function ExpensesPage() {
   const del = useMutation({
     mutationFn: (id: string) => deleteExpense({ id }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["expenses", familyId] }),
-    onError: (e: Error) => toast.error(e.message),
-  });
-
-  const addM = useMutation({
-    mutationFn: (data: any) => createExpense(data),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["expenses", familyId] });
-      setOpenAdd(false);
-      setTitle("");
-      setAmount("");
-      toast.success("Đã thêm khoản chi");
-    },
     onError: (e: Error) => toast.error(e.message),
   });
 
@@ -100,21 +80,6 @@ function ExpensesPage() {
   const insight = pct > 90 
     ? "Ngân sách tháng này sắp hết, hãy chú ý các khoản lớn!" 
     : "Chi tiêu tháng này đang trong tầm kiểm soát.";
-
-  const handleAdd = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!familyId) {
-      toast.error("Không tìm thấy thông tin gia đình");
-      return;
-    }
-    addM.mutate({
-      family_id: familyId,
-      title,
-      amount: parseInt(amount, 10),
-      category,
-      spent_on: new Date().toISOString().slice(0, 10),
-    });
-  };
 
   return (
     <MobileShell>
@@ -167,9 +132,9 @@ function ExpensesPage() {
             title="Giao dịch gần đây"
             subtitle={userExpenses.length > 0 ? `${userExpenses.length} khoản` : undefined}
           />
-          <button onClick={() => setOpenAdd(true)} className="h-8 px-3 rounded-full bg-brand text-white text-xs font-semibold flex items-center gap-1.5 active:scale-95 transition">
+          <Link to="/chi-tieu/them" className="h-8 px-3 rounded-full bg-brand text-white text-xs font-semibold flex items-center gap-1.5 active:scale-95 transition">
             <Plus className="h-3.5 w-3.5" /> Thêm
-          </button>
+          </Link>
         </div>
 
         <RoundedCard className="p-0 divide-y divide-border">
@@ -224,44 +189,6 @@ function ExpensesPage() {
         <Camera className="h-5 w-5" />
         <span className="text-sm">Quét hóa đơn</span>
       </Link>
-
-      {openAdd && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-4 animate-in fade-in duration-200">
-          <div className="w-full max-w-md bg-card rounded-2xl p-5 shadow-2xl relative animate-in zoom-in-95 duration-200">
-            <button 
-              onClick={() => setOpenAdd(false)}
-              className="absolute right-4 top-4 h-8 w-8 grid place-items-center rounded-full bg-muted text-muted-foreground hover:bg-muted/80"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
-            </button>
-            <h2 className="text-xl font-bold mb-4">Thêm khoản chi</h2>
-            <form onSubmit={handleAdd} className="space-y-4">
-              <div className="space-y-2">
-                <Label>Tên khoản chi</Label>
-                <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Ví dụ: Mua gạo" required className="h-11" />
-              </div>
-              <div className="space-y-2">
-                <Label>Số tiền (VNĐ)</Label>
-                <Input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="500000" required className="h-11" />
-              </div>
-              <div className="space-y-2">
-                <Label>Danh mục</Label>
-                <Select value={category} onValueChange={setCategory}>
-                  <SelectTrigger className="h-11"><SelectValue placeholder="Chọn danh mục" /></SelectTrigger>
-                  <SelectContent>
-                    {Object.keys(CATEGORY_META).map((c) => (
-                      <SelectItem key={c} value={c}>{CATEGORY_META[c].icon} {c}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <Button type="submit" className="w-full h-11 rounded-xl bg-brand text-white font-semibold mt-2" disabled={addM.isPending}>
-                {addM.isPending ? "Đang lưu..." : "Lưu khoản chi"}
-              </Button>
-            </form>
-          </div>
-        </div>
-      )}
     </MobileShell>
   );
 }

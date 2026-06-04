@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { Plus, Heart, Sparkles, Upload, Calendar, Lock, ImagePlus } from "lucide-react";
 import { MobileShell } from "@shared/ui/mobile/MobileShell";
@@ -58,13 +58,13 @@ function MemoriesPage() {
         subtitle="Lưu lại từng khoảnh khắc đáng nhớ"
         emoji="📸"
         right={
-          <button
-            onClick={() => toast("Thêm kỷ niệm mới", { description: "Tính năng sẽ sớm có mặt." })}
+          <Link
+            to="/ky-niem-gia-dinh/them"
             className="h-10 w-10 rounded-2xl bg-brand text-white grid place-items-center shadow-[var(--shadow-soft)]"
             aria-label="Thêm kỷ niệm"
           >
             <Plus className="h-5 w-5" />
-          </button>
+          </Link>
         }
       />
 
@@ -128,9 +128,9 @@ function MemoriesPage() {
 
       {/* Upload placeholder */}
       <section className="px-4 mt-6">
-        <button
-          onClick={() => toast("Tải ảnh lên", { description: "Tính năng đang chuẩn bị." })}
-          className="w-full"
+        <Link
+          to="/ky-niem-gia-dinh/upload"
+          className="w-full block"
         >
           <RoundedCard className="border-2 border-dashed border-border bg-transparent">
             <div className="flex items-center gap-3">
@@ -143,7 +143,7 @@ function MemoriesPage() {
               </div>
             </div>
           </RoundedCard>
-        </button>
+        </Link>
       </section>
 
       {/* Categories filter */}
@@ -188,9 +188,9 @@ function MemoriesPage() {
             </button>
           ))}
           {/* Add album tile */}
-          <button
-            onClick={() => toast("Tạo album mới")}
-            className="text-left active:scale-[0.98] transition"
+          <Link
+            to="/ky-niem-gia-dinh/album"
+            className="text-left active:scale-[0.98] transition block"
           >
             <div className="aspect-square rounded-2xl border-2 border-dashed border-border grid place-items-center text-muted-foreground">
               <div className="flex flex-col items-center gap-1">
@@ -198,7 +198,7 @@ function MemoriesPage() {
                 <span className="text-[11px] font-semibold">Album mới</span>
               </div>
             </div>
-          </button>
+          </Link>
         </div>
       </section>
 
