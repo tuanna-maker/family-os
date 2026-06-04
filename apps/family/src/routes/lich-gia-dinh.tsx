@@ -105,8 +105,8 @@ function CalendarPage() {
     enabled: !!familyId,
   });
 
-  const events: FamilyEventRow[] = q.data && q.data.length > 0 ? q.data : MOCK_EVENTS;
-  const isMock = !q.data || q.data.length === 0;
+  const events: FamilyEventRow[] = q.data ?? MOCK_EVENTS;
+  const isMock = !familyId;
 
   const filteredEvents = useMemo(
     () =>
