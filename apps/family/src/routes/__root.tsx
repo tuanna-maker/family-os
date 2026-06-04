@@ -4,6 +4,7 @@ import { Toaster } from "@shared/ui/ui/sonner";
 import { AuthProvider } from "@shared/ui/hooks/use-auth";
 import { ThemeProvider } from "@shared/ui/hooks/use-theme";
 import { EasyReadProvider } from "@shared/ui/hooks/use-easy-read";
+import { PushInit } from "@/components/PushInit";
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   component: RootLayout,
@@ -14,6 +15,7 @@ function RootLayout() {
     <ThemeProvider>
       <EasyReadProvider>
         <AuthProvider>
+          <PushInit />
           <Outlet />
           <Toaster richColors position="top-center" />
         </AuthProvider>

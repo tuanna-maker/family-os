@@ -1,11 +1,13 @@
-import * as Sentry from "@sentry/capacitor";
-import { init as reactInit, type ErrorEvent, type EventHint } from "@sentry/react";
-import { scrubSentryEvent } from "@shared/utils/pii-scrub";
+import type { ErrorEvent, EventHint } from "@sentry/react";
 
 /** Gọi một lần trước createRoot — no-op nếu thiếu VITE_SENTRY_DSN. */
-export function initSentry(): boolean {
+export async function initSentry(): Promise<boolean> {
   const dsn = (import.meta.env.VITE_SENTRY_DSN as string | undefined)?.trim();
   if (!dsn) return false;
+
+  const Sentry = await import("@sentry/capacitor");
+  const { init: reactInit } = await import("@sentry/react");
+  const { scrubSentryEvent } = await import("@shared/utils/pii-scrub");
 
   Sentry.init(
     {

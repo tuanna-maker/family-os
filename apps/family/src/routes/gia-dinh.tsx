@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { MobileShell } from "@shared/ui/mobile/MobileShell";
 import {
   Bell,
@@ -28,6 +28,7 @@ import {
 import { cn } from "@shared/utils";
 import { getMyContext } from "@/api/auth";
 import { getDashboard } from "@/api/dashboard";
+import { listMoments } from "@/api/moments";
 import { requireAuth } from "@/api/require-auth";
 
 // Cache constants — context hiếm khi đổi, dashboard refresh nhanh hơn
@@ -127,6 +128,25 @@ function FamilyPage() {
     staleTime: DASH_STALE_MS,
     refetchOnWindowFocus: false,
   });
+
+  const momentsQ = useQuery({
+    queryKey: ["family-moments-preview", familyId],
+    queryFn: () => listMoments({ family_id: familyId! }),
+    enabled: !!familyId,
+    staleTime: DASH_STALE_MS,
+  });
+
+  const previewMoments = useMemo(() => {
+    const rows = momentsQ.data?.moments ?? [];
+    if (rows.length === 0) return MOMENTS;
+    return rows.slice(0, 5).map((m) => ({
+      id: m.id,
+      title: (m.caption ?? "Kỷ niệm").replace(/^\[Pilot\]\s*/, ""),
+      date: new Date(m.taken_at).toLocaleDateString("vi-VN"),
+      img: m.media_url,
+      momentId: m.id,
+    }));
+  }, [momentsQ.data]);
 
 
   const expCur = dash?.expenses_month.total ?? 0;
@@ -412,15 +432,29 @@ function FamilyPage() {
         <div className="grid grid-cols-5 gap-2.5">
           <ServiceTile icon={Plane} label="Cả nhà du lịch" tint="bg-tint-blue" color="text-brand" to="/du-lich" />
           <ServiceTile icon={Home} label="Dịch vụ tại nhà" tint="bg-tint-green" color="text-success" to="/quan-ly-giup-viec" />
-          <ServiceTile icon={Car} label="Đặt xe gia đình" tint="bg-tint-orange" color="text-warning" to="/dich-vu" />
+          <ServiceTile
+            icon={Car}
+            label="Đặt xe gia đình"
+            tint="bg-tint-orange"
+            color="text-warning"
+            to="/dang-phat-trien"
+            search={{ feature: "dat-xe-gia-dinh", back: "/gia-dinh" }}
+          />
           <ServiceTile
             icon={ShoppingCart}
             label="Mua sắm hộ"
             tint="bg-tint-purple"
             color="text-[oklch(0.65_0.2_295)]"
-            to="/dich-vu"
+            to="/mua-sam-ho"
           />
-          <ServiceTile icon={Crown} label={"Gói dịch vụ\nưu đãi"} tint="bg-tint-orange" color="text-warning" to="/dich-vu" />
+          <ServiceTile
+            icon={Crown}
+            label={"Gói dịch vụ\nưu đãi"}
+            tint="bg-tint-orange"
+            color="text-warning"
+            to="/dang-phat-trien"
+            search={{ feature: "goi-uu-dai", back: "/gia-dinh" }}
+          />
         </div>
       </section>
 
@@ -433,23 +467,36 @@ function FamilyPage() {
           </Link>
         </div>
         <div className="flex gap-3 overflow-x-auto pb-2 px-4 scrollbar-none">
-          {MOMENTS.map((m) => (
-            <div key={m.id} className="shrink-0 w-[136px]">
-              <div className="h-[136px] w-[136px] rounded-2xl overflow-hidden bg-muted">
-                <img
-                  src={m.img}
-                  alt={m.title}
-                  width={136}
-                  height={136}
-                  loading="lazy"
-                  decoding="async"
-                  className="h-full w-full object-cover"
-                />
+          {previewMoments.map((m) => {
+            const card = (
+              <>
+                <div className="h-[136px] w-[136px] rounded-2xl overflow-hidden bg-muted">
+                  <img
+                    src={m.img}
+                    alt={m.title}
+                    width={136}
+                    height={136}
+                    loading="lazy"
+                    decoding="async"
+                    className="h-full w-full object-cover"
+                  />
+                </div>
+                <p className="mt-2 text-[13px] font-semibold leading-tight truncate">{m.title}</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">{m.date}</p>
+              </>
+            );
+            return (
+              <div key={m.id} className="shrink-0 w-[136px]">
+                {"momentId" in m && m.momentId ? (
+                  <Link to="/ky-niem-gia-dinh/$momentId" params={{ momentId: m.momentId }} className="block">
+                    {card}
+                  </Link>
+                ) : (
+                  card
+                )}
               </div>
-              <p className="mt-2 text-[13px] font-semibold leading-tight truncate">{m.title}</p>
-              <p className="text-[11px] text-muted-foreground mt-0.5">{m.date}</p>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </section>
       </MobileShell>
@@ -560,12 +607,14 @@ function ServiceTile({
   tint,
   color,
   to,
+  search,
 }: {
   icon: typeof Plane;
   label: string;
   tint: string;
   color: string;
   to?: string;
+  search?: Record<string, string>;
 }) {
   const inner = (
     <div className="flex flex-col items-center gap-2 active:scale-95 transition">
@@ -578,7 +627,7 @@ function ServiceTile({
     </div>
   );
   return to ? (
-    <Link to={to as never} className="block">
+    <Link to={to as never} search={search as never} className="block">
       {inner}
     </Link>
   ) : (

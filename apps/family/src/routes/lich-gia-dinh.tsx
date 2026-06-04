@@ -1,23 +1,18 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { Plus, Sparkles, Pencil, Trash2, Bell, MapPin } from "lucide-react";
+import { Sparkles, Pencil, Trash2, Bell, MapPin } from "lucide-react";
 import { toast } from "sonner";
 import { MobileShell } from "@shared/ui/mobile/MobileShell";
 import { PageHeader } from "@shared/ui/common/PageHeader";
 import { RoundedCard, SectionHeader } from "@shared/ui/common/RoundedCard";
 import { LoadingState, ErrorState, EmptyState } from "@shared/ui/common/States";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@shared/ui/ui/dialog";
 import { Button } from "@shared/ui/ui/button";
-import { Input } from "@shared/ui/ui/input";
-import { Label } from "@shared/ui/ui/label";
-import { Textarea } from "@shared/ui/ui/textarea";
 import { supabase } from "@shared/supabase/client";
 import { useFamilyContext } from "@/hooks/use-family-context";
 import { cn } from "@shared/utils";
 import {
   listFamilyEvents,
-  upsertFamilyEvent,
   deleteFamilyEvent,
   type FamilyEventRow,
   type EventCategory,
@@ -58,20 +53,6 @@ const SCOPES: { id: "all" | EventScope; label: string }[] = [
   { id: "travel", label: "Du lịch" },
 ];
 
-// ============ Mock fallback (khi backend rỗng) ============
-const todayISO = new Date().toISOString().slice(0, 10);
-const at = (h: number, m = 0) => {
-  const d = new Date();
-  d.setHours(h, m, 0, 0);
-  return d.toISOString();
-};
-const MOCK_EVENTS: FamilyEventRow[] = [
-  { id: "m1", family_id: "mock", title: "Ông Nội uống thuốc huyết áp", notes: null, category: "medication", member_scope: "elderly", member_name: "Ông Nội", starts_at: at(7), ends_at: null, all_day: false, location: null, remind_minutes_before: 10, status: "planned" },
-  { id: "m2", family_id: "mock", title: "Bé Minh đi học", notes: null, category: "school", member_scope: "children", member_name: "Bé Minh", starts_at: at(8), ends_at: null, all_day: false, location: "Trường Tiểu học Nguyễn Du", remind_minutes_before: 15, status: "planned" },
-  { id: "m3", family_id: "mock", title: "Bé An học Piano", notes: null, category: "school", member_scope: "children", member_name: "Bé An", starts_at: at(17, 30), ends_at: null, all_day: false, location: "Lớp Piano cô Hà", remind_minutes_before: 30, status: "planned" },
-  { id: "m4", family_id: "mock", title: "Thanh toán hóa đơn điện", notes: "Tháng 5/2026", category: "payment", member_scope: "all", member_name: null, starts_at: at(20), ends_at: null, all_day: false, location: null, remind_minutes_before: 60, status: "planned" },
-];
-
 // ============ Helpers ============
 const fmtTime = (iso: string) =>
   new Date(iso).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
@@ -88,16 +69,19 @@ function startOfWeek(d: Date) {
   return c;
 }
 
-// ============ Page ============
-type DialogState = { row?: FamilyEventRow } | null;
-
 function CalendarPage() {
   const { familyId, isLoading: famLoading } = useFamilyContext();
-      const qc = useQueryClient();
+  const qc = useQueryClient();
+  const navigate = useNavigate();
 
   const [scope, setScope] = useState<(typeof SCOPES)[number]["id"]>("all");
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [dlg, setDlg] = useState<DialogState>(null);
+
+  const goAddEvent = () => {
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const date = `${selectedDate.getFullYear()}-${pad(selectedDate.getMonth() + 1)}-${pad(selectedDate.getDate())}`;
+    navigate({ to: "/lich-gia-dinh/them", search: { date } });
+  };
 
   const q = useQuery({
     queryKey: ["family-events", familyId],
@@ -105,8 +89,7 @@ function CalendarPage() {
     enabled: !!familyId,
   });
 
-  const events: FamilyEventRow[] = q.data ?? MOCK_EVENTS;
-  const isMock = !familyId;
+  const events: FamilyEventRow[] = q.data ?? [];
 
   const filteredEvents = useMemo(
     () =>
@@ -135,6 +118,13 @@ function CalendarPage() {
     [filteredEvents, selectedDate],
   );
 
+  const briefingText = useMemo(() => {
+    if (dayEvents.length === 0) return "Hôm nay chưa có sự kiện nào — thêm lịch mới cho cả nhà.";
+    const first = dayEvents.slice(0, 2).map((e) => `${fmtTime(e.starts_at)} ${e.title}`).join("; ");
+    const more = dayEvents.length > 2 ? ` và ${dayEvents.length - 2} việc khác` : "";
+    return `Hôm nay có ${dayEvents.length} sự kiện: ${first}${more}.`;
+  }, [dayEvents]);
+
   const weekCounts = useMemo(() => {
     const map = new Map<string, number>();
     for (const e of filteredEvents) {
@@ -153,7 +143,7 @@ function CalendarPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  // Render shell even without familyId (mock fallback); famLoading is informational only.
+  // Render shell even without familyId; famLoading is informational only.
 
   return (
     <MobileShell>
@@ -162,16 +152,7 @@ function CalendarPage() {
         title="Lịch gia đình"
         subtitle="Mọi lịch trình của cả nhà trong một nơi"
         emoji="📅"
-        right={
-          <button
-            onClick={() => setDlg({})}
-            disabled={isMock}
-            className="h-10 w-10 rounded-2xl bg-brand text-white grid place-items-center shadow-[var(--shadow-soft)] disabled:opacity-40"
-            aria-label="Thêm sự kiện"
-          >
-            <Plus className="h-5 w-5" />
-          </button>
-        }
+        back="/gia-dinh"
       />
 
       {/* AI Daily Briefing */}
@@ -184,9 +165,7 @@ function CalendarPage() {
             <p className="text-[10px] uppercase tracking-wider font-semibold text-pink">
               Trợ lý AI · Tóm tắt hôm nay
             </p>
-            <p className="text-sm font-medium leading-snug mt-1">
-              Hôm nay có <b>{dayEvents.length}</b> sự kiện. Đừng quên nhắc Ông Nội uống thuốc lúc 7:00 và thanh toán hoá đơn điện trước 20:00.
-            </p>
+            <p className="text-sm font-medium leading-snug mt-1">{briefingText}</p>
           </div>
         </RoundedCard>
       </section>
@@ -263,8 +242,8 @@ function CalendarPage() {
             title="Chưa có sự kiện"
             description="Thêm sự kiện đầu tiên cho ngày này"
             action={
-              <Button onClick={() => setDlg({})} disabled={isMock} size="sm">
-                <Plus className="h-4 w-4 mr-1" /> Thêm sự kiện
+              <Button onClick={goAddEvent} size="sm">
+                Thêm sự kiện
               </Button>
             }
           />
@@ -308,10 +287,10 @@ function CalendarPage() {
                           </p>
                         )}
                       </div>
-                      {!isMock && (
+                      {familyId && (
                         <div className="flex gap-1 shrink-0">
                           <button
-                            onClick={() => setDlg({ row: e })}
+                            onClick={() => navigate({ to: "/lich-gia-dinh/sua/$eventId", params: { eventId: e.id } })}
                             className="h-8 w-8 rounded-xl bg-muted grid place-items-center"
                             aria-label="Sửa"
                           >
@@ -336,161 +315,7 @@ function CalendarPage() {
           </RoundedCard>
         )}
 
-        {isMock && (
-          <p className="text-[11px] text-muted-foreground text-center mt-3">
-            Đang xem dữ liệu mẫu — thêm sự kiện thật khi gia đình của bạn được khởi tạo.
-          </p>
-        )}
       </section>
-
-      {/* Dialog */}
-      {dlg && familyId && (
-        <EventDialog
-          row={dlg.row}
-          familyId={familyId}
-          defaultDate={selectedDate}
-          onClose={() => setDlg(null)}
-          onSaved={() => {
-            qc.invalidateQueries({ queryKey: ["family-events", familyId] });
-            setDlg(null);
-          }}
-        />
-      )}
     </MobileShell>
-  );
-}
-
-// ============ Dialog ============
-function toLocalInput(iso: string) {
-  const d = new Date(iso);
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
-
-function EventDialog({
-  row,
-  familyId,
-  defaultDate,
-  onClose,
-  onSaved,
-}: {
-  row?: FamilyEventRow;
-  familyId: string;
-  defaultDate: Date;
-  onClose: () => void;
-  onSaved: () => void;
-}) {
-    const def = new Date(defaultDate);
-  def.setHours(9, 0, 0, 0);
-
-  const [title, setTitle] = useState(row?.title ?? "");
-  const [category, setCategory] = useState<EventCategory>(row?.category ?? "family");
-  const [scope, setScope] = useState<EventScope>(row?.member_scope ?? "all");
-  const [memberName, setMemberName] = useState(row?.member_name ?? "");
-  const [startsAt, setStartsAt] = useState(toLocalInput(row?.starts_at ?? def.toISOString()));
-  const [location, setLocation] = useState(row?.location ?? "");
-  const [remind, setRemind] = useState<string>(
-    row?.remind_minutes_before != null ? String(row.remind_minutes_before) : "",
-  );
-  const [notes, setNotes] = useState(row?.notes ?? "");
-
-  const mut = useMutation({
-    mutationFn: () =>
-      upsertFamilyEvent({
-          id: row?.id,
-          family_id: familyId,
-          title,
-          category,
-          member_scope: scope,
-          member_name: memberName || null,
-          starts_at: new Date(startsAt).toISOString(),
-          location: location || null,
-          remind_minutes_before: remind ? Number(remind) : null,
-          notes: notes || null,
-          all_day: false
-    }),
-    onSuccess: () => {
-      toast.success(row ? "Đã cập nhật" : "Đã thêm sự kiện");
-      onSaved();
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
-
-  return (
-    <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle>{row ? "Sửa sự kiện" : "Thêm sự kiện"}</DialogTitle>
-        </DialogHeader>
-        <div className="space-y-3">
-          <div>
-            <Label>Tiêu đề</Label>
-            <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Bé Minh đi học" />
-          </div>
-          <div>
-            <Label>Loại sự kiện</Label>
-            <div className="grid grid-cols-3 gap-2 mt-1">
-              {CATS.map((c) => (
-                <button
-                  key={c.id}
-                  type="button"
-                  onClick={() => setCategory(c.id)}
-                  className={cn(
-                    "h-14 rounded-xl border text-[11px] font-semibold flex flex-col items-center justify-center gap-0.5",
-                    category === c.id ? "border-brand bg-tint-blue" : "border-border bg-card",
-                  )}
-                >
-                  <span className="text-base">{c.icon}</span>
-                  {c.label}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <Label>Thành viên</Label>
-              <select
-                value={scope}
-                onChange={(e) => setScope(e.target.value as EventScope)}
-                className="w-full h-10 px-3 rounded-xl border border-border bg-card text-sm"
-              >
-                {SCOPES.filter((s) => s.id !== "all").map((s) => (
-                  <option key={s.id} value={s.id}>{s.label}</option>
-                ))}
-                <option value="all">Cả nhà</option>
-              </select>
-            </div>
-            <div>
-              <Label>Tên (tuỳ chọn)</Label>
-              <Input value={memberName} onChange={(e) => setMemberName(e.target.value)} placeholder="Bé Minh" />
-            </div>
-          </div>
-          <div>
-            <Label>Bắt đầu</Label>
-            <Input type="datetime-local" value={startsAt} onChange={(e) => setStartsAt(e.target.value)} />
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <Label>Địa điểm</Label>
-              <Input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Trường..." />
-            </div>
-            <div>
-              <Label>Nhắc trước (phút)</Label>
-              <Input type="number" value={remind} onChange={(e) => setRemind(e.target.value)} placeholder="15" min={0} />
-            </div>
-          </div>
-          <div>
-            <Label>Ghi chú</Label>
-            <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} />
-          </div>
-        </div>
-        <DialogFooter>
-          <Button variant="ghost" onClick={onClose}>Huỷ</Button>
-          <Button onClick={() => mut.mutate()} disabled={!title || mut.isPending}>
-            {mut.isPending ? "Đang lưu…" : row ? "Cập nhật" : "Thêm"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
   );
 }

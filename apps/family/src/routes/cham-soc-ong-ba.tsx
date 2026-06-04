@@ -297,7 +297,11 @@ function ElderlyCarePage() {
     if (isSos) {
       if (session) {
         try {
-          await createSecurityRequest({ request_type: "sos" });
+          await createSecurityRequest({
+            request_type: "sos",
+            elderly_id: profile?.id ?? null,
+            apartment: profile?.name ?? null,
+          });
           await qc2.invalidateQueries({ queryKey: ["security-requests"] });
           toast.error(`SOS — Đã gửi tới bảo an`, {
             description: `Theo dõi trạng thái tại trang Bảo an. Vẫn đang gọi ${label}.`,

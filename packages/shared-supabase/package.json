@@ -7,7 +7,9 @@
     ".": "./src/index.ts",
     "./client": "./src/client.ts",
     "./auth": "./src/auth.ts",
-    "./types": "./src/types.ts"
+    "./types": "./src/types.ts",
+    "./create-client": "./src/create-client.ts",
+    "./get-client": "./src/get-client.ts"
   },
   "dependencies": {
     "@capacitor/preferences": "^6.0.0",

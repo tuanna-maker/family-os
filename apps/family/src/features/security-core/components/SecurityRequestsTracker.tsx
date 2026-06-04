@@ -1,8 +1,10 @@
 import { useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, ShieldCheck, Clock, Activity, X } from "lucide-react";
-import { listSecurityRequests, type SecurityRequest } from "@/api/security";
+import { cancelSecurityRequest, listSecurityRequests, type SecurityRequest } from "@/api/security";
 import { useAuth } from "@shared/ui/hooks/use-auth";
+import { useSecurityRequestsRealtime } from "@/hooks/use-security-requests-realtime";
+import { toast } from "sonner";
 
 const TYPE_LABEL: Record<string, string> = {
   sos: "SOS khẩn cấp",
@@ -48,13 +50,14 @@ function fmtElapsed(iso: string) {
 
 export function SecurityRequestsTracker() {
   const { session } = useAuth();
-  
+  useSecurityRequestsRealtime();
+
   const q = useQuery({
     queryKey: ["security-requests", session?.user?.id ?? "anon"],
-    queryFn: () => fetchList(),
+    queryFn: () => listSecurityRequests(),
     enabled: !!session,
     staleTime: 15_000,
-    refetchInterval: 30_000,
+    refetchInterval: 60_000,
   });
 
   const items = useMemo<SecurityRequest[]>(() => {
@@ -73,7 +76,7 @@ export function SecurityRequestsTracker() {
         <div>
           <h2 className="text-[17px] font-semibold tracking-tight">Trạng thái điều phối</h2>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Yêu cầu của bạn — cập nhật mỗi 30 giây
+            Yêu cầu của bạn — cập nhật realtime
           </p>
         </div>
         {q.isFetching && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
@@ -107,6 +110,15 @@ export function SecurityRequestsTracker() {
 }
 
 function RequestRow({ req }: { req: SecurityRequest }) {
+  const qc = useQueryClient();
+  const cancelMut = useMutation({
+    mutationFn: () => cancelSecurityRequest({ id: req.id }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["security-requests"] });
+      toast.success("Đã hủy yêu cầu");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
   const Icon =
     req.status === "resolved"
       ? ShieldCheck
@@ -137,6 +149,16 @@ function RequestRow({ req }: { req: SecurityRequest }) {
           {req.resolved_at && ` · xong ${fmtElapsed(req.resolved_at)}`}
         </p>
       </div>
+      {req.status === "open" && (
+        <button
+          type="button"
+          onClick={() => cancelMut.mutate()}
+          disabled={cancelMut.isPending}
+          className="text-[11px] font-semibold text-muted-foreground shrink-0 px-2 py-1 rounded-lg border border-border"
+        >
+          Hủy
+        </button>
+      )}
     </div>
   );
 }

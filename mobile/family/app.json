@@ -1,0 +1,49 @@
+{
+  "expo": {
+    "name": "STOS Family",
+    "slug": "stos-family-native",
+    "version": "0.0.1",
+    "orientation": "portrait",
+    "scheme": "vn.unicom.stos.familyrn",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "icon": "./assets/icon.webp",
+    "splash": {
+      "image": "./assets/icon.webp",
+      "resizeMode": "contain",
+      "backgroundColor": "#071A3D"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "vn.unicom.stos.familyrn",
+      "infoPlist": {
+        "UIBackgroundModes": ["remote-notification"]
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icon.webp",
+        "backgroundColor": "#071A3D"
+      },
+      "package": "vn.unicom.stos.familyrn",
+      "permissions": ["RECEIVE_BOOT_COMPLETED", "VIBRATE"]
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "expo-image-picker",
+      "expo-notifications"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "supabaseUrl": "",
+      "supabaseAnonKey": "",
+      "pilotPrefill": true,
+      "eas": {
+        "projectId": "REPLACE_WITH_EAS_PROJECT_ID"
+      }
+    }
+  }
+}

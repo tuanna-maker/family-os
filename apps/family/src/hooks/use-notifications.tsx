@@ -1,7 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { unreadCount } from "@/api/notifications";
+import { useNotificationsRealtime } from "@/hooks/use-notifications-realtime";
 
 export function useNotifications() {
+  useNotificationsRealtime();
   const q = useQuery({
     queryKey: ["notifications-unread"],
     queryFn: () => unreadCount(),

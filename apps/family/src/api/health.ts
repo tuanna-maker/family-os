@@ -47,11 +47,12 @@ export async function listHealth(data: any) {
   const { supabase, userId } = await requireUser();
 
         const [profiles, meds, appts, recs] = await Promise.all([
-      supabase.from("health_profiles").select("*").eq("family_id", data.family_id).order("created_at"),
+      supabase.rpc("get_health_profiles", { _family_id: data.family_id }),
       supabase.from("medicine_reminders").select("*").eq("family_id", data.family_id).order("created_at", { ascending: false }),
       supabase.from("medical_appointments").select("*").eq("family_id", data.family_id).order("scheduled_at"),
       supabase.from("health_records").select("*").eq("family_id", data.family_id).order("recorded_at", { ascending: false }).limit(50),
     ]);
+    if (profiles.error) throw new Error(profiles.error.message);
     return {
       profiles: (profiles.data ?? []) as HealthProfileRow[],
       meds: (meds.data ?? []) as MedicineRow[],
@@ -63,24 +64,18 @@ export async function listHealth(data: any) {
 // ============ PROFILES ============
 export async function upsertHealthProfile(data: any) {
   const { supabase, userId } = await requireUser();
-    const payload = {
-      family_id: data.family_id,
-      name: data.name,
-      dob: data.dob || null,
-      blood_type: data.blood_type || null,
-      allergies: data.allergies || null,
-      conditions: data.conditions || null,
-      notes: data.notes || null,
-      updated_at: new Date().toISOString(),
-    };
-    if (data.id) {
-      const { error } = await supabase.from("health_profiles").update(payload).eq("id", data.id);
-      if (error) throw new Error(error.message);
-    } else {
-      const { error } = await supabase.from("health_profiles").insert({ ...payload, created_by: userId });
-      if (error) throw new Error(error.message);
-    }
-    return { ok: true };
+    const { data: id, error } = await supabase.rpc("upsert_health_profile_enc", {
+      _id: data.id ?? null,
+      _family_id: data.family_id,
+      _name: data.name,
+      _dob: data.dob || null,
+      _blood_type: data.blood_type || null,
+      _allergies: data.allergies || null,
+      _conditions: data.conditions || null,
+      _notes: data.notes || null,
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true, id };
 }
 
 // ============ MEDICINE ============

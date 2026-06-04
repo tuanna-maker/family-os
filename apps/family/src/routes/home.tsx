@@ -44,8 +44,10 @@ import { getFamilyToday, type FamilyTodayMember, type StatusTone } from "@/api/f
 import { getSecurityStatus, type SecurityChip, type SecurityTone } from "@/api/security";
 import { useFamilyContext } from "@/hooks/use-family-context";
 import { useNotifications } from "@/hooks/use-notifications";
+import { requireAuth } from "@/api/require-auth";
 
 export const Route = createFileRoute("/home")({
+  beforeLoad: ({ location }) => requireAuth({ location }),
   head: () => ({
     meta: [
       { title: "STOS Life — Hệ điều hành cho gia đình đô thị" },
@@ -133,7 +135,8 @@ function formatActivityTime(iso: string): string {
 
 function HomePage() {
   const { theme, toggle } = useTheme();
-  const { familyId } = useFamilyContext();
+  const { familyId, family: familyCtx } = useFamilyContext();
+  const displayName = familyCtx?.name ?? family.name;
   const { unread } = useNotifications();
   const [pageCount, setPageCount] = useState(1);
       const limit = pageCount * ACTIVITY_PAGE_SIZE;
@@ -188,7 +191,7 @@ function HomePage() {
         <div className="flex-1 min-w-0 text-right">
           <p className="text-xs text-muted-foreground">Xin chào,</p>
           <p className="text-sm font-bold tracking-tight truncate">
-            {family.name} <span>👋</span>
+            {displayName} <span>👋</span>
           </p>
         </div>
         <div className="flex items-center gap-1 shrink-0">

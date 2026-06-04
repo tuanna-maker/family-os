@@ -1,4 +1,4 @@
-import { supabase } from "./client";
+import { getSupabase } from "./get-client";
 
 export type AppRole =
   | "super_admin"
@@ -19,6 +19,7 @@ export type MyContext = {
 };
 
 export async function requireUser() {
+  const supabase = getSupabase();
   const {
     data: { user },
     error,
@@ -28,7 +29,8 @@ export async function requireUser() {
 }
 
 export async function getMyContext(): Promise<MyContext> {
-  const { supabase, userId, user } = await requireUser();
+  const supabase = getSupabase();
+  const { userId, user } = await requireUser();
 
   const [{ data: profile }, { data: rolesData }] = await Promise.all([
     supabase.from("profiles").select("id, full_name, avatar_url").eq("id", userId).maybeSingle(),

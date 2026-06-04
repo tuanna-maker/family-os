@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, MapPin, Info, Clock } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { checkInShift } from "@/api/guard-shifts";
 
@@ -145,7 +145,15 @@ function motionInfo() {
   );
 }
 
-export function SubHeader({ title, back }: { title: string; back: string }) {
+export function SubHeader({
+  title,
+  back,
+  right,
+}: {
+  title: string;
+  back: string;
+  right?: ReactNode;
+}) {
   return (
     <header className="sticky top-0 z-30 bg-background/95 backdrop-blur px-4 py-3 flex items-center gap-3 border-b border-border">
       <Link
@@ -154,7 +162,8 @@ export function SubHeader({ title, back }: { title: string; back: string }) {
       >
         <ArrowLeft className="h-4 w-4" />
       </Link>
-      <h1 className="text-sm font-bold tracking-wide uppercase">{title}</h1>
+      <h1 className="text-sm font-bold tracking-wide uppercase flex-1">{title}</h1>
+      {right}
     </header>
   );
 }

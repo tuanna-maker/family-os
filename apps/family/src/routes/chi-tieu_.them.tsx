@@ -6,7 +6,7 @@ import { PageHeader } from "@shared/ui/common/PageHeader";
 import { Input } from "@shared/ui/ui/input";
 import { Label } from "@shared/ui/ui/label";
 import { Button } from "@shared/ui/ui/button";
-// removed Select
+import { ChevronDown, ChevronUp } from "lucide-react";
 import { toast } from "sonner";
 import { createExpense } from "@/api/expenses";
 import { getMyContext } from "@/api/auth";
@@ -30,6 +30,7 @@ function AddExpensePage() {
   const [title, setTitle] = useState("");
   const [amount, setAmount] = useState("");
   const [category, setCategory] = useState("Ăn uống");
+  const [isCategoryOpen, setIsCategoryOpen] = useState(false);
 
   const ctxQ = useQuery({
     queryKey: ["my-context"],
@@ -96,22 +97,38 @@ function AddExpensePage() {
           </div>
           <div className="space-y-2">
             <Label>Danh mục</Label>
-            <div className="relative">
-              <select
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                className="w-full h-11 px-3 rounded-md border border-input bg-transparent text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring appearance-none"
-              >
-                {Object.keys(CATEGORY_META).map((c) => (
-                  <option key={c} value={c}>
-                    {CATEGORY_META[c].icon} {c}
-                  </option>
-                ))}
-              </select>
-              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground">
-                <svg className="h-4 w-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
-              </div>
+            <div 
+              className="w-full h-11 px-3 rounded-md border border-input bg-transparent text-sm shadow-sm flex items-center justify-between cursor-pointer"
+              onClick={() => setIsCategoryOpen(!isCategoryOpen)}
+            >
+              <span>{CATEGORY_META[category].icon} {category}</span>
+              {isCategoryOpen ? (
+                <ChevronUp className="h-4 w-4 opacity-50" />
+              ) : (
+                <ChevronDown className="h-4 w-4 opacity-50" />
+              )}
             </div>
+            
+            {isCategoryOpen && (
+              <div className="border border-input rounded-md mt-2 divide-y divide-border overflow-hidden bg-background">
+                {Object.keys(CATEGORY_META).map((c) => (
+                  <div
+                    key={c}
+                    className={`flex items-center px-3 py-3 cursor-pointer hover:bg-muted ${category === c ? 'bg-muted' : ''}`}
+                    onClick={() => {
+                      setCategory(c);
+                      setIsCategoryOpen(false);
+                    }}
+                  >
+                    <span className="mr-3 text-lg">{CATEGORY_META[c].icon}</span>
+                    <span className="flex-1 text-sm">{c}</span>
+                    <div className="w-4 h-4 rounded-full border border-primary flex items-center justify-center">
+                      {category === c && <div className="w-2 h-2 rounded-full bg-primary" />}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
           <Button 
             type="submit" 

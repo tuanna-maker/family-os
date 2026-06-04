@@ -1,7 +1,7 @@
 /**
- * Run Gradle in apps/<app>/android (cross-platform).
+ * Run Gradle in apps/<app>/android or mobile/<app>/android (cross-platform).
  * On Windows with Unicode project paths, maps repo to SUBST drive (Java/Gradle limitation).
- * Usage: node scripts/android-build.mjs family|guard [assembleDebug|assembleRelease]
+ * Usage: node scripts/android-build.mjs family|guard|mobile-family [assembleDebug|assembleRelease]
  */
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
@@ -9,12 +9,33 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
+
+const APP_ROOTS = {
+  family: ["apps", "family"],
+  guard: ["apps", "guard"],
+  "mobile-family": ["mobile", "family"],
+};
+
 const app = process.argv[2];
 const task = process.argv[3] ?? "assembleDebug";
 
-if (!app) {
-  console.error("Usage: node scripts/android-build.mjs family|guard [assembleDebug|assembleRelease]");
+if (!app || !APP_ROOTS[app]) {
+  console.error(
+    "Usage: node scripts/android-build.mjs family|guard|mobile-family [assembleDebug|assembleRelease]",
+  );
   process.exit(1);
+}
+
+function appRootSegments() {
+  return APP_ROOTS[app];
+}
+
+function androidDirFromRoot(root) {
+  return path.join(root, ...appRootSegments(), "android");
+}
+
+function releaseDirFromRoot(root) {
+  return path.join(root, ...appRootSegments(), "release");
 }
 
 const WRAPPER_URL =
@@ -31,7 +52,7 @@ async function ensureGradleWrapper(androidDir) {
 }
 
 function resolveAndroidCwd() {
-  const androidDir = path.join(ROOT, "apps", app, "android");
+  const androidDir = androidDirFromRoot(ROOT);
   if (process.platform !== "win32" || !/[^\u0000-\u007f]/.test(ROOT)) {
     return androidDir;
   }
@@ -46,7 +67,7 @@ function resolveAndroidCwd() {
       return androidDir;
     }
   }
-  return path.join(substRoot, "apps", app, "android");
+  return androidDirFromRoot(substRoot);
 }
 
 const sdk =
@@ -58,7 +79,15 @@ const env = {
   ...process.env,
   ANDROID_HOME: sdk,
   ANDROID_SDK_ROOT: sdk,
+  NODE_ENV: task.includes("Release") ? "production" : process.env.NODE_ENV ?? "development",
 };
+
+const mobileFamilyRoot = path.join(ROOT, "mobile", "family");
+if (app === "mobile-family") {
+  env.EXPO_NO_METRO_WORKSPACE_ROOT = "1";
+  env.METRO_CONFIG = path.join(mobileFamilyRoot, "metro.config.js");
+  env.EXPO_ROUTER_APP_ROOT = "./app";
+}
 
 const androidDir = resolveAndroidCwd();
 await ensureGradleWrapper(androidDir);
@@ -70,5 +99,29 @@ const result = spawnSync(gradle, [task], {
   shell: true,
   env,
 });
+
+if (result.status === 0 && (task === "assembleRelease" || task === "assembleDebug")) {
+  const androidRoot = androidDirFromRoot(ROOT);
+  const variant = task === "assembleRelease" ? "release" : "debug";
+  const apkDir = path.join(androidRoot, "app", "build", "outputs", "apk", variant);
+  const signed = path.join(apkDir, `app-${variant}.apk`);
+  const unsigned = path.join(apkDir, `app-${variant}-unsigned.apk`);
+  const src = fs.existsSync(signed) ? signed : unsigned;
+  if (fs.existsSync(src)) {
+    const destDir = releaseDirFromRoot(ROOT);
+    fs.mkdirSync(destDir, { recursive: true });
+    const destName = variant === "release" ? "app-release.apk" : "app-debug.apk";
+    const dest = path.join(destDir, destName);
+    fs.copyFileSync(src, dest);
+    console.log(`\nAPK: ${dest}`);
+    if (variant === "release" && src === unsigned) {
+      console.warn(
+        "WARN: APK is unsigned — add keystore.properties under " +
+          appRootSegments().join("/") +
+          "/android (see apps/family) then rebuild.",
+      );
+    }
+  }
+}
 
 process.exit(result.status ?? 1);

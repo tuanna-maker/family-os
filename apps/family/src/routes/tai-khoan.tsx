@@ -4,7 +4,10 @@ import { MobileShell } from "@shared/ui/mobile/MobileShell";
 import { PageHeader } from "@shared/ui/common/PageHeader";
 import { RoundedCard } from "@shared/ui/common/RoundedCard";
 import { useAuth } from "@shared/ui/hooks/use-auth";
+import { useTheme } from "@shared/ui/hooks/use-theme";
 import { supabase } from "@shared/supabase/client";
+import { getMyContext } from "@/api/auth";
+import { toast } from "sonner";
 import {
   Bell,
   Globe,
@@ -25,22 +28,30 @@ export const Route = createFileRoute("/tai-khoan")({
 type SettingItem = {
   icon: LucideIcon;
   label: string;
-  to?: "/admin";
+  to?: "/admin" | "/cai-dat/thong-bao";
+  action?: "theme" | "support";
   value?: string;
 };
 
 const SETTINGS: SettingItem[] = [
-  { icon: Bell, label: "Thông báo" },
-  { icon: Lock, label: "Bảo mật & quyền riêng tư" },
-  { icon: Moon, label: "Giao diện" },
+  { icon: Bell, label: "Thông báo", to: "/cai-dat/thong-bao" },
+  { icon: Lock, label: "Bảo mật & quyền riêng tư", to: "/cai-dat/thong-bao" },
+  { icon: Moon, label: "Giao diện", action: "theme" },
   { icon: Globe, label: "Ngôn ngữ", value: "Tiếng Việt" },
   { icon: LayoutDashboard, label: "Bảng quản trị (Admin)", to: "/admin" },
-  { icon: HelpCircle, label: "Hỗ trợ" },
+  { icon: HelpCircle, label: "Hỗ trợ", action: "support" },
 ];
 
 function AccountPage() {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  const { theme, toggle } = useTheme();
+
+  const ctxQ = useQuery({
+    queryKey: ["my-context"],
+    queryFn: () => getMyContext(),
+    staleTime: 5 * 60_000,
+  });
 
   const { data: profile } = useQuery({
     queryKey: ["profile", user?.id],
@@ -74,6 +85,17 @@ function AccountPage() {
     .filter(Boolean)
     .join(", ");
   const subtitle = apartmentLine || profile?.email || user?.email || "";
+  const isOwner = ctxQ.data?.roles?.includes("family_owner");
+  const tierLabel = isOwner ? "Chủ hộ • Premium" : "Thành viên • Premium";
+
+  const handleSetting = (item: SettingItem) => {
+    if (item.action === "theme") {
+      toggle();
+      toast.success(theme === "dark" ? "Đã bật giao diện sáng" : "Đã bật giao diện tối");
+    } else if (item.action === "support") {
+      window.location.href = "mailto:hotro@securitytech.vn?subject=STOS%20Life%20Hỗ%20trợ";
+    }
+  };
 
   return (
     <MobileShell>
@@ -97,30 +119,43 @@ function AccountPage() {
             {subtitle && (
               <p className="text-xs text-muted-foreground truncate">{subtitle}</p>
             )}
-            <p className="text-[11px] text-brand font-medium mt-1">Chủ hộ • Premium</p>
+            <p className="text-[11px] text-brand font-medium mt-1">{tierLabel}</p>
           </div>
         </RoundedCard>
       </section>
 
       <section className="px-4 mt-5">
         <RoundedCard className="p-0 divide-y divide-border">
-          {SETTINGS.map(({ icon: Icon, label, value, to }) => {
+          {SETTINGS.map(({ icon: Icon, label, value, to, action }) => {
             const content = (
               <div className="w-full flex items-center gap-3 p-4">
                 <div className="h-9 w-9 rounded-2xl bg-muted grid place-items-center shrink-0">
                   <Icon className="h-4 w-4" />
                 </div>
                 <span className="flex-1 text-sm font-medium truncate">{label}</span>
+                {action === "theme" && (
+                  <span className="text-xs text-muted-foreground shrink-0">
+                    {theme === "dark" ? "Tối" : "Sáng"}
+                  </span>
+                )}
                 {value && <span className="text-xs text-muted-foreground shrink-0">{value}</span>}
                 <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
               </div>
             );
-            return to ? (
-              <Link key={label} to={to} className="block active:bg-muted/40">
-                {content}
-              </Link>
-            ) : (
-              <button key={label} className="w-full text-left active:bg-muted/40">
+            if (to) {
+              return (
+                <Link key={label} to={to} className="block active:bg-muted/40">
+                  {content}
+                </Link>
+              );
+            }
+            return (
+              <button
+                key={label}
+                type="button"
+                onClick={() => handleSetting({ icon: Icon, label, value, action })}
+                className="w-full text-left active:bg-muted/40"
+              >
                 {content}
               </button>
             );

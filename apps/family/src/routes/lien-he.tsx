@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { Phone, RotateCcw, Check, ChevronDown } from "lucide-react";
 import { MobileShell } from "@shared/ui/mobile/MobileShell";
 import { PageHeader } from "@shared/ui/common/PageHeader";
@@ -104,7 +104,22 @@ function ContactsPage() {
         </div>
       </section>
 
-      <section className="px-4 mt-6 mb-8">
+      <section className="px-4 mt-6">
+        <RoundedCard className="p-4">
+          <p className="text-sm font-semibold">Gửi yêu cầu tới Ban quản lý</p>
+          <p className="text-[12px] text-muted-foreground mt-1">
+            Sửa chữa, khiếu nại, dịch vụ tòa nhà — theo dõi trạng thái ticket.
+          </p>
+          <Link
+            to="/dich-vu"
+            className="inline-block mt-3 text-sm font-semibold text-brand"
+          >
+            Mở Dịch vụ & Tiện ích →
+          </Link>
+        </RoundedCard>
+      </section>
+
+      <section className="px-4 mt-4 mb-8">
         <button
           onClick={() => {
             reset();

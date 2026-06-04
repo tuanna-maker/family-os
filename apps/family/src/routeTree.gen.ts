@@ -14,9 +14,11 @@ import { Route as ThongBaoRouteImport } from './routes/thong-bao'
 import { Route as TaiKhoanRouteImport } from './routes/tai-khoan'
 import { Route as SucKhoeRouteImport } from './routes/suc-khoe'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as QuetMaRouteImport } from './routes/quet-ma'
 import { Route as QuanLyGiupViecRouteImport } from './routes/quan-ly-giup-viec'
 import { Route as QrVaoRaRouteImport } from './routes/qr-vao-ra'
 import { Route as PortalRouteImport } from './routes/portal'
+import { Route as MuaSamHoRouteImport } from './routes/mua-sam-ho'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as LienHeRouteImport } from './routes/lien-he'
 import { Route as LichGiaDinhRouteImport } from './routes/lich-gia-dinh'
@@ -27,20 +29,34 @@ import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as DuLichRouteImport } from './routes/du-lich'
 import { Route as DichVuRouteImport } from './routes/dich-vu'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as DangPhatTrienRouteImport } from './routes/dang-phat-trien'
 import { Route as CongDongRouteImport } from './routes/cong-dong'
 import { Route as ConCaiRouteImport } from './routes/con-cai'
 import { Route as ChiTieuRouteImport } from './routes/chi-tieu'
 import { Route as ChamSocOngBaRouteImport } from './routes/cham-soc-ong-ba'
 import { Route as BaoAnRouteImport } from './routes/bao-an'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ThucPhamThemRouteImport } from './routes/thuc-pham_.them'
 import { Route as SucKhoeQuanLyRouteImport } from './routes/suc-khoe.quan-ly'
+import { Route as QuanLyGiupViecThemRouteImport } from './routes/quan-ly-giup-viec_.them'
+import { Route as MuaSamHoThemRouteImport } from './routes/mua-sam-ho_.them'
+import { Route as LichGiaDinhThemRouteImport } from './routes/lich-gia-dinh_.them'
 import { Route as KyNiemGiaDinhUploadRouteImport } from './routes/ky-niem-gia-dinh_.upload'
 import { Route as KyNiemGiaDinhThemRouteImport } from './routes/ky-niem-gia-dinh_.them'
 import { Route as KyNiemGiaDinhAlbumRouteImport } from './routes/ky-niem-gia-dinh_.album'
+import { Route as KyNiemGiaDinhMomentIdRouteImport } from './routes/ky-niem-gia-dinh_.$momentId'
+import { Route as DuLichThemRouteImport } from './routes/du-lich_.them'
+import { Route as ConCaiThemRouteImport } from './routes/con-cai_.them'
 import { Route as ChiTieuThemRouteImport } from './routes/chi-tieu_.them'
 import { Route as ChiTieuScanRouteImport } from './routes/chi-tieu_.scan'
 import { Route as ChamSocOngBaNhatKyRouteImport } from './routes/cham-soc-ong-ba.nhat-ky'
 import { Route as CaiDatThongBaoRouteImport } from './routes/cai-dat.thong-bao'
+import { Route as BaoAnChatRouteImport } from './routes/bao-an_.chat'
+import { Route as LichGiaDinhSuaEventIdRouteImport } from './routes/lich-gia-dinh_.sua.$eventId'
+import { Route as KyNiemGiaDinhAlbumTaoRouteImport } from './routes/ky-niem-gia-dinh_.album_.tao'
+import { Route as KyNiemGiaDinhAlbumAlbumIdRouteImport } from './routes/ky-niem-gia-dinh_.album.$albumId'
+import { Route as DuLichSuaTripIdRouteImport } from './routes/du-lich_.sua.$tripId'
+import { Route as DuLichTripIdThemMucRouteImport } from './routes/du-lich_.$tripId.them-muc'
 
 const ThucPhamRoute = ThucPhamRouteImport.update({
   id: '/thuc-pham',
@@ -67,6 +83,11 @@ const ResetPasswordRoute = ResetPasswordRouteImport.update({
   path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
+const QuetMaRoute = QuetMaRouteImport.update({
+  id: '/quet-ma',
+  path: '/quet-ma',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const QuanLyGiupViecRoute = QuanLyGiupViecRouteImport.update({
   id: '/quan-ly-giup-viec',
   path: '/quan-ly-giup-viec',
@@ -80,6 +101,11 @@ const QrVaoRaRoute = QrVaoRaRouteImport.update({
 const PortalRoute = PortalRouteImport.update({
   id: '/portal',
   path: '/portal',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MuaSamHoRoute = MuaSamHoRouteImport.update({
+  id: '/mua-sam-ho',
+  path: '/mua-sam-ho',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -132,6 +158,11 @@ const DashboardRoute = DashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DangPhatTrienRoute = DangPhatTrienRouteImport.update({
+  id: '/dang-phat-trien',
+  path: '/dang-phat-trien',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CongDongRoute = CongDongRouteImport.update({
   id: '/cong-dong',
   path: '/cong-dong',
@@ -162,10 +193,30 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ThucPhamThemRoute = ThucPhamThemRouteImport.update({
+  id: '/thuc-pham_/them',
+  path: '/thuc-pham/them',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SucKhoeQuanLyRoute = SucKhoeQuanLyRouteImport.update({
   id: '/quan-ly',
   path: '/quan-ly',
   getParentRoute: () => SucKhoeRoute,
+} as any)
+const QuanLyGiupViecThemRoute = QuanLyGiupViecThemRouteImport.update({
+  id: '/quan-ly-giup-viec_/them',
+  path: '/quan-ly-giup-viec/them',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MuaSamHoThemRoute = MuaSamHoThemRouteImport.update({
+  id: '/mua-sam-ho_/them',
+  path: '/mua-sam-ho/them',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LichGiaDinhThemRoute = LichGiaDinhThemRouteImport.update({
+  id: '/lich-gia-dinh_/them',
+  path: '/lich-gia-dinh/them',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const KyNiemGiaDinhUploadRoute = KyNiemGiaDinhUploadRouteImport.update({
   id: '/ky-niem-gia-dinh_/upload',
@@ -180,6 +231,21 @@ const KyNiemGiaDinhThemRoute = KyNiemGiaDinhThemRouteImport.update({
 const KyNiemGiaDinhAlbumRoute = KyNiemGiaDinhAlbumRouteImport.update({
   id: '/ky-niem-gia-dinh_/album',
   path: '/ky-niem-gia-dinh/album',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const KyNiemGiaDinhMomentIdRoute = KyNiemGiaDinhMomentIdRouteImport.update({
+  id: '/ky-niem-gia-dinh_/$momentId',
+  path: '/ky-niem-gia-dinh/$momentId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DuLichThemRoute = DuLichThemRouteImport.update({
+  id: '/du-lich_/them',
+  path: '/du-lich/them',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConCaiThemRoute = ConCaiThemRouteImport.update({
+  id: '/con-cai_/them',
+  path: '/con-cai/them',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ChiTieuThemRoute = ChiTieuThemRouteImport.update({
@@ -202,6 +268,37 @@ const CaiDatThongBaoRoute = CaiDatThongBaoRouteImport.update({
   path: '/cai-dat/thong-bao',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BaoAnChatRoute = BaoAnChatRouteImport.update({
+  id: '/bao-an_/chat',
+  path: '/bao-an/chat',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LichGiaDinhSuaEventIdRoute = LichGiaDinhSuaEventIdRouteImport.update({
+  id: '/lich-gia-dinh_/sua/$eventId',
+  path: '/lich-gia-dinh/sua/$eventId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const KyNiemGiaDinhAlbumTaoRoute = KyNiemGiaDinhAlbumTaoRouteImport.update({
+  id: '/ky-niem-gia-dinh_/album_/tao',
+  path: '/ky-niem-gia-dinh/album/tao',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const KyNiemGiaDinhAlbumAlbumIdRoute =
+  KyNiemGiaDinhAlbumAlbumIdRouteImport.update({
+    id: '/$albumId',
+    path: '/$albumId',
+    getParentRoute: () => KyNiemGiaDinhAlbumRoute,
+  } as any)
+const DuLichSuaTripIdRoute = DuLichSuaTripIdRouteImport.update({
+  id: '/du-lich_/sua/$tripId',
+  path: '/du-lich/sua/$tripId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DuLichTripIdThemMucRoute = DuLichTripIdThemMucRouteImport.update({
+  id: '/du-lich_/$tripId/them-muc',
+  path: '/du-lich/$tripId/them-muc',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -210,6 +307,7 @@ export interface FileRoutesByFullPath {
   '/chi-tieu': typeof ChiTieuRoute
   '/con-cai': typeof ConCaiRoute
   '/cong-dong': typeof CongDongRoute
+  '/dang-phat-trien': typeof DangPhatTrienRoute
   '/dashboard': typeof DashboardRoute
   '/dich-vu': typeof DichVuRoute
   '/du-lich': typeof DuLichRoute
@@ -220,22 +318,37 @@ export interface FileRoutesByFullPath {
   '/lich-gia-dinh': typeof LichGiaDinhRoute
   '/lien-he': typeof LienHeRoute
   '/login': typeof LoginRoute
+  '/mua-sam-ho': typeof MuaSamHoRoute
   '/portal': typeof PortalRoute
   '/qr-vao-ra': typeof QrVaoRaRoute
   '/quan-ly-giup-viec': typeof QuanLyGiupViecRoute
+  '/quet-ma': typeof QuetMaRoute
   '/reset-password': typeof ResetPasswordRoute
   '/suc-khoe': typeof SucKhoeRouteWithChildren
   '/tai-khoan': typeof TaiKhoanRoute
   '/thong-bao': typeof ThongBaoRoute
   '/thuc-pham': typeof ThucPhamRoute
+  '/bao-an/chat': typeof BaoAnChatRoute
   '/cai-dat/thong-bao': typeof CaiDatThongBaoRoute
   '/cham-soc-ong-ba/nhat-ky': typeof ChamSocOngBaNhatKyRoute
   '/chi-tieu/scan': typeof ChiTieuScanRoute
   '/chi-tieu/them': typeof ChiTieuThemRoute
-  '/ky-niem-gia-dinh/album': typeof KyNiemGiaDinhAlbumRoute
+  '/con-cai/them': typeof ConCaiThemRoute
+  '/du-lich/them': typeof DuLichThemRoute
+  '/ky-niem-gia-dinh/$momentId': typeof KyNiemGiaDinhMomentIdRoute
+  '/ky-niem-gia-dinh/album': typeof KyNiemGiaDinhAlbumRouteWithChildren
   '/ky-niem-gia-dinh/them': typeof KyNiemGiaDinhThemRoute
   '/ky-niem-gia-dinh/upload': typeof KyNiemGiaDinhUploadRoute
+  '/lich-gia-dinh/them': typeof LichGiaDinhThemRoute
+  '/mua-sam-ho/them': typeof MuaSamHoThemRoute
+  '/quan-ly-giup-viec/them': typeof QuanLyGiupViecThemRoute
   '/suc-khoe/quan-ly': typeof SucKhoeQuanLyRoute
+  '/thuc-pham/them': typeof ThucPhamThemRoute
+  '/du-lich/$tripId/them-muc': typeof DuLichTripIdThemMucRoute
+  '/du-lich/sua/$tripId': typeof DuLichSuaTripIdRoute
+  '/ky-niem-gia-dinh/album/$albumId': typeof KyNiemGiaDinhAlbumAlbumIdRoute
+  '/ky-niem-gia-dinh/album/tao': typeof KyNiemGiaDinhAlbumTaoRoute
+  '/lich-gia-dinh/sua/$eventId': typeof LichGiaDinhSuaEventIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -244,6 +357,7 @@ export interface FileRoutesByTo {
   '/chi-tieu': typeof ChiTieuRoute
   '/con-cai': typeof ConCaiRoute
   '/cong-dong': typeof CongDongRoute
+  '/dang-phat-trien': typeof DangPhatTrienRoute
   '/dashboard': typeof DashboardRoute
   '/dich-vu': typeof DichVuRoute
   '/du-lich': typeof DuLichRoute
@@ -254,22 +368,37 @@ export interface FileRoutesByTo {
   '/lich-gia-dinh': typeof LichGiaDinhRoute
   '/lien-he': typeof LienHeRoute
   '/login': typeof LoginRoute
+  '/mua-sam-ho': typeof MuaSamHoRoute
   '/portal': typeof PortalRoute
   '/qr-vao-ra': typeof QrVaoRaRoute
   '/quan-ly-giup-viec': typeof QuanLyGiupViecRoute
+  '/quet-ma': typeof QuetMaRoute
   '/reset-password': typeof ResetPasswordRoute
   '/suc-khoe': typeof SucKhoeRouteWithChildren
   '/tai-khoan': typeof TaiKhoanRoute
   '/thong-bao': typeof ThongBaoRoute
   '/thuc-pham': typeof ThucPhamRoute
+  '/bao-an/chat': typeof BaoAnChatRoute
   '/cai-dat/thong-bao': typeof CaiDatThongBaoRoute
   '/cham-soc-ong-ba/nhat-ky': typeof ChamSocOngBaNhatKyRoute
   '/chi-tieu/scan': typeof ChiTieuScanRoute
   '/chi-tieu/them': typeof ChiTieuThemRoute
-  '/ky-niem-gia-dinh/album': typeof KyNiemGiaDinhAlbumRoute
+  '/con-cai/them': typeof ConCaiThemRoute
+  '/du-lich/them': typeof DuLichThemRoute
+  '/ky-niem-gia-dinh/$momentId': typeof KyNiemGiaDinhMomentIdRoute
+  '/ky-niem-gia-dinh/album': typeof KyNiemGiaDinhAlbumRouteWithChildren
   '/ky-niem-gia-dinh/them': typeof KyNiemGiaDinhThemRoute
   '/ky-niem-gia-dinh/upload': typeof KyNiemGiaDinhUploadRoute
+  '/lich-gia-dinh/them': typeof LichGiaDinhThemRoute
+  '/mua-sam-ho/them': typeof MuaSamHoThemRoute
+  '/quan-ly-giup-viec/them': typeof QuanLyGiupViecThemRoute
   '/suc-khoe/quan-ly': typeof SucKhoeQuanLyRoute
+  '/thuc-pham/them': typeof ThucPhamThemRoute
+  '/du-lich/$tripId/them-muc': typeof DuLichTripIdThemMucRoute
+  '/du-lich/sua/$tripId': typeof DuLichSuaTripIdRoute
+  '/ky-niem-gia-dinh/album/$albumId': typeof KyNiemGiaDinhAlbumAlbumIdRoute
+  '/ky-niem-gia-dinh/album/tao': typeof KyNiemGiaDinhAlbumTaoRoute
+  '/lich-gia-dinh/sua/$eventId': typeof LichGiaDinhSuaEventIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -279,6 +408,7 @@ export interface FileRoutesById {
   '/chi-tieu': typeof ChiTieuRoute
   '/con-cai': typeof ConCaiRoute
   '/cong-dong': typeof CongDongRoute
+  '/dang-phat-trien': typeof DangPhatTrienRoute
   '/dashboard': typeof DashboardRoute
   '/dich-vu': typeof DichVuRoute
   '/du-lich': typeof DuLichRoute
@@ -289,22 +419,37 @@ export interface FileRoutesById {
   '/lich-gia-dinh': typeof LichGiaDinhRoute
   '/lien-he': typeof LienHeRoute
   '/login': typeof LoginRoute
+  '/mua-sam-ho': typeof MuaSamHoRoute
   '/portal': typeof PortalRoute
   '/qr-vao-ra': typeof QrVaoRaRoute
   '/quan-ly-giup-viec': typeof QuanLyGiupViecRoute
+  '/quet-ma': typeof QuetMaRoute
   '/reset-password': typeof ResetPasswordRoute
   '/suc-khoe': typeof SucKhoeRouteWithChildren
   '/tai-khoan': typeof TaiKhoanRoute
   '/thong-bao': typeof ThongBaoRoute
   '/thuc-pham': typeof ThucPhamRoute
+  '/bao-an_/chat': typeof BaoAnChatRoute
   '/cai-dat/thong-bao': typeof CaiDatThongBaoRoute
   '/cham-soc-ong-ba/nhat-ky': typeof ChamSocOngBaNhatKyRoute
   '/chi-tieu_/scan': typeof ChiTieuScanRoute
   '/chi-tieu_/them': typeof ChiTieuThemRoute
-  '/ky-niem-gia-dinh_/album': typeof KyNiemGiaDinhAlbumRoute
+  '/con-cai_/them': typeof ConCaiThemRoute
+  '/du-lich_/them': typeof DuLichThemRoute
+  '/ky-niem-gia-dinh_/$momentId': typeof KyNiemGiaDinhMomentIdRoute
+  '/ky-niem-gia-dinh_/album': typeof KyNiemGiaDinhAlbumRouteWithChildren
   '/ky-niem-gia-dinh_/them': typeof KyNiemGiaDinhThemRoute
   '/ky-niem-gia-dinh_/upload': typeof KyNiemGiaDinhUploadRoute
+  '/lich-gia-dinh_/them': typeof LichGiaDinhThemRoute
+  '/mua-sam-ho_/them': typeof MuaSamHoThemRoute
+  '/quan-ly-giup-viec_/them': typeof QuanLyGiupViecThemRoute
   '/suc-khoe/quan-ly': typeof SucKhoeQuanLyRoute
+  '/thuc-pham_/them': typeof ThucPhamThemRoute
+  '/du-lich_/$tripId/them-muc': typeof DuLichTripIdThemMucRoute
+  '/du-lich_/sua/$tripId': typeof DuLichSuaTripIdRoute
+  '/ky-niem-gia-dinh_/album/$albumId': typeof KyNiemGiaDinhAlbumAlbumIdRoute
+  '/ky-niem-gia-dinh_/album_/tao': typeof KyNiemGiaDinhAlbumTaoRoute
+  '/lich-gia-dinh_/sua/$eventId': typeof LichGiaDinhSuaEventIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -315,6 +460,7 @@ export interface FileRouteTypes {
     | '/chi-tieu'
     | '/con-cai'
     | '/cong-dong'
+    | '/dang-phat-trien'
     | '/dashboard'
     | '/dich-vu'
     | '/du-lich'
@@ -325,22 +471,37 @@ export interface FileRouteTypes {
     | '/lich-gia-dinh'
     | '/lien-he'
     | '/login'
+    | '/mua-sam-ho'
     | '/portal'
     | '/qr-vao-ra'
     | '/quan-ly-giup-viec'
+    | '/quet-ma'
     | '/reset-password'
     | '/suc-khoe'
     | '/tai-khoan'
     | '/thong-bao'
     | '/thuc-pham'
+    | '/bao-an/chat'
     | '/cai-dat/thong-bao'
     | '/cham-soc-ong-ba/nhat-ky'
     | '/chi-tieu/scan'
     | '/chi-tieu/them'
+    | '/con-cai/them'
+    | '/du-lich/them'
+    | '/ky-niem-gia-dinh/$momentId'
     | '/ky-niem-gia-dinh/album'
     | '/ky-niem-gia-dinh/them'
     | '/ky-niem-gia-dinh/upload'
+    | '/lich-gia-dinh/them'
+    | '/mua-sam-ho/them'
+    | '/quan-ly-giup-viec/them'
     | '/suc-khoe/quan-ly'
+    | '/thuc-pham/them'
+    | '/du-lich/$tripId/them-muc'
+    | '/du-lich/sua/$tripId'
+    | '/ky-niem-gia-dinh/album/$albumId'
+    | '/ky-niem-gia-dinh/album/tao'
+    | '/lich-gia-dinh/sua/$eventId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -349,6 +510,7 @@ export interface FileRouteTypes {
     | '/chi-tieu'
     | '/con-cai'
     | '/cong-dong'
+    | '/dang-phat-trien'
     | '/dashboard'
     | '/dich-vu'
     | '/du-lich'
@@ -359,22 +521,37 @@ export interface FileRouteTypes {
     | '/lich-gia-dinh'
     | '/lien-he'
     | '/login'
+    | '/mua-sam-ho'
     | '/portal'
     | '/qr-vao-ra'
     | '/quan-ly-giup-viec'
+    | '/quet-ma'
     | '/reset-password'
     | '/suc-khoe'
     | '/tai-khoan'
     | '/thong-bao'
     | '/thuc-pham'
+    | '/bao-an/chat'
     | '/cai-dat/thong-bao'
     | '/cham-soc-ong-ba/nhat-ky'
     | '/chi-tieu/scan'
     | '/chi-tieu/them'
+    | '/con-cai/them'
+    | '/du-lich/them'
+    | '/ky-niem-gia-dinh/$momentId'
     | '/ky-niem-gia-dinh/album'
     | '/ky-niem-gia-dinh/them'
     | '/ky-niem-gia-dinh/upload'
+    | '/lich-gia-dinh/them'
+    | '/mua-sam-ho/them'
+    | '/quan-ly-giup-viec/them'
     | '/suc-khoe/quan-ly'
+    | '/thuc-pham/them'
+    | '/du-lich/$tripId/them-muc'
+    | '/du-lich/sua/$tripId'
+    | '/ky-niem-gia-dinh/album/$albumId'
+    | '/ky-niem-gia-dinh/album/tao'
+    | '/lich-gia-dinh/sua/$eventId'
   id:
     | '__root__'
     | '/'
@@ -383,6 +560,7 @@ export interface FileRouteTypes {
     | '/chi-tieu'
     | '/con-cai'
     | '/cong-dong'
+    | '/dang-phat-trien'
     | '/dashboard'
     | '/dich-vu'
     | '/du-lich'
@@ -393,22 +571,37 @@ export interface FileRouteTypes {
     | '/lich-gia-dinh'
     | '/lien-he'
     | '/login'
+    | '/mua-sam-ho'
     | '/portal'
     | '/qr-vao-ra'
     | '/quan-ly-giup-viec'
+    | '/quet-ma'
     | '/reset-password'
     | '/suc-khoe'
     | '/tai-khoan'
     | '/thong-bao'
     | '/thuc-pham'
+    | '/bao-an_/chat'
     | '/cai-dat/thong-bao'
     | '/cham-soc-ong-ba/nhat-ky'
     | '/chi-tieu_/scan'
     | '/chi-tieu_/them'
+    | '/con-cai_/them'
+    | '/du-lich_/them'
+    | '/ky-niem-gia-dinh_/$momentId'
     | '/ky-niem-gia-dinh_/album'
     | '/ky-niem-gia-dinh_/them'
     | '/ky-niem-gia-dinh_/upload'
+    | '/lich-gia-dinh_/them'
+    | '/mua-sam-ho_/them'
+    | '/quan-ly-giup-viec_/them'
     | '/suc-khoe/quan-ly'
+    | '/thuc-pham_/them'
+    | '/du-lich_/$tripId/them-muc'
+    | '/du-lich_/sua/$tripId'
+    | '/ky-niem-gia-dinh_/album/$albumId'
+    | '/ky-niem-gia-dinh_/album_/tao'
+    | '/lich-gia-dinh_/sua/$eventId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -418,6 +611,7 @@ export interface RootRouteChildren {
   ChiTieuRoute: typeof ChiTieuRoute
   ConCaiRoute: typeof ConCaiRoute
   CongDongRoute: typeof CongDongRoute
+  DangPhatTrienRoute: typeof DangPhatTrienRoute
   DashboardRoute: typeof DashboardRoute
   DichVuRoute: typeof DichVuRoute
   DuLichRoute: typeof DuLichRoute
@@ -428,20 +622,34 @@ export interface RootRouteChildren {
   LichGiaDinhRoute: typeof LichGiaDinhRoute
   LienHeRoute: typeof LienHeRoute
   LoginRoute: typeof LoginRoute
+  MuaSamHoRoute: typeof MuaSamHoRoute
   PortalRoute: typeof PortalRoute
   QrVaoRaRoute: typeof QrVaoRaRoute
   QuanLyGiupViecRoute: typeof QuanLyGiupViecRoute
+  QuetMaRoute: typeof QuetMaRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SucKhoeRoute: typeof SucKhoeRouteWithChildren
   TaiKhoanRoute: typeof TaiKhoanRoute
   ThongBaoRoute: typeof ThongBaoRoute
   ThucPhamRoute: typeof ThucPhamRoute
+  BaoAnChatRoute: typeof BaoAnChatRoute
   CaiDatThongBaoRoute: typeof CaiDatThongBaoRoute
   ChiTieuScanRoute: typeof ChiTieuScanRoute
   ChiTieuThemRoute: typeof ChiTieuThemRoute
-  KyNiemGiaDinhAlbumRoute: typeof KyNiemGiaDinhAlbumRoute
+  ConCaiThemRoute: typeof ConCaiThemRoute
+  DuLichThemRoute: typeof DuLichThemRoute
+  KyNiemGiaDinhMomentIdRoute: typeof KyNiemGiaDinhMomentIdRoute
+  KyNiemGiaDinhAlbumRoute: typeof KyNiemGiaDinhAlbumRouteWithChildren
   KyNiemGiaDinhThemRoute: typeof KyNiemGiaDinhThemRoute
   KyNiemGiaDinhUploadRoute: typeof KyNiemGiaDinhUploadRoute
+  LichGiaDinhThemRoute: typeof LichGiaDinhThemRoute
+  MuaSamHoThemRoute: typeof MuaSamHoThemRoute
+  QuanLyGiupViecThemRoute: typeof QuanLyGiupViecThemRoute
+  ThucPhamThemRoute: typeof ThucPhamThemRoute
+  DuLichTripIdThemMucRoute: typeof DuLichTripIdThemMucRoute
+  DuLichSuaTripIdRoute: typeof DuLichSuaTripIdRoute
+  KyNiemGiaDinhAlbumTaoRoute: typeof KyNiemGiaDinhAlbumTaoRoute
+  LichGiaDinhSuaEventIdRoute: typeof LichGiaDinhSuaEventIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -481,6 +689,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/quet-ma': {
+      id: '/quet-ma'
+      path: '/quet-ma'
+      fullPath: '/quet-ma'
+      preLoaderRoute: typeof QuetMaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/quan-ly-giup-viec': {
       id: '/quan-ly-giup-viec'
       path: '/quan-ly-giup-viec'
@@ -500,6 +715,13 @@ declare module '@tanstack/react-router' {
       path: '/portal'
       fullPath: '/portal'
       preLoaderRoute: typeof PortalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mua-sam-ho': {
+      id: '/mua-sam-ho'
+      path: '/mua-sam-ho'
+      fullPath: '/mua-sam-ho'
+      preLoaderRoute: typeof MuaSamHoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -572,6 +794,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/dang-phat-trien': {
+      id: '/dang-phat-trien'
+      path: '/dang-phat-trien'
+      fullPath: '/dang-phat-trien'
+      preLoaderRoute: typeof DangPhatTrienRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/cong-dong': {
       id: '/cong-dong'
       path: '/cong-dong'
@@ -614,12 +843,40 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/thuc-pham_/them': {
+      id: '/thuc-pham_/them'
+      path: '/thuc-pham/them'
+      fullPath: '/thuc-pham/them'
+      preLoaderRoute: typeof ThucPhamThemRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/suc-khoe/quan-ly': {
       id: '/suc-khoe/quan-ly'
       path: '/quan-ly'
       fullPath: '/suc-khoe/quan-ly'
       preLoaderRoute: typeof SucKhoeQuanLyRouteImport
       parentRoute: typeof SucKhoeRoute
+    }
+    '/quan-ly-giup-viec_/them': {
+      id: '/quan-ly-giup-viec_/them'
+      path: '/quan-ly-giup-viec/them'
+      fullPath: '/quan-ly-giup-viec/them'
+      preLoaderRoute: typeof QuanLyGiupViecThemRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mua-sam-ho_/them': {
+      id: '/mua-sam-ho_/them'
+      path: '/mua-sam-ho/them'
+      fullPath: '/mua-sam-ho/them'
+      preLoaderRoute: typeof MuaSamHoThemRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lich-gia-dinh_/them': {
+      id: '/lich-gia-dinh_/them'
+      path: '/lich-gia-dinh/them'
+      fullPath: '/lich-gia-dinh/them'
+      preLoaderRoute: typeof LichGiaDinhThemRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/ky-niem-gia-dinh_/upload': {
       id: '/ky-niem-gia-dinh_/upload'
@@ -640,6 +897,27 @@ declare module '@tanstack/react-router' {
       path: '/ky-niem-gia-dinh/album'
       fullPath: '/ky-niem-gia-dinh/album'
       preLoaderRoute: typeof KyNiemGiaDinhAlbumRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ky-niem-gia-dinh_/$momentId': {
+      id: '/ky-niem-gia-dinh_/$momentId'
+      path: '/ky-niem-gia-dinh/$momentId'
+      fullPath: '/ky-niem-gia-dinh/$momentId'
+      preLoaderRoute: typeof KyNiemGiaDinhMomentIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/du-lich_/them': {
+      id: '/du-lich_/them'
+      path: '/du-lich/them'
+      fullPath: '/du-lich/them'
+      preLoaderRoute: typeof DuLichThemRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/con-cai_/them': {
+      id: '/con-cai_/them'
+      path: '/con-cai/them'
+      fullPath: '/con-cai/them'
+      preLoaderRoute: typeof ConCaiThemRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/chi-tieu_/them': {
@@ -670,6 +948,48 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CaiDatThongBaoRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/bao-an_/chat': {
+      id: '/bao-an_/chat'
+      path: '/bao-an/chat'
+      fullPath: '/bao-an/chat'
+      preLoaderRoute: typeof BaoAnChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lich-gia-dinh_/sua/$eventId': {
+      id: '/lich-gia-dinh_/sua/$eventId'
+      path: '/lich-gia-dinh/sua/$eventId'
+      fullPath: '/lich-gia-dinh/sua/$eventId'
+      preLoaderRoute: typeof LichGiaDinhSuaEventIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ky-niem-gia-dinh_/album_/tao': {
+      id: '/ky-niem-gia-dinh_/album_/tao'
+      path: '/ky-niem-gia-dinh/album/tao'
+      fullPath: '/ky-niem-gia-dinh/album/tao'
+      preLoaderRoute: typeof KyNiemGiaDinhAlbumTaoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ky-niem-gia-dinh_/album/$albumId': {
+      id: '/ky-niem-gia-dinh_/album/$albumId'
+      path: '/$albumId'
+      fullPath: '/ky-niem-gia-dinh/album/$albumId'
+      preLoaderRoute: typeof KyNiemGiaDinhAlbumAlbumIdRouteImport
+      parentRoute: typeof KyNiemGiaDinhAlbumRoute
+    }
+    '/du-lich_/sua/$tripId': {
+      id: '/du-lich_/sua/$tripId'
+      path: '/du-lich/sua/$tripId'
+      fullPath: '/du-lich/sua/$tripId'
+      preLoaderRoute: typeof DuLichSuaTripIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/du-lich_/$tripId/them-muc': {
+      id: '/du-lich_/$tripId/them-muc'
+      path: '/du-lich/$tripId/them-muc'
+      fullPath: '/du-lich/$tripId/them-muc'
+      preLoaderRoute: typeof DuLichTripIdThemMucRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -696,6 +1016,17 @@ const SucKhoeRouteChildren: SucKhoeRouteChildren = {
 const SucKhoeRouteWithChildren =
   SucKhoeRoute._addFileChildren(SucKhoeRouteChildren)
 
+interface KyNiemGiaDinhAlbumRouteChildren {
+  KyNiemGiaDinhAlbumAlbumIdRoute: typeof KyNiemGiaDinhAlbumAlbumIdRoute
+}
+
+const KyNiemGiaDinhAlbumRouteChildren: KyNiemGiaDinhAlbumRouteChildren = {
+  KyNiemGiaDinhAlbumAlbumIdRoute: KyNiemGiaDinhAlbumAlbumIdRoute,
+}
+
+const KyNiemGiaDinhAlbumRouteWithChildren =
+  KyNiemGiaDinhAlbumRoute._addFileChildren(KyNiemGiaDinhAlbumRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   BaoAnRoute: BaoAnRoute,
@@ -703,6 +1034,7 @@ const rootRouteChildren: RootRouteChildren = {
   ChiTieuRoute: ChiTieuRoute,
   ConCaiRoute: ConCaiRoute,
   CongDongRoute: CongDongRoute,
+  DangPhatTrienRoute: DangPhatTrienRoute,
   DashboardRoute: DashboardRoute,
   DichVuRoute: DichVuRoute,
   DuLichRoute: DuLichRoute,
@@ -713,20 +1045,34 @@ const rootRouteChildren: RootRouteChildren = {
   LichGiaDinhRoute: LichGiaDinhRoute,
   LienHeRoute: LienHeRoute,
   LoginRoute: LoginRoute,
+  MuaSamHoRoute: MuaSamHoRoute,
   PortalRoute: PortalRoute,
   QrVaoRaRoute: QrVaoRaRoute,
   QuanLyGiupViecRoute: QuanLyGiupViecRoute,
+  QuetMaRoute: QuetMaRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SucKhoeRoute: SucKhoeRouteWithChildren,
   TaiKhoanRoute: TaiKhoanRoute,
   ThongBaoRoute: ThongBaoRoute,
   ThucPhamRoute: ThucPhamRoute,
+  BaoAnChatRoute: BaoAnChatRoute,
   CaiDatThongBaoRoute: CaiDatThongBaoRoute,
   ChiTieuScanRoute: ChiTieuScanRoute,
   ChiTieuThemRoute: ChiTieuThemRoute,
-  KyNiemGiaDinhAlbumRoute: KyNiemGiaDinhAlbumRoute,
+  ConCaiThemRoute: ConCaiThemRoute,
+  DuLichThemRoute: DuLichThemRoute,
+  KyNiemGiaDinhMomentIdRoute: KyNiemGiaDinhMomentIdRoute,
+  KyNiemGiaDinhAlbumRoute: KyNiemGiaDinhAlbumRouteWithChildren,
   KyNiemGiaDinhThemRoute: KyNiemGiaDinhThemRoute,
   KyNiemGiaDinhUploadRoute: KyNiemGiaDinhUploadRoute,
+  LichGiaDinhThemRoute: LichGiaDinhThemRoute,
+  MuaSamHoThemRoute: MuaSamHoThemRoute,
+  QuanLyGiupViecThemRoute: QuanLyGiupViecThemRoute,
+  ThucPhamThemRoute: ThucPhamThemRoute,
+  DuLichTripIdThemMucRoute: DuLichTripIdThemMucRoute,
+  DuLichSuaTripIdRoute: DuLichSuaTripIdRoute,
+  KyNiemGiaDinhAlbumTaoRoute: KyNiemGiaDinhAlbumTaoRoute,
+  LichGiaDinhSuaEventIdRoute: LichGiaDinhSuaEventIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -1,27 +1,26 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
-import { Plus, Trash2, Pencil, Refrigerator, ShoppingCart, ChefHat, Sparkles, Leaf, AlertTriangle } from "lucide-react";
+import { useMemo } from "react";
+import {
+  AlertTriangle,
+  Leaf,
+  Refrigerator,
+  ShoppingCart,
+  ChefHat,
+  Sparkles,
+  Plus,
+  Pencil,
+  Trash2,
+} from "lucide-react";
 import { toast } from "sonner";
 import { MobileShell } from "@shared/ui/mobile/MobileShell";
 import { PageHeader } from "@shared/ui/common/PageHeader";
 import { RoundedCard, SectionHeader } from "@shared/ui/common/RoundedCard";
 import { LoadingState, ErrorState, EmptyState } from "@shared/ui/common/States";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@shared/ui/ui/dialog";
-import { Button } from "@shared/ui/ui/button";
-import { Input } from "@shared/ui/ui/input";
-import { Label } from "@shared/ui/ui/label";
-import { Textarea } from "@shared/ui/ui/textarea";
 import { supabase } from "@shared/supabase/client";
 import { useFamilyContext } from "@/hooks/use-family-context";
-import {
-  listFood,
-  upsertFoodItem,
-  upsertShoppingItem,
-  toggleShopping,
-  deleteFoodRow,
-  suggestMeals,
-} from "@/api/food";
+import { listFood, toggleShopping, deleteFoodRow, suggestMeals } from "@/api/food";
+import { listCommunityServices, createServiceBooking } from "@/api/community";
 
 export const Route = createFileRoute("/thuc-pham")({
   head: () => ({ meta: [{ title: "Thực phẩm & Tủ lạnh — STOS Life" }] }),
@@ -40,11 +39,22 @@ const LOC_LABEL: Record<string, string> = {
   other: "Khác",
 };
 
-type Dlg = { type: "food"; row?: any } | { type: "shop"; row?: any } | null;
-
 function FoodPage() {
+  const navigate = useNavigate();
   const { familyId, isLoading: isFamLoading } = useFamilyContext();
-          const qc = useQueryClient();
+  const qc = useQueryClient();
+
+  const farmQ = useQuery({
+    queryKey: ["community-services"],
+    queryFn: () => listCommunityServices(),
+  });
+  const farmService = (farmQ.data ?? []).find((s: { slug: string }) => s.slug === "farm");
+
+  const farmBookMut = useMutation({
+    mutationFn: () => createServiceBooking({ service_id: farmService!.id, family_id: familyId! }),
+    onSuccess: () => toast.success("Đã đặt Farm Fresh — BQL sẽ liên hệ"),
+    onError: (e: Error) => toast.error(e.message),
+  });
 
   const q = useQuery({
     queryKey: ["food", familyId],
@@ -57,7 +67,10 @@ function FoodPage() {
     enabled: !!familyId,
   });
 
-  const [dlg, setDlg] = useState<Dlg>(null);
+  const goForm = (type: "food" | "shop", id?: string) => {
+    navigate({ to: "/thuc-pham/them", search: { type, ...(id ? { id } : {}) } });
+  };
+
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: ["food", familyId] });
     qc.invalidateQueries({ queryKey: ["meal-suggest", familyId] });
@@ -88,7 +101,7 @@ function FoodPage() {
 
   return (
     <MobileShell>
-      <PageHeader eyebrow="Family Core" title="Thực phẩm & Tủ lạnh" subtitle="Quản lý đồ ăn, hạn dùng, đi chợ" emoji="🥬" />
+      <PageHeader eyebrow="Family Core" title="Thực phẩm & Tủ lạnh" subtitle="Quản lý đồ ăn, hạn dùng, đi chợ" emoji="🥬" back="/gia-dinh" />
 
       {(isFamLoading || q.isLoading) && <section className="px-4"><LoadingState /></section>}
       {q.isError && <section className="px-4"><ErrorState message={(q.error as Error).message} /></section>}
@@ -116,7 +129,7 @@ function FoodPage() {
             <SectionHeader
               title="Tồn kho"
               subtitle={`${q.data.items.length} món`}
-              action={<AddBtn onClick={() => setDlg({ type: "food" })} />}
+              action={<AddBtn onClick={() => goForm("food")} />}
             />
             {q.data.items.length === 0 ? (
               <EmptyState icon={<Refrigerator className="h-5 w-5" />} title="Tủ lạnh trống" description="Thêm món để theo dõi hạn dùng" />
@@ -138,7 +151,12 @@ function FoodPage() {
                       {it.expires_on && (
                         <span className={`text-[10px] px-2 py-0.5 rounded-full ${status.cls}`}>{status.label}</span>
                       )}
-                      <RowActions onEdit={() => setDlg({ type: "food", row: it })} onDelete={() => delMut.mutate({ table: "food_items", id: it.id })} />
+                      <RowActions
+                        onEdit={() => goForm("food", it.id)}
+                        onDelete={() => {
+                          if (confirm("Xoá món này khỏi tồn kho?")) delMut.mutate({ table: "food_items", id: it.id });
+                        }}
+                      />
                     </RoundedCard>
                   );
                 })}
@@ -151,7 +169,7 @@ function FoodPage() {
             <SectionHeader
               title="Đi chợ"
               subtitle={`${q.data.shopping.filter((s) => !s.purchased).length} chưa mua`}
-              action={<AddBtn onClick={() => setDlg({ type: "shop" })} />}
+              action={<AddBtn onClick={() => goForm("shop")} />}
             />
             {q.data.shopping.length === 0 ? (
               <EmptyState icon={<ShoppingCart className="h-5 w-5" />} title="Chưa có món cần mua" />
@@ -166,7 +184,12 @@ function FoodPage() {
                         {[s.qty && `${s.qty}${s.unit ?? ""}`, s.category].filter(Boolean).join(" • ") || "—"}
                       </p>
                     </div>
-                    <RowActions onEdit={() => setDlg({ type: "shop", row: s })} onDelete={() => delMut.mutate({ table: "shopping_items", id: s.id })} />
+                    <RowActions
+                      onEdit={() => goForm("shop", s.id)}
+                      onDelete={() => {
+                        if (confirm("Xoá món khỏi danh sách đi chợ?")) delMut.mutate({ table: "shopping_items", id: s.id });
+                      }}
+                    />
                   </div>
                 ))}
               </RoundedCard>
@@ -192,7 +215,7 @@ function FoodPage() {
           </section>
 
           {/* FARM FRESH CTA */}
-          <section className="px-4 mt-6">
+          <section className="px-4 mt-6 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
             <RoundedCard className="bg-gradient-to-br from-emerald-500 to-emerald-700 text-white border-0">
               <div className="flex items-start gap-3">
                 <div className="h-10 w-10 rounded-2xl bg-white/20 grid place-items-center shrink-0">
@@ -202,8 +225,16 @@ function FoodPage() {
                   <p className="text-xs uppercase tracking-wider font-semibold text-white/80">Farm Fresh</p>
                   <p className="text-base font-bold mt-0.5">Rau củ tươi giao tận nhà</p>
                   <p className="text-xs text-white/80 mt-1">Đặt rau organic từ nông trại đối tác, giao trong ngày.</p>
-                  <button className="mt-3 h-9 px-4 rounded-xl bg-white text-emerald-700 text-xs font-semibold">
-                    Khám phá Farm Fresh
+                  <button
+                    type="button"
+                    className="mt-3 h-9 px-4 rounded-xl bg-white text-emerald-700 text-xs font-semibold"
+                    disabled={!familyId || !farmService || farmBookMut.isPending}
+                    onClick={() => {
+                      if (farmService) farmBookMut.mutate();
+                      else navigate({ to: "/dich-vu" });
+                    }}
+                  >
+                    {farmBookMut.isPending ? "Đang gửi…" : "Đặt Farm Fresh"}
                   </button>
                 </div>
               </div>
@@ -212,9 +243,6 @@ function FoodPage() {
         </>
       )}
 
-      {dlg && familyId && (
-        <FoodDialog state={dlg} familyId={familyId} onClose={() => setDlg(null)} onSaved={() => { setDlg(null); invalidate(); }} />
-      )}
     </MobileShell>
   );
 }
@@ -243,60 +271,5 @@ function RowActions({ onEdit, onDelete }: { onEdit: () => void; onDelete: () => 
       <button onClick={onEdit} className="h-7 w-7 grid place-items-center rounded-lg hover:bg-muted"><Pencil className="h-3.5 w-3.5" /></button>
       <button onClick={onDelete} className="h-7 w-7 grid place-items-center rounded-lg hover:bg-destructive/10 text-destructive"><Trash2 className="h-3.5 w-3.5" /></button>
     </div>
-  );
-}
-function FormField({ label, children }: { label: string; children: React.ReactNode }) {
-  return <div className="space-y-1"><Label className="text-xs">{label}</Label>{children}</div>;
-}
-
-function FoodDialog({ state, familyId, onClose, onSaved }: { state: NonNullable<Dlg>; familyId: string; onClose: () => void; onSaved: () => void }) {
-      const [form, setForm] = useState<any>(state.row ?? {});
-  const set = (k: string, v: any) => setForm((f: any) => ({ ...f, [k]: v }));
-
-  const mut = useMutation({
-    mutationFn: async () => {
-      const base = { ...form, family_id: familyId, id: state.row?.id ?? null };
-      if (state.type === "food") {
-        return upsertFoodItem({ ...base, qty: form.qty ? Number(form.qty) : null });
-      }
-      return upsertShoppingItem({ ...base, qty: form.qty ? Number(form.qty) : null, purchased: form.purchased ?? false });
-    },
-    onSuccess: () => { toast.success("Đã lưu"); onSaved(); },
-    onError: (e: Error) => toast.error(e.message),
-  });
-
-  return (
-    <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-md">
-        <DialogHeader><DialogTitle>{state.type === "food" ? (state.row ? "Sửa món" : "Thêm món vào tủ") : (state.row ? "Sửa món cần mua" : "Thêm món cần mua")}</DialogTitle></DialogHeader>
-        <div className="space-y-3">
-          <FormField label="Tên *"><Input value={form.name ?? ""} onChange={(e) => set("name", e.target.value)} /></FormField>
-          <div className="grid grid-cols-2 gap-2">
-            <FormField label="Số lượng"><Input type="number" step="0.1" value={form.qty ?? ""} onChange={(e) => set("qty", e.target.value)} /></FormField>
-            <FormField label="Đơn vị"><Input placeholder="kg, hộp, quả" value={form.unit ?? ""} onChange={(e) => set("unit", e.target.value)} /></FormField>
-          </div>
-          <FormField label="Loại"><Input placeholder="Rau, Thịt, Trái cây…" value={form.category ?? ""} onChange={(e) => set("category", e.target.value)} /></FormField>
-          {state.type === "food" && (
-            <>
-              <FormField label="Nơi cất">
-                <select className="w-full h-10 px-3 rounded-md border bg-background text-sm" value={form.location ?? ""} onChange={(e) => set("location", e.target.value || null)}>
-                  <option value="">—</option>
-                  <option value="fridge">Tủ lạnh</option>
-                  <option value="freezer">Tủ đông</option>
-                  <option value="pantry">Tủ bếp</option>
-                  <option value="other">Khác</option>
-                </select>
-              </FormField>
-              <FormField label="Hạn dùng"><Input type="date" value={form.expires_on ?? ""} onChange={(e) => set("expires_on", e.target.value)} /></FormField>
-              <FormField label="Ghi chú"><Textarea rows={2} value={form.notes ?? ""} onChange={(e) => set("notes", e.target.value)} /></FormField>
-            </>
-          )}
-        </div>
-        <DialogFooter>
-          <Button variant="ghost" onClick={onClose}>Huỷ</Button>
-          <Button onClick={() => mut.mutate()} disabled={mut.isPending}>{mut.isPending ? "Đang lưu…" : "Lưu"}</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
   );
 }

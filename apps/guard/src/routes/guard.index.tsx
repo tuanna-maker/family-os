@@ -1,6 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Shield, Bell, LogIn, LogOut, MapPin, AlertTriangle, Users } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@shared/ui/hooks/use-auth";
+import { listOpenResidentRequests } from "@/api/security";
+import { useGuardNotifications } from "@/hooks/use-guard-notifications";
 
 export const Route = createFileRoute("/guard/")({
   head: () => ({ meta: [{ title: "Bảo vệ — Trang chủ" }] }),
@@ -9,6 +12,12 @@ export const Route = createFileRoute("/guard/")({
 
 function GuardHome() {
   const { user } = useAuth();
+  const { unread } = useGuardNotifications();
+  const { data: openRequests = [] } = useQuery({
+    queryKey: ["guard-open-requests"],
+    queryFn: () => listOpenResidentRequests(),
+    refetchInterval: 60_000,
+  });
   const fullName =
     (user?.user_metadata as { full_name?: string } | null)?.full_name ?? "Nhân viên bảo vệ";
   const initials = fullName
@@ -38,9 +47,11 @@ function GuardHome() {
           className="relative h-10 w-10 rounded-full bg-card border border-border grid place-items-center"
         >
           <Bell className="h-4 w-4" />
-          <span className="absolute -top-1 -right-1 h-4 min-w-4 px-1 rounded-full bg-emergency text-white text-[9px] font-bold grid place-items-center">
-            3
-          </span>
+          {unread > 0 && (
+            <span className="absolute -top-1 -right-1 h-4 min-w-4 px-1 rounded-full bg-emergency text-white text-[9px] font-bold grid place-items-center">
+              {unread > 9 ? "9+" : unread}
+            </span>
+          )}
         </Link>
       </header>
 
@@ -105,7 +116,11 @@ function GuardHome() {
           </div>
           <div>
             <p className="text-base font-bold tracking-wide">YÊU CẦU CƯ DÂN</p>
-            <p className="text-[12px] text-white/80">Xem & xử lý</p>
+            <p className="text-[12px] text-white/80">
+              {openRequests.length > 0
+                ? `${openRequests.length} yêu cầu đang mở · Xem & xử lý`
+                : "Xem & xử lý"}
+            </p>
           </div>
         </Link>
       </section>

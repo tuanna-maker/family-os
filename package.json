@@ -4,7 +4,8 @@
   "type": "module",
   "workspaces": [
     "apps/*",
-    "packages/*"
+    "packages/*",
+    "mobile/*"
   ],
   "scripts": {
     "dev:family": "npm run dev -w @apps/family",
@@ -22,6 +23,10 @@
     "android:guard": "npm run build:guard && node scripts/android-build.mjs guard assembleRelease",
     "android:family:debug": "npm run build:family && node scripts/android-build.mjs family assembleDebug",
     "android:guard:debug": "npm run build:guard && node scripts/android-build.mjs guard assembleDebug",
+    "mobile:family": "npm run start -w @mobile/family",
+    "mobile:family:android": "npm run android -w @mobile/family",
+    "android:mobile-family": "node scripts/android-build.mjs mobile-family assembleRelease",
+    "android:mobile-family:debug": "node scripts/android-build.mjs mobile-family assembleDebug",
     "ios:family": "npm run build:family && npm run cap:open:ios -w @apps/family",
     "ios:guard": "npm run build:guard && npm run cap:open:ios -w @apps/guard",
     "native:setup": "node scripts/setup-native.mjs",

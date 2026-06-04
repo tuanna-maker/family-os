@@ -103,6 +103,32 @@ export async function createElderlyProfile(data: any) {
     return { id: row.id };
 }
 
+export async function updateElderlyProfile(data: {
+  id: string;
+  name?: string;
+  avatar?: string;
+  age?: number | null;
+  relation?: string | null;
+  phone?: string | null;
+  address?: string | null;
+  conditions?: string[];
+  doctor?: string | null;
+}) {
+  const { supabase } = await requireUser();
+  const payload: Record<string, unknown> = {};
+  if (data.name !== undefined) payload.name = data.name;
+  if (data.avatar !== undefined) payload.avatar = data.avatar;
+  if (data.age !== undefined) payload.age = data.age;
+  if (data.relation !== undefined) payload.relation = data.relation;
+  if (data.phone !== undefined) payload.phone = data.phone;
+  if (data.address !== undefined) payload.address = data.address;
+  if (data.conditions !== undefined) payload.conditions = data.conditions;
+  if (data.doctor !== undefined) payload.doctor = data.doctor;
+  const { error } = await supabase.from("elderly_profiles").update(payload).eq("id", data.id);
+  if (error) throw new Error(error.message);
+  return { ok: true };
+}
+
 export async function deleteElderlyProfile(data: any) {
   const { supabase, userId } = await requireUser();
 

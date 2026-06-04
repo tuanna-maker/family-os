@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { requireUser } from "@shared/supabase/auth";
+import { firePushDispatch } from "@shared/supabase";
 import { sosDispatchSchema, SOS_SCHEMA_VERSION } from "@/features/security-core/sosSchema";
 
 export type SecurityRequest = {
@@ -92,6 +93,8 @@ export async function createSosDispatch(data: any) {
       } as never,
     });
 
+    firePushDispatch();
+
     return {
       id: row.id as string,
       ticket_code,
@@ -100,24 +103,51 @@ export async function createSosDispatch(data: any) {
 }
 
 
-export async function createSecurityRequest(data: any) {
+export async function createSecurityRequest(data: {
+  request_type: string;
+  building?: string | null;
+  apartment?: string | null;
+  elderly_id?: string | null;
+  payload?: Record<string, unknown>;
+}) {
   const { supabase, userId } = await requireUser();
   const { data: project } = await supabase.from("projects").select("id").limit(1).maybeSingle();
+  const payload = {
+    ...(data.payload ?? {}),
+    ...(data.elderly_id ? { elderly_id: data.elderly_id } : {}),
+  };
 
-    const { data: row, error } = await supabase
-      .from("security_requests")
-      .insert({
-        requester_id: userId,
-        request_type: data.request_type,
-        building: data.building ?? null,
-        apartment: data.apartment ?? null,
-        payload: (data.payload ?? {}) as never,
-        ...(project ? { project_id: project.id } : {}),
-      } as any)
-      .select("id")
-      .single();
-    if (error) throw new Error(error.message);
-    return { id: row.id };
+  const { data: row, error } = await supabase
+    .from("security_requests")
+    .insert({
+      requester_id: userId,
+      request_type: data.request_type,
+      status: "open",
+      building: data.building ?? null,
+      apartment: data.apartment ?? null,
+      payload: payload as never,
+      ...(project ? { project_id: project.id } : {}),
+    } as any)
+    .select("id")
+    .single();
+  if (error) throw new Error(error.message);
+  firePushDispatch();
+  return { id: row.id };
+}
+
+/** Cư dân hủy yêu cầu khi còn trạng thái open. */
+export async function cancelSecurityRequest(data: { id: string }) {
+  const { supabase, userId } = await requireUser();
+  const { id } = z.object({ id: z.string().uuid() }).parse(data);
+  const { data: row, error: readErr } = await supabase
+    .from("security_requests")
+    .select("status, requester_id")
+    .eq("id", id)
+    .single();
+  if (readErr) throw new Error(readErr.message);
+  if (row?.requester_id !== userId) throw new Error("Không có quyền hủy yêu cầu này");
+  if (row?.status !== "open") throw new Error("Chỉ hủy được yêu cầu đang chờ xử lý");
+  return updateSosStatus({ id, status: "cancelled", note: "Cư dân hủy" });
 }
 
 export async function listSecurityRequests() {

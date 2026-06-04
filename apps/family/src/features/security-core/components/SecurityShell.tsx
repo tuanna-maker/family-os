@@ -1,17 +1,14 @@
 import type { ReactNode } from "react";
-import { BottomNav } from "@shared/ui/mobile/BottomNav";
 import { SideNav } from "@shared/ui/mobile/SideNav";
 import { SHELL_OUTER, SHELL_CONTAINER } from "@shared/ui/mobile/shellLayout";
 import { ShieldCheck, ArrowLeft } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { cn } from "@shared/utils";
 
 /**
  * SecurityShell — vỏ chung cho mọi màn thuộc Security Core.
- * Bọc `dark` cục bộ trong wrapper thay vì đẩy lên <html> để
- * không ghi đè theme user chọn (Dark/Light toggle vẫn nhất quán
- * khi điều hướng vào/ra Security Core).
+ * Không hiển thị bottom nav (màn chi tiết / luồng tập trung).
  */
-import { Link } from "@tanstack/react-router";
-
 export function SecurityShell({
   title,
   subtitle,
@@ -26,7 +23,12 @@ export function SecurityShell({
   return (
     <div className={SHELL_OUTER}>
       <SideNav />
-      <div className={SHELL_CONTAINER}>
+      <div
+        className={cn(
+          SHELL_CONTAINER,
+          "pb-[max(1.5rem,env(safe-area-inset-bottom,0px))] md:pb-12",
+        )}
+      >
         <header className="px-5 md:px-0 pt-6 pb-2">
           <div className="flex items-start gap-3">
             {back && (
@@ -49,8 +51,6 @@ export function SecurityShell({
         </header>
         {children}
       </div>
-      <BottomNav />
     </div>
   );
 }
-

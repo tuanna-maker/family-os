@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
@@ -82,9 +82,40 @@ function SecurityPage() {
       <section className="px-4 mt-4 grid grid-cols-2 gap-3">
         {securityServiceGrid.map(({ id, icon: Icon, label, desc, color, bg }) => {
           const type = TYPE_MAP[id] ?? "other";
+          if (id === "chat") {
+            return (
+              <Link
+                key={id}
+                to="/bao-an/chat"
+                className="rounded-3xl bg-card border border-border p-4 text-left active:scale-[0.98] transition block"
+              >
+                <div className={`h-11 w-11 rounded-2xl grid place-items-center ${bg}`}>
+                  <Icon className={`h-5 w-5 ${color}`} />
+                </div>
+                <p className="mt-3 text-sm font-semibold">{label}</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">{desc}</p>
+              </Link>
+            );
+          }
+          if (id === "call") {
+            return (
+              <a
+                key={id}
+                href={`tel:${securityMeta.hotline.replace(/\s/g, "")}`}
+                className="rounded-3xl bg-card border border-border p-4 text-left active:scale-[0.98] transition block"
+              >
+                <div className={`h-11 w-11 rounded-2xl grid place-items-center ${bg}`}>
+                  <Icon className={`h-5 w-5 ${color}`} />
+                </div>
+                <p className="mt-3 text-sm font-semibold">{label}</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">{desc}</p>
+              </a>
+            );
+          }
           return (
             <button
               key={id}
+              type="button"
               onClick={() => trigger(type, label)}
               disabled={pending === type}
               className="rounded-3xl bg-card border border-border p-4 text-left active:scale-[0.98] transition disabled:opacity-70"

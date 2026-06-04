@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { requireUser } from "@shared/supabase/auth";
+import { firePushDispatch } from "@shared/supabase";
 import { sosDispatchSchema, SOS_SCHEMA_VERSION } from "@/features/security-ops/dashboard/sosSchema";
 
 export type SecurityRequest = {
@@ -11,6 +12,7 @@ export type SecurityRequest = {
   requester_id: string | null;
   created_at: string;
   resolved_at: string | null;
+  payload?: Record<string, unknown> | null;
 };
 
 const TYPES = ["sos", "fire", "intrusion", "noise", "package", "other"] as const;
@@ -89,6 +91,8 @@ export async function createSosDispatch(data: any) {
       } as never,
     });
 
+    firePushDispatch();
+
     return {
       id: row.id as string,
       ticket_code,
@@ -119,11 +123,16 @@ export async function listSecurityRequests() {
 
         const { data, error } = await supabase
       .from("security_requests")
-      .select("id, request_type, status, building, apartment, requester_id, created_at, resolved_at")
+      .select("id, request_type, status, building, apartment, requester_id, created_at, resolved_at, payload")
       .order("created_at", { ascending: false })
       .limit(50);
     if (error) throw new Error(error.message);
-    return data ?? [];
+    return (data ?? []) as SecurityRequest[];
+}
+
+export async function listOpenResidentRequests() {
+  const rows = await listSecurityRequests();
+  return rows.filter((r) => r.status === "open" || r.status === "in_progress");
 }
 
 export async function updateSecurityRequest(data: any) {
@@ -143,6 +152,7 @@ export async function updateSecurityRequest(data: any) {
       _target_id: data.id,
       _metadata: {},
     });
+    firePushDispatch();
     return { ok: true };
 }
 
@@ -388,6 +398,7 @@ export async function updateSosStatus(data: any) {
       to_status: data.status,
       note: data.note ?? null,
     });
+    firePushDispatch();
     return { ok: true };
 }
 

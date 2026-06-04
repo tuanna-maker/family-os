@@ -9,7 +9,7 @@ import { initSentry } from "./init-sentry";
 import { routeTree } from "./routeTree.gen";
 import "./styles.css";
 
-initSentry();
+void initSentry();
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, staleTime: 30_000 } },

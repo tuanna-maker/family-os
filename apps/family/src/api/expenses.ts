@@ -92,6 +92,29 @@ export async function createExpense(data: any) {
     return { id: inserted.id };
 }
 
+export async function updateExpense(data: {
+  id: string;
+  title: string;
+  category: string;
+  amount: number;
+  spent_on: string;
+  note?: string | null;
+}) {
+  const { supabase } = await requireUser();
+  const { error } = await supabase
+    .from("expenses")
+    .update({
+      title: data.title,
+      category: data.category,
+      amount: data.amount,
+      spent_on: data.spent_on,
+      note: data.note ?? null,
+    })
+    .eq("id", data.id);
+  if (error) throw new Error(error.message);
+  return { ok: true };
+}
+
 export async function deleteExpense(data: any) {
   const { supabase, userId } = await requireUser();
 

@@ -1,6 +1,18 @@
 import { describe, expect, it } from "vitest";
+import { normalizeQrPayload, isHelperShiftToken } from "@/lib/qr-payload";
 
-/** QR guest pass — Phase 2 stub contract tests */
+describe("qr-payload", () => {
+  it("extracts pass from URL query", () => {
+    const code = "abc123deadbeef";
+    expect(normalizeQrPayload(`https://stos.life/pass?pass=${code}`)).toBe(code);
+  });
+
+  it("detects helper tokens", () => {
+    expect(isHelperShiftToken("HLP-abc-2026-06-04-IN-XYZ")).toBe(true);
+  });
+});
+
+/** QR guest pass — TTL contract */
 describe("qr-vao-ra (stub)", () => {
   it("guest QR expires after configured TTL", () => {
     const TTL_MS = 24 * 60 * 60 * 1000;

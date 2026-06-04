@@ -93,22 +93,91 @@ const MEMBER_AVATAR: Record<string, string> = {
 
 function HealthOverview() {
   const { familyId } = useFamilyContext();
-    const q = useQuery({
+  const q = useQuery({
     queryKey: ["health-overview", familyId],
     queryFn: () => listHealth({ family_id: familyId! }),
     enabled: !!familyId,
   });
   const [activeMember, setActiveMember] = useState("all");
 
+  const memberTabs = useMemo(() => {
+    const profiles = q.data?.profiles ?? [];
+    const tabs = [{ id: "all", name: "Cả nhà", img: FAMILY_MEMBERS[0].img, dot: null as string | null }];
+    for (const p of profiles) {
+      tabs.push({
+        id: p.name,
+        name: p.name,
+        img: MEMBER_AVATAR[p.name] ?? FAMILY_MEMBERS[1].img,
+        dot: "bg-brand",
+      });
+    }
+    if (tabs.length === 1) return FAMILY_MEMBERS;
+    return tabs;
+  }, [q.data?.profiles]);
+
   const upcomingAppts = useMemo(() => {
     const list = q.data?.appts ?? [];
     const now = Date.now();
-    return list
-      .filter((a) => new Date(a.scheduled_at).getTime() >= now && a.status !== "cancelled")
-      .slice(0, 2);
-  }, [q.data]);
+    let filtered = list.filter((a) => new Date(a.scheduled_at).getTime() >= now && a.status !== "cancelled");
+    if (activeMember !== "all") filtered = filtered.filter((a) => a.member_name === activeMember);
+    return filtered.slice(0, 2);
+  }, [q.data, activeMember]);
 
-  const meds = (q.data?.meds ?? []).filter((m) => m.active).slice(0, 3);
+  const meds = useMemo(() => {
+    let list = (q.data?.meds ?? []).filter((m) => m.active);
+    if (activeMember !== "all") list = list.filter((m) => m.member_name === activeMember);
+    return list.slice(0, 3);
+  }, [q.data, activeMember]);
+
+  const profileCount = q.data?.profiles?.length ?? 0;
+  const records = q.data?.records ?? [];
+  const recordCounts = useMemo(() => {
+    const byKind = (k: string) => records.filter((r) => r.kind === k).length;
+    return {
+      lab: byKind("lab") || records.filter((r) => r.title.includes("xét nghiệm")).length,
+      rx: byKind("prescription") || records.filter((r) => r.title.includes("Đơn")).length,
+      allergy: (q.data?.profiles ?? []).filter((p) => p.allergies).length,
+    };
+  }, [q.data, records]);
+
+  const dynamicInsights = useMemo(() => {
+    const profiles = q.data?.profiles ?? [];
+    const lines: { emoji: string; text: string }[] = [];
+    for (const p of profiles.slice(0, 2)) {
+      if (p.conditions) lines.push({ emoji: "❤️", text: `${p.name}: theo dõi ${p.conditions}.` });
+      else lines.push({ emoji: "✅", text: `${p.name} đang khỏe mạnh, duy trì thói quen tốt.` });
+    }
+    if (upcomingAppts[0]) {
+      lines.push({
+        emoji: "📅",
+        text: `Lịch khám ${upcomingAppts[0].member_name} vào ${formatApptShort(upcomingAppts[0].scheduled_at)}.`,
+      });
+    }
+    return lines.length > 0 ? lines : INSIGHTS;
+  }, [q.data, upcomingAppts]);
+
+  const dynamicActivity = useMemo(() => {
+    const items: typeof ACTIVITY = [];
+    for (const a of upcomingAppts.slice(0, 1)) {
+      items.push({
+        icon: Calendar,
+        tint: "bg-tint-purple",
+        color: "text-[oklch(0.65_0.2_295)]",
+        text: `Lịch khám ${a.member_name}${a.doctor ? ` — ${a.doctor}` : ""}`,
+        time: formatApptShort(a.scheduled_at).split(" • ")[0] ?? "Sắp tới",
+      });
+    }
+    for (const m of meds.slice(0, 1)) {
+      items.push({
+        icon: Pill,
+        tint: "bg-tint-green",
+        color: "text-success",
+        text: `${m.member_name} uống ${m.medicine} lúc ${(m.time_of_day ?? "08:00").slice(0, 5)}`,
+        time: "Hôm nay",
+      });
+    }
+    return items.length > 0 ? items : ACTIVITY;
+  }, [upcomingAppts, meds]);
 
   return (
       <MobileShell>
@@ -131,7 +200,7 @@ function HealthOverview() {
         {/* Member tabs */}
         <section className="px-4">
           <div className="flex gap-3.5 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-none">
-            {FAMILY_MEMBERS.map((m) => {
+            {memberTabs.map((m) => {
               const active = activeMember === m.id;
               return (
                 <button
@@ -150,12 +219,12 @@ function HealthOverview() {
                 </button>
               );
             })}
-            <button className="flex flex-col items-center gap-1.5 shrink-0">
+            <Link to="/suc-khoe/quan-ly" className="flex flex-col items-center gap-1.5 shrink-0">
               <div className="h-[60px] w-[60px] rounded-2xl bg-muted/40 border border-border grid place-items-center">
                 <Plus className="h-5 w-5 text-muted-foreground" />
               </div>
               <span className="text-[11px] font-medium text-muted-foreground">Thêm người</span>
-            </button>
+            </Link>
           </div>
         </section>
 
@@ -167,7 +236,12 @@ function HealthOverview() {
               <ShieldCheck className="h-6 w-6 text-success" />
               <p className="text-[28px] font-bold text-success leading-none">Tốt</p>
             </div>
-            <p className="text-[11px] text-muted-foreground mt-2">Cập nhật 09:30, 20/05/2024</p>
+            <p className="text-[11px] text-muted-foreground mt-2">
+              {profileCount} hồ sơ · {meds.length} nhắc thuốc hôm nay · {upcomingAppts.length} lịch sắp tới
+            </p>
+            <Link to="/suc-khoe/quan-ly" className="text-[11px] text-brand font-semibold mt-1 inline-block">
+              Quản lý hồ sơ chi tiết →
+            </Link>
             <div className="absolute top-4 right-4 h-[90px] w-[110px] grid place-items-center opacity-90">
               <div className="absolute inset-0 rounded-full bg-success/10 blur-xl" />
               <svg viewBox="0 0 110 70" className="relative h-full w-full text-success">
@@ -235,7 +309,10 @@ function HealthOverview() {
               className="h-full"
             >
               <ul className="space-y-3 mt-3">
-                {(upcomingAppts.length > 0 ? upcomingAppts : SAMPLE_APPTS).map((a, i) => (
+                {upcomingAppts.length === 0 ? (
+                  <li className="text-[11px] text-muted-foreground">Chưa có lịch khám sắp tới.</li>
+                ) : (
+                  upcomingAppts.map((a, i) => (
                   <li key={a.id ?? i} className="flex items-start gap-2.5">
                     <img src={MEMBER_AVATAR[a.member_name] ?? FAMILY_MEMBERS[0].img} alt="" className="h-9 w-9 rounded-full object-cover shrink-0" />
                     <div className="flex-1 min-w-0">
@@ -246,7 +323,8 @@ function HealthOverview() {
                     </div>
                     <ChevronRight className="h-3.5 w-3.5 text-muted-foreground mt-2 shrink-0" />
                   </li>
-                ))}
+                  ))
+                )}
               </ul>
             </CollapsibleSection>
           </div>
@@ -260,7 +338,10 @@ function HealthOverview() {
               className="h-full"
             >
               <ul className="space-y-3 mt-3">
-                {(meds.length > 0 ? meds : SAMPLE_MEDS).map((m, i) => (
+                {meds.length === 0 ? (
+                  <li className="text-[11px] text-muted-foreground">Chưa có nhắc thuốc.</li>
+                ) : (
+                  meds.map((m, i) => (
                   <li key={m.id ?? i} className="flex items-start gap-2.5">
                     <img src={MEMBER_AVATAR[m.member_name] ?? FAMILY_MEMBERS[0].img} alt="" className="h-9 w-9 rounded-full object-cover shrink-0" />
                     <div className="flex-1 min-w-0">
@@ -273,7 +354,8 @@ function HealthOverview() {
                       <p className="text-[9px] text-muted-foreground mt-1">Còn {medCountdown(m.time_of_day)}</p>
                     </div>
                   </li>
-                ))}
+                  ))
+                )}
               </ul>
             </CollapsibleSection>
           </div>
@@ -297,7 +379,7 @@ function HealthOverview() {
                   }
                 >
                   <ul className="mt-2 space-y-1.5">
-                    {INSIGHTS.map((i, k) => (
+                    {dynamicInsights.map((i, k) => (
                       <li key={k} className="text-[11px] leading-snug">
                         <span className="mr-1.5">{i.emoji}</span>{i.text}
                       </li>
@@ -317,7 +399,13 @@ function HealthOverview() {
             action={<Link to="/suc-khoe/quan-ly" className="text-[12px] font-semibold text-brand">Xem tất cả</Link>}
           >
             <div className="grid grid-cols-5 gap-2 mt-3">
-              {RECORDS.map((r) => (
+              {[
+                { icon: TestTube, label: "Kết quả xét nghiệm", detail: `${recordCounts.lab || 0} kết quả` },
+                { icon: ClipboardList, label: "Đơn thuốc", detail: `${recordCounts.rx || 0} đơn thuốc` },
+                { icon: Syringe, label: "Tiêm chủng", detail: "Đầy đủ" },
+                { icon: AlertTriangle, label: "Dị ứng", detail: `${recordCounts.allergy || 0} dị ứng đã ghi nhận` },
+                { icon: FileHeart, label: "Bệnh sử", detail: profileCount > 0 ? `${profileCount} hồ sơ` : "Chưa có" },
+              ].map((r) => (
                 <Link key={r.label} to="/suc-khoe/quan-ly" className="block rounded-2xl bg-card border border-border p-2.5 text-center">
                   <div className="h-10 grid place-items-center">
                     <r.icon className="h-6 w-6 text-[oklch(0.65_0.2_295)]" strokeWidth={2.2} />
@@ -338,7 +426,7 @@ function HealthOverview() {
             action={<button className="text-[12px] font-semibold text-brand">Xem tất cả</button>}
           >
             <ul className="space-y-2.5 mt-3">
-              {ACTIVITY.map((a, i) => (
+              {dynamicActivity.map((a, i) => (
                 <li key={i} className="flex items-center gap-3 rounded-2xl bg-card border border-border px-3 py-2.5">
                   <div className={cn("h-8 w-8 rounded-xl grid place-items-center shrink-0", a.tint)}>
                     <a.icon className={cn("h-4 w-4", a.color)} />
@@ -353,17 +441,6 @@ function HealthOverview() {
       </MobileShell>
   );
 }
-
-const SAMPLE_APPTS = [
-  { id: "s1", member_name: "Anh Hùng", scheduled_at: new Date(Date.now() + 4 * 86400000).toISOString(), location: "Bệnh viện Vinmec", title: "Khám tổng quát định kỳ" } as any,
-  { id: "s2", member_name: "Chị Lan", scheduled_at: new Date(Date.now() + 5 * 86400000).toISOString(), location: "Nha khoa Parkway", title: "Khám răng định kỳ" } as any,
-];
-
-const SAMPLE_MEDS = [
-  { id: "m1", member_name: "Bé Minh", medicine: "Vitamin D3", dosage: "1 viên", notes: "Sau ăn sáng", time_of_day: "08:00", active: true } as any,
-  { id: "m2", member_name: "Bé An", medicine: "Siro ho", dosage: "5ml", notes: "Sau ăn tối", time_of_day: "20:00", active: true } as any,
-  { id: "m3", member_name: "Anh Hùng", medicine: "Omega 3", dosage: "1 viên", notes: "Sau ăn tối", time_of_day: "20:00", active: true } as any,
-];
 
 function formatApptShort(iso: string) {
   const d = new Date(iso);

@@ -88,6 +88,7 @@ export function SosTicketDrawer({
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: ["sos-events", row?.id] });
     qc.invalidateQueries({ queryKey: ["open-sos"] });
+    qc.invalidateQueries({ queryKey: ["guard-open-requests"] });
   };
 
   const statusMut = useMutation({

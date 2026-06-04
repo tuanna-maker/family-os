@@ -64,23 +64,34 @@ const EventInput = z.object({
 
 export async function upsertFamilyEvent(data: any) {
   const { supabase, userId } = await requireUser();
-    const payload = { ...data, created_by: userId };
-    if (data.id) {
-      const { id, ...rest } = payload;
-      const { error } = await supabase
-        .from("family_events")
-        .update(rest)
-        .eq("id", id!);
-      if (error) throw new Error(error.message);
-      return { ok: true, id };
-    }
-    const { data: row, error } = await supabase
-      .from("family_events")
-      .insert(payload)
-      .select("id")
-      .single();
+  const parsed = EventInput.parse(data);
+  const payload = {
+    family_id: parsed.family_id,
+    title: parsed.title,
+    notes: parsed.notes ?? null,
+    category: parsed.category,
+    member_scope: parsed.member_scope,
+    member_name: parsed.member_name ?? null,
+    starts_at: parsed.starts_at,
+    ends_at: parsed.ends_at ?? null,
+    all_day: parsed.all_day,
+    location: parsed.location ?? null,
+    remind_minutes_before: parsed.remind_minutes_before ?? null,
+    created_by: userId,
+  };
+  if (parsed.id) {
+    const { created_by: _cb, ...updatePayload } = payload;
+    const { error } = await supabase.from("family_events").update(updatePayload).eq("id", parsed.id);
     if (error) throw new Error(error.message);
-    return { ok: true, id: row.id as string };
+    return { ok: true, id: parsed.id };
+  }
+  const { data: row, error } = await supabase
+    .from("family_events")
+    .insert(payload)
+    .select("id")
+    .single();
+  if (error) throw new Error(error.message);
+  return { ok: true, id: row.id as string };
 }
 
 export async function deleteFamilyEvent(data: any) {
