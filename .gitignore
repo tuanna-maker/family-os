@@ -32,6 +32,11 @@ test-results/
 **/android/.gradle/
 **/android/app/build/
 **/ios/App/Pods/
+
+# Android APK / AAB (build artifacts — không đẩy lên GitHub)
+*.apk
+*.aab
+**/release/
 .vscode/*
 !.vscode/extensions.json
 .idea
