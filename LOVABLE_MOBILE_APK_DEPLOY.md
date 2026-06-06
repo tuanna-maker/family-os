@@ -40,7 +40,24 @@ Upload lại 2 file vào bucket mobile-apks (private, upsert):
 (đính kèm file từ web/public/downloads/)
 ```
 
+## Publish web (bắt buộc — nếu 404)
+
+APK đã có trên Supabase nhưng **production chưa có route** nếu chưa publish code web.
+Gửi Lovable:
+
+```text
+Publish/deploy web app lên stoslife.lovable.app với các file:
+- src/routes/api/public/downloads/guard.ts
+- src/routes/api/public/downloads/family.ts
+- src/lib/serve-apk.ts (signed URL bucket mobile-apks)
+- src/lib/mobile-apk.ts
+- src/routes/index.tsx (section QR)
+
+Verify sau publish:
+GET https://stoslife.lovable.app/api/public/downloads/family → redirect tải APK (không 404)
+```
+
 ## Lưu ý PWA
 
-Nếu điện thoại đã cài PWA "STOS Life", có thể bị chuyển về `/login?source=pwa-family`.
-Cách xử lý: gỡ PWA cũ hoặc mở link tải bằng Chrome (không qua shortcut PWA).
+`manifest-family.json` scope đã thu hẹp `/gia-dinh` — không chặn `/api/public/downloads/*`.
+Nếu vẫn bị redirect login: gỡ PWA "STOS Life" cũ trên điện thoại rồi thử lại.
