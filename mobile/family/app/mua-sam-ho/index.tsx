@@ -3,7 +3,7 @@ import { useRouter } from "expo-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, ShoppingBag, Trash2 } from "lucide-react-native";
 import { Screen } from "@mobile/components/Screen";
-import { Card, PageHeader, PrimaryButton } from "@mobile/components/ui";
+import { Card, HeaderIconButton, PageHeader, PrimaryButton } from "@mobile/components/ui";
 import { SectionHeader } from "@mobile/components/SectionHeader";
 import { LoadingState, EmptyState } from "@mobile/components/states";
 import { colors, radius } from "@mobile/theme/colors";
@@ -55,7 +55,20 @@ export default function MuaSamHoScreen() {
 
   return (
     <Screen contentStyle={{ paddingTop: 0 }}>
-      <PageHeader eyebrow="Dịch vụ" title="Mua sắm hộ" back="/(tabs)/gia-dinh" />
+      <PageHeader
+        eyebrow="Dịch vụ"
+        title="Mua sắm hộ"
+        back="/(tabs)/gia-dinh"
+        right={
+          <HeaderIconButton
+            variant="primary"
+            accessibilityLabel="Thêm món"
+            onPress={() => router.push("/mua-sam-ho/them")}
+          >
+            <Plus color={colors.white} size={20} />
+          </HeaderIconButton>
+        }
+      />
 
       {(famLoading || q.isLoading) && <LoadingState />}
 
@@ -104,12 +117,9 @@ export default function MuaSamHoScreen() {
             ))
           )}
 
-          <Pressable style={styles.fab} onPress={() => router.push("/mua-sam-ho/them")}>
-            <Plus color={colors.white} size={22} />
-          </Pressable>
         </>
       )}
-      <View style={{ height: 48 }} />
+      <View style={{ height: 32 }} />
     </Screen>
   );
 }
@@ -132,15 +142,4 @@ const styles = StyleSheet.create({
   purchased: { textDecorationLine: "line-through", color: colors.muted },
   sub: { fontSize: 11, color: colors.muted },
   link: { color: colors.brand, fontWeight: "600", fontSize: 12 },
-  fab: {
-    position: "absolute",
-    right: 20,
-    bottom: 24,
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: colors.brandDeep,
-    alignItems: "center",
-    justifyContent: "center",
-  },
 });

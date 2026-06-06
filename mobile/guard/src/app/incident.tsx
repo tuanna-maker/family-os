@@ -1,107 +1,157 @@
-import React, { useState } from 'react';
-import { View, Text, ScrollView, Alert, Image, TouchableOpacity } from 'react-native';
-import { useRouter } from 'expo-router';
-import * as ImagePicker from 'expo-image-picker';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
-import { Camera, X } from 'lucide-react-native';
+import React, { useState } from "react";
+import { View, Text, ScrollView, TouchableOpacity, Alert } from "react-native";
+import { useRouter } from "expo-router";
+import {
+  AlertTriangle,
+  Flame,
+  Wrench,
+  Package,
+  Car,
+  MoreHorizontal,
+} from "lucide-react-native";
+import { SubHeader } from "@mobile/components/SubHeader";
+import { Input } from "@mobile/components/ui/Input";
+import { Button } from "@mobile/components/ui/Button";
+import { createSecurityRequest } from "@guard/api/security";
+
+const TYPES = [
+  { icon: AlertTriangle, label: "An ninh", key: "intrusion", color: "#ef4444", bg: "#fee2e2" },
+  { icon: Flame, label: "PCCC", key: "fire", color: "#f59e0b", bg: "#fef3c7" },
+  { icon: Wrench, label: "Kỹ thuật", key: "other", color: "#2563eb", bg: "#dbeafe" },
+  { icon: Package, label: "Mất mát", key: "other", color: "#d97706", bg: "#ffedd5" },
+  { icon: Car, label: "Giao thông", key: "other", color: "#7c3aed", bg: "#ede9fe" },
+  { icon: MoreHorizontal, label: "Khác", key: "other", color: "#6b7280", bg: "#f3f4f6" },
+] as const;
 
 export default function IncidentReportScreen() {
   const router = useRouter();
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [images, setImages] = useState<string[]>([]);
+  const [step, setStep] = useState(0);
+  const [selected, setSelected] = useState<(typeof TYPES)[number] | null>(null);
+  const [detail, setDetail] = useState("");
+  const [location, setLocation] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const takePhoto = async () => {
-    let result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      quality: 0.5,
-    });
-
-    if (!result.canceled && result.assets && result.assets.length > 0) {
-      setImages([...images, result.assets[0].uri]);
-    }
-  };
-
-  const removeImage = (index: number) => {
-    setImages(images.filter((_, i) => i !== index));
-  };
-
-  const handleSubmit = () => {
-    if (!title || !description) {
-      Alert.alert('Lỗi', 'Vui lòng nhập đầy đủ tiêu đề và mô tả sự cố.');
+  const handleSubmit = async () => {
+    if (!selected || !detail.trim()) {
+      Alert.alert("Lỗi", "Vui lòng chọn loại sự cố và mô tả chi tiết.");
       return;
     }
     setLoading(true);
-    // Giả lập API
-    setTimeout(() => {
-      setLoading(false);
-      Alert.alert('Thành công', 'Đã gửi báo cáo sự cố!', [
-        { text: 'OK', onPress: () => router.back() }
+    try {
+      await createSecurityRequest({
+        request_type: selected.key,
+        building: location.trim() || null,
+        apartment: null,
+        payload: { incident_category: selected.label, description: detail.trim() },
+      });
+      Alert.alert("Thành công", "Đã gửi báo cáo sự cố!", [
+        { text: "OK", onPress: () => router.back() },
       ]);
-    }, 1500);
+    } catch (e) {
+      Alert.alert("Lỗi", (e as Error).message || "Không gửi được báo cáo");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <ScrollView className="flex-1 bg-background p-4">
-      <Text className="text-2xl font-bold text-foreground mb-6">Báo cáo Sự cố</Text>
-      
-      <View className="bg-white p-5 rounded-2xl shadow-sm border border-border space-y-4">
-        <Input 
-          label="Tiêu đề sự cố" 
-          placeholder="VD: Cửa từ hầm B1 bị hỏng" 
-          value={title}
-          onChangeText={setTitle}
-        />
-        
-        <View className="mt-4">
-          <Text className="text-sm font-medium text-foreground mb-1">Mô tả chi tiết</Text>
-          <Input 
-            placeholder="Mô tả cụ thể vấn đề xảy ra..." 
-            value={description}
-            onChangeText={setDescription}
-            multiline
-            numberOfLines={4}
-            className="h-24 text-top"
-            textAlignVertical="top"
-          />
-        </View>
-
-        <View className="mt-4 mb-2">
-          <Text className="text-sm font-medium text-foreground mb-2">Hình ảnh hiện trường</Text>
-          <View className="flex-row flex-wrap gap-2">
-            {images.map((uri, index) => (
-              <View key={index} className="relative">
-                <Image source={{ uri }} className="w-20 h-20 rounded-lg" />
-                <TouchableOpacity 
-                  className="absolute -top-2 -right-2 bg-red-500 rounded-full p-1"
-                  onPress={() => removeImage(index)}
-                >
-                  <X size={14} color="white" />
-                </TouchableOpacity>
-              </View>
-            ))}
-            
-            {images.length < 3 && (
-              <TouchableOpacity 
-                className="w-20 h-20 bg-gray-100 rounded-lg border border-dashed border-gray-300 items-center justify-center"
-                onPress={takePhoto}
+    <View className="flex-1 bg-background">
+      <SubHeader title="BÁO SỰ CỐ" />
+      <ScrollView className="flex-1 p-5">
+        <View className="flex-row justify-between mb-6">
+          {["Loại sự cố", "Chi tiết", "Gửi báo cáo"].map((s, i) => (
+            <View key={s} className="items-center flex-1">
+              <View
+                className={`h-7 w-7 rounded-full items-center justify-center mb-1 ${
+                  i <= step ? "bg-brand" : "bg-muted"
+                }`}
               >
-                <Camera size={24} color="#6b7280" />
-              </TouchableOpacity>
-            )}
-          </View>
+                <Text className={`text-xs font-bold ${i <= step ? "text-white" : "text-muted-foreground"}`}>
+                  {i + 1}
+                </Text>
+              </View>
+              <Text className={`text-[10px] ${i === step ? "font-semibold text-foreground" : "text-muted-foreground"}`}>
+                {s}
+              </Text>
+            </View>
+          ))}
         </View>
 
-        <Button 
-          className="w-full mt-6" 
-          onPress={handleSubmit}
-          isLoading={loading}
-        >
-          Gửi Báo Cáo
-        </Button>
-      </View>
-    </ScrollView>
+        {step === 0 && (
+          <>
+            <Text className="text-sm font-semibold mb-3 text-foreground">Chọn loại sự cố</Text>
+            <View className="flex-row flex-wrap justify-between">
+              {TYPES.map((t) => (
+                <TouchableOpacity
+                  key={t.label}
+                  onPress={() => {
+                    setSelected(t);
+                    setStep(1);
+                  }}
+                  className="w-[48%] rounded-2xl bg-card border border-border p-4 mb-3 items-center"
+                >
+                  <View
+                    className="h-12 w-12 rounded-2xl items-center justify-center mb-2"
+                    style={{ backgroundColor: t.bg }}
+                  >
+                    <t.icon size={24} color={t.color} />
+                  </View>
+                  <Text className="text-sm font-semibold text-foreground">{t.label}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </>
+        )}
+
+        {step === 1 && selected && (
+          <>
+            <Text className="text-sm font-semibold mb-1 text-foreground">Loại: {selected.label}</Text>
+            <Input
+              label="Vị trí / khu vực"
+              placeholder="VD: Hầm B1 - Khu A"
+              value={location}
+              onChangeText={setLocation}
+              className="mt-3"
+            />
+            <View className="mt-4">
+              <Input
+                label="Mô tả chi tiết"
+                placeholder="Mô tả cụ thể vấn đề..."
+                value={detail}
+                onChangeText={setDetail}
+                multiline
+                numberOfLines={4}
+              />
+            </View>
+            <View className="flex-row gap-2 mt-6">
+              <Button variant="outline" className="flex-1" onPress={() => setStep(0)}>
+                Quay lại
+              </Button>
+              <Button className="flex-1" onPress={() => setStep(2)} disabled={!detail.trim()}>
+                Tiếp tục
+              </Button>
+            </View>
+          </>
+        )}
+
+        {step === 2 && selected && (
+          <>
+            <View className="bg-card rounded-2xl border border-border p-4 mb-4">
+              <Text className="font-semibold text-foreground">{selected.label}</Text>
+              {location ? (
+                <Text className="text-sm text-muted-foreground mt-1">{location}</Text>
+              ) : null}
+              <Text className="text-sm mt-2 text-foreground">{detail}</Text>
+            </View>
+            <Button onPress={handleSubmit} isLoading={loading} className="w-full">
+              Gửi Báo Cáo
+            </Button>
+            <Button variant="outline" className="w-full mt-2" onPress={() => setStep(1)}>
+              Sửa lại
+            </Button>
+          </>
+        )}
+      </ScrollView>
+    </View>
   );
 }

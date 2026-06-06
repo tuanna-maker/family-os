@@ -13,22 +13,23 @@ import { useRouter } from "expo-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Activity,
-  CheckCircle2,
   ChevronRight,
+  MapPin,
   NotebookPen,
-  Phone,
   Pill,
   Plus,
   Send,
-  ShieldAlert,
-  Siren,
+  Stethoscope,
   Trash2,
-  Users,
 } from "lucide-react-native";
 import { Screen } from "@mobile/components/Screen";
 import { Card, PageHeader, PrimaryButton, TextField } from "@mobile/components/ui";
 import { SectionHeader } from "@mobile/components/SectionHeader";
 import { EmptyState, LoadingState } from "@mobile/components/states";
+import { SafeCheckPanel } from "@mobile/components/elderly-care/SafeCheckPanel";
+import { MedicineWeekView } from "@mobile/components/elderly-care/MedicineWeekView";
+import { ContactQuickGrid } from "@mobile/components/elderly-care/ContactQuickGrid";
+import { MedicineConfirmModal } from "@mobile/components/elderly-care/MedicineConfirmModal";
 import { useFamilyContext } from "@mobile/hooks/useFamilyContext";
 import { useAuth } from "@mobile/hooks/useAuth";
 import {
@@ -48,21 +49,18 @@ import {
   markMedicineTaken,
   undoMedicineTaken,
   updateElderlyProfile,
+  type ActivityRow,
   type ElderlyProfileRow,
+  type MedicineReminderRow,
 } from "@mobile/api/elderly-care";
 import { createSecurityRequest } from "@mobile/api/security";
 import { emergencyContacts } from "@mobile/constants/emergency-contacts";
 import { loadFamilyContacts } from "@mobile/lib/family-contacts";
 import { supabase } from "@shared/supabase/get-client";
 import { toast } from "@mobile/utils/toast";
+import { useTheme } from "@mobile/theme/themeStore";
+import { useThemedStyles } from "@mobile/theme/useThemedStyles";
 import { colors, radius } from "@mobile/theme/colors";
-
-const statusLabel: Record<string, string> = { ok: "Ổn định", warn: "Lưu ý", alert: "Cảnh báo" };
-const statusBg: Record<string, string> = {
-  ok: colors.tintGreen,
-  warn: colors.tintOrange,
-  alert: colors.tintOrange,
-};
 
 function fmtRelative(iso: string) {
   const diff = Date.now() - new Date(iso).getTime();
@@ -74,20 +72,206 @@ function fmtRelative(iso: string) {
   return `${Math.floor(h / 24)} ngày trước`;
 }
 
+function fmtTime(iso: string) {
+  return new Date(iso).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
+}
+
+const actKindStyle = (c: typeof colors, kind: ActivityRow["kind"]) => {
+  if (kind === "med") return { bg: c.tintGreen, fg: c.success };
+  if (kind === "vital") return { bg: c.tintOrange, fg: c.warning };
+  if (kind === "check") return { bg: c.tintBlue, fg: c.brand };
+  return { bg: c.tintPink, fg: c.pink };
+};
+
 export default function ChamSocOngBaScreen() {
   const router = useRouter();
   const { familyId } = useFamilyContext();
   const { user } = useAuth();
+  const { colors: themeColors } = useTheme();
   const qc = useQueryClient();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showAddProfile, setShowAddProfile] = useState(false);
   const [showAddMed, setShowAddMed] = useState(false);
   const [showEditProfile, setShowEditProfile] = useState(false);
-  const [showWeek, setShowWeek] = useState(false);
+  const [medsView, setMedsView] = useState<"day" | "week">("day");
   const [showVital, setShowVital] = useState(false);
-  const [safeNote, setSafeNote] = useState("");
-  const [pickedStatus, setPickedStatus] = useState<"ok" | "warn" | "alert">("ok");
+  const [safeNoteDraft, setSafeNoteDraft] = useState("");
   const [noteInput, setNoteInput] = useState("");
+  const [confirmMed, setConfirmMed] = useState<MedicineReminderRow | null>(null);
+  const [confirmTime, setConfirmTime] = useState("");
+  const [confirmNote, setConfirmNote] = useState("");
+
+  const styles = useThemedStyles((c, fontScale) => ({
+    pageSub: {
+      fontSize: 13 * fontScale,
+      color: c.muted,
+      marginTop: -4,
+      marginBottom: 12,
+      lineHeight: 18,
+    },
+    chipRow: { flexDirection: "row" as const, gap: 8 },
+    chip: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      gap: 6,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      borderColor: c.cardBorder,
+      backgroundColor: c.card,
+    },
+    chipActive: { backgroundColor: c.brandDeep, borderColor: c.brandDeep },
+    chipText: { fontWeight: "600" as const, color: c.foreground },
+    chipTextActive: { color: c.white },
+    chipAdd: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      gap: 4,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      borderStyle: "dashed" as const,
+      borderColor: c.cardBorder,
+    },
+    chipAddText: { color: c.muted, fontWeight: "600" as const },
+    profileRow: { flexDirection: "row" as const, alignItems: "center" as const, gap: 12, marginBottom: 12 },
+    avatarBox: {
+      width: 64,
+      height: 64,
+      borderRadius: radius.lg,
+      backgroundColor: c.tintPink,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+    },
+    avatarBig: { fontSize: 32 },
+    profileName: { fontSize: 17 * fontScale, fontWeight: "800" as const, color: c.foreground },
+    muted: { fontSize: 12 * fontScale, color: c.muted, marginTop: 2 },
+    addressRow: { flexDirection: "row" as const, alignItems: "center" as const, gap: 4, marginTop: 4 },
+    conditionChip: {
+      fontSize: 11 * fontScale,
+      paddingHorizontal: 10,
+      paddingVertical: 4,
+      borderRadius: 999,
+      backgroundColor: c.tintRed,
+      color: c.emergency,
+      fontWeight: "600" as const,
+      overflow: "hidden" as const,
+    },
+    conditionsWrap: { flexDirection: "row" as const, flexWrap: "wrap" as const, gap: 6, marginBottom: 12 },
+    editLink: { color: c.brand, fontWeight: "700" as const, fontSize: 13 * fontScale, marginRight: 8 },
+    medsToggleRow: { flexDirection: "row" as const, gap: 8, marginBottom: 12 },
+    medsToggle: {
+      flex: 1,
+      paddingVertical: 10,
+      borderRadius: radius.md,
+      borderWidth: 1,
+      borderColor: c.cardBorder,
+      alignItems: "center" as const,
+      backgroundColor: c.card,
+    },
+    medsToggleActive: { backgroundColor: c.brand, borderColor: c.brand },
+    medsToggleText: { fontSize: 12 * fontScale, fontWeight: "600" as const, color: c.foreground },
+    medsToggleTextActive: { color: c.white },
+    medRow: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      gap: 10,
+      marginBottom: 8,
+      padding: 14,
+    },
+    medIcon: {
+      width: 48,
+      height: 48,
+      borderRadius: radius.lg,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+    },
+    medTitle: { fontSize: 14 * fontScale, fontWeight: "700" as const, color: c.foreground },
+    medDone: { textDecorationLine: "line-through" as const, color: c.muted },
+    medBtn: {
+      backgroundColor: c.brand,
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+      borderRadius: radius.md,
+      minWidth: 88,
+      alignItems: "center" as const,
+    },
+    medBtnDone: { backgroundColor: c.mutedBg },
+    medBtnText: { color: c.white, fontSize: 11 * fontScale, fontWeight: "700" as const },
+    medBtnTextMuted: { color: c.muted },
+    vitalGrid: { flexDirection: "row" as const, flexWrap: "wrap" as const, gap: 8, marginBottom: 16 },
+    vitalCard: { width: "47%" as const, padding: 12 },
+    vitalVal: { fontSize: 20 * fontScale, fontWeight: "800" as const, marginTop: 4, color: c.foreground },
+    noteRow: { flexDirection: "row" as const, gap: 8, marginBottom: 12 },
+    noteInput: {
+      flex: 1,
+      borderWidth: 1,
+      borderColor: c.cardBorder,
+      borderRadius: radius.lg,
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+      color: c.foreground,
+      fontSize: 14 * fontScale,
+    },
+    sendBtn: {
+      width: 44,
+      height: 44,
+      borderRadius: 12,
+      backgroundColor: c.brand,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+    },
+    noteItem: {
+      flexDirection: "row" as const,
+      gap: 8,
+      marginBottom: 10,
+      backgroundColor: c.mutedBg,
+      padding: 12,
+      borderRadius: radius.lg,
+    },
+    noteAuthor: { fontSize: 11 * fontScale, fontWeight: "700" as const, color: c.foreground },
+    noteBody: { fontSize: 13 * fontScale, color: c.muted, marginTop: 4 },
+    noteTime: { fontSize: 11 * fontScale, color: c.muted, marginLeft: "auto" as const },
+    actRow: { flexDirection: "row" as const, gap: 10, padding: 14, borderBottomWidth: 1, borderBottomColor: c.cardBorder },
+    actIcon: {
+      width: 36,
+      height: 36,
+      borderRadius: radius.md,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+    },
+    actTitle: { fontSize: 14 * fontScale, fontWeight: "600" as const, color: c.foreground, flex: 1 },
+    actDetail: { fontSize: 12 * fontScale, color: c.muted, marginTop: 2 },
+    actTime: { fontSize: 11 * fontScale, color: c.muted },
+    doctorCard: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      gap: 12,
+      backgroundColor: c.tintBlue,
+      marginTop: 16,
+      marginBottom: 8,
+    },
+    doctorLabel: {
+      fontSize: 11 * fontScale,
+      fontWeight: "600" as const,
+      color: c.brand,
+      textTransform: "uppercase" as const,
+      letterSpacing: 0.5,
+    },
+    doctorName: { fontSize: 14 * fontScale, fontWeight: "600" as const, color: c.foreground, marginTop: 2 },
+    linkAction: { fontSize: 12 * fontScale, fontWeight: "600" as const, color: c.brand },
+    journalLink: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      gap: 6,
+      marginTop: 8,
+      marginBottom: 12,
+    },
+    journalText: { fontSize: 12 * fontScale, fontWeight: "600" as const, color: c.brand },
+    emptyMed: { color: c.muted, textAlign: "center" as const, padding: 16, fontSize: 14 * fontScale },
+  }));
 
   const profilesQ = useQuery({
     queryKey: ["elderly-profiles", familyId],
@@ -104,6 +288,12 @@ export default function ChamSocOngBaScreen() {
   const medsQ = useQuery({
     queryKey: ["elderly-meds", familyId, profile?.name],
     queryFn: () => listMedicineReminders({ familyId: familyId!, memberName: profile!.name }),
+    enabled: !!familyId && !!profile,
+  });
+
+  const weekQ = useQuery({
+    queryKey: ["elderly-meds-week", familyId, profile?.name],
+    queryFn: () => listMedicineWeek({ familyId: familyId!, memberName: profile!.name, days: 7 }),
     enabled: !!familyId && !!profile,
   });
 
@@ -135,12 +325,6 @@ export default function ChamSocOngBaScreen() {
     queryKey: ["family-contacts", familyId],
     queryFn: () => loadFamilyContacts(familyId!),
     enabled: !!familyId,
-  });
-
-  const weekQ = useQuery({
-    queryKey: ["elderly-meds-week", familyId, profile?.name],
-    queryFn: () => listMedicineWeek({ familyId: familyId!, memberName: profile!.name, days: 7 }),
-    enabled: !!familyId && !!profile && showWeek,
   });
 
   const quickContacts = useMemo(() => {
@@ -187,6 +371,12 @@ export default function ChamSocOngBaScreen() {
     };
   }, [profile?.id, profile?.name, familyId, qc]);
 
+  const invalidateMeds = () => {
+    qc.invalidateQueries({ queryKey: ["elderly-meds", familyId, profile?.name] });
+    qc.invalidateQueries({ queryKey: ["elderly-meds-week", familyId, profile?.name] });
+    qc.invalidateQueries({ queryKey: ["elderly-activity", profile?.id] });
+  };
+
   const createProfile = useMutation({
     mutationFn: createElderlyProfile,
     onSuccess: () => {
@@ -208,16 +398,16 @@ export default function ChamSocOngBaScreen() {
   });
 
   const safeMut = useMutation({
-    mutationFn: () =>
+    mutationFn: (input: { status: "ok" | "warn" | "alert"; note?: string }) =>
       confirmSafeCheck({
         elderly_id: profile!.id,
         family_id: profile!.family_id,
-        status: pickedStatus,
-        note: safeNote.trim() || undefined,
+        status: input.status,
+        note: input.note,
       }),
-    onSuccess: () => {
-      toast.success(`Safe Check: ${statusLabel[pickedStatus]}`);
-      setSafeNote("");
+    onSuccess: (_d, vars) => {
+      toast.success(`Safe Check: ${vars.status}`);
+      setSafeNoteDraft("");
       qc.invalidateQueries({ queryKey: ["elderly-profiles", familyId] });
       qc.invalidateQueries({ queryKey: ["safe-checks", profile?.id] });
       qc.invalidateQueries({ queryKey: ["elderly-activity", profile?.id] });
@@ -227,20 +417,25 @@ export default function ChamSocOngBaScreen() {
 
   const takenMut = useMutation({
     mutationFn: markMedicineTaken,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["elderly-meds", familyId, profile?.name] }),
+    onSuccess: (_d, vars) => {
+      invalidateMeds();
+      setConfirmMed(null);
+      toast.success("Đã ghi nhận uống thuốc");
+      void vars;
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 
   const undoMut = useMutation({
     mutationFn: undoMedicineTaken,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["elderly-meds", familyId, profile?.name] }),
+    onSuccess: invalidateMeds,
   });
 
   const createMed = useMutation({
     mutationFn: createMedicineReminder,
     onSuccess: () => {
       toast.success("Đã thêm nhắc thuốc");
-      qc.invalidateQueries({ queryKey: ["elderly-meds", familyId, profile?.name] });
+      invalidateMeds();
       setShowAddMed(false);
     },
     onError: (e: Error) => toast.error(e.message),
@@ -299,12 +494,46 @@ export default function ChamSocOngBaScreen() {
     Linking.openURL(`tel:${phone.replace(/\s/g, "")}`);
   };
 
+  const openConfirmMed = (m: MedicineReminderRow) => {
+    const now = new Date();
+    const hh = String(now.getHours()).padStart(2, "0");
+    const mm = String(now.getMinutes()).padStart(2, "0");
+    setConfirmTime(`${hh}:${mm}`);
+    setConfirmNote("");
+    setConfirmMed(m);
+  };
+
+  const submitConfirmMed = () => {
+    if (!confirmMed || !familyId) return;
+    const [hh, mm] = confirmTime.split(":").map(Number);
+    const at = new Date();
+    if (!Number.isNaN(hh)) at.setHours(hh, mm ?? 0, 0, 0);
+    takenMut.mutate({
+      reminder_id: confirmMed.id,
+      family_id: familyId,
+      taken_at: at.toISOString(),
+      note: confirmNote.trim() || undefined,
+    });
+  };
+
+  const markWeekMed = (reminderId: string) => {
+    if (!familyId) return;
+    takenMut.mutate({
+      reminder_id: reminderId,
+      family_id: familyId,
+      taken_at: new Date().toISOString(),
+    });
+  };
+
   const meds = medsQ.data ?? [];
   const takenCount = meds.filter((m) => m.taken_today).length;
+  const activity = actQ.data ?? [];
+  const vitals = vitalsQ.data ?? [];
 
   return (
     <Screen contentStyle={{ paddingTop: 0 }}>
-      <PageHeader eyebrow="Gia đình" title="Chăm sóc ông bà" back="/(tabs)/gia-dinh" />
+      <PageHeader eyebrow="Family Core" title="Chăm sóc ông bà" back="/(tabs)/gia-dinh" />
+      <Text style={styles.pageSub}>Quan tâm mỗi ngày — Safe Check, thuốc và liên hệ khẩn cấp 👵</Text>
 
       {profilesQ.isLoading && <LoadingState />}
 
@@ -336,7 +565,7 @@ export default function ChamSocOngBaScreen() {
                 </Pressable>
               ))}
               <Pressable style={styles.chipAdd} onPress={() => setShowAddProfile((s) => !s)}>
-                <Plus color={colors.muted} size={16} />
+                <Plus color={themeColors.muted} size={16} />
                 <Text style={styles.chipAddText}>Thêm</Text>
               </Pressable>
             </View>
@@ -353,13 +582,25 @@ export default function ChamSocOngBaScreen() {
             <>
               <Card>
                 <View style={styles.profileRow}>
-                  <Text style={styles.avatarBig}>{profile.avatar ?? "👵"}</Text>
+                  <View style={styles.avatarBox}>
+                    <Text style={styles.avatarBig}>{profile.avatar ?? "👵"}</Text>
+                  </View>
                   <View style={{ flex: 1 }}>
                     <Text style={styles.profileName}>
                       {profile.name}
-                      {profile.age != null ? ` · ${profile.age} tuổi` : ""}
+                      {profile.age != null ? (
+                        <Text style={styles.muted}> · {profile.age} tuổi</Text>
+                      ) : null}
                     </Text>
                     {profile.relation ? <Text style={styles.muted}>{profile.relation}</Text> : null}
+                    {profile.address ? (
+                      <View style={styles.addressRow}>
+                        <MapPin color={themeColors.muted} size={12} />
+                        <Text style={styles.muted} numberOfLines={2}>
+                          {profile.address}
+                        </Text>
+                      </View>
+                    ) : null}
                   </View>
                   <Pressable onPress={() => setShowEditProfile((s) => !s)}>
                     <Text style={styles.editLink}>Sửa</Text>
@@ -372,9 +613,19 @@ export default function ChamSocOngBaScreen() {
                       ])
                     }
                   >
-                    <Trash2 color={colors.emergency} size={18} />
+                    <Trash2 color={themeColors.emergency} size={18} />
                   </Pressable>
                 </View>
+
+                {profile.conditions.length > 0 && (
+                  <View style={styles.conditionsWrap}>
+                    {profile.conditions.map((c) => (
+                      <Text key={c} style={styles.conditionChip}>
+                        {c}
+                      </Text>
+                    ))}
+                  </View>
+                )}
 
                 {showEditProfile && (
                   <EditProfileForm
@@ -384,96 +635,58 @@ export default function ChamSocOngBaScreen() {
                   />
                 )}
 
-                <View style={[styles.safeBanner, { backgroundColor: statusBg[profile.safe_status] }]}>
-                  <CheckCircle2 color={colors.foreground} size={22} />
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.safeTitle}>Safe Check · {statusLabel[profile.safe_status]}</Text>
-                    <Text style={styles.muted} numberOfLines={2}>
-                      {profile.safe_note ?? "Chưa có ghi chú"}
-                    </Text>
-                    <Text style={styles.mutedSmall}>
-                      {profile.safe_last_at ? fmtRelative(profile.safe_last_at) : "Chưa xác nhận"}
-                    </Text>
-                  </View>
-                </View>
-
-                <View style={styles.statusRow}>
-                  {(["ok", "warn", "alert"] as const).map((s) => (
-                    <Pressable
-                      key={s}
-                      style={[styles.statusChip, pickedStatus === s && styles.statusChipActive]}
-                      onPress={() => setPickedStatus(s)}
-                    >
-                      <Text style={styles.statusChipText}>{statusLabel[s]}</Text>
-                    </Pressable>
-                  ))}
-                </View>
-                <TextField label="Ghi chú Safe Check" value={safeNote} onChangeText={setSafeNote} multiline />
-                <PrimaryButton
-                  label="Xác nhận Safe Check"
-                  onPress={() => safeMut.mutate()}
-                  loading={safeMut.isPending}
+                <SafeCheckPanel
+                  profile={profile}
+                  history={safeQ.data ?? []}
+                  historyLoading={safeQ.isLoading}
+                  note={safeNoteDraft}
+                  onNoteChange={setSafeNoteDraft}
+                  onConfirm={(status, note) => safeMut.mutate({ status, note })}
+                  isPending={safeMut.isPending}
                 />
               </Card>
 
-              <Pressable style={styles.journalLink} onPress={() => router.push("/lien-he")}>
-                <Phone color={colors.brand} size={18} />
-                <Text style={styles.journalText}>Chỉnh sửa người liên hệ khẩn cấp</Text>
-                <ChevronRight color={colors.muted} size={18} />
-              </Pressable>
-
-              <SectionHeader title="Liên hệ nhanh" />
-              <View style={styles.contactGrid}>
-                {quickContacts.map((c) => {
-                  const isSos = c.kind === "sos";
-                  const phone = c.kind === "elder" && profile.phone ? profile.phone : c.phone;
-                  const Icon =
-                    c.kind === "elder" ? Phone : c.kind === "family" ? Users : c.kind === "security" ? ShieldAlert : Siren;
-                  return (
-                    <Pressable
-                      key={c.id}
-                      style={[styles.contactBtn, isSos && styles.contactSos]}
-                      onPress={() => handleCall(c.label, phone, isSos)}
-                    >
-                      <Icon color={isSos ? colors.white : colors.foreground} size={22} />
-                      <Text style={[styles.contactLabel, isSos && { color: colors.white }]}>{c.label}</Text>
-                      <Text style={[styles.contactSub, isSos && { color: colors.white }]} numberOfLines={1}>
-                        {c.kind === "elder" ? profile.name : c.name}
-                      </Text>
-                    </Pressable>
-                  );
-                })}
-              </View>
+              <SectionHeader
+                title="Liên hệ nhanh"
+                subtitle="Nút lớn — dễ bấm cho mọi người"
+                action={
+                  <Pressable onPress={() => router.push("/lien-he")}>
+                    <Text style={styles.linkAction}>Sửa số</Text>
+                  </Pressable>
+                }
+              />
+              <ContactQuickGrid
+                contacts={quickContacts}
+                elderName={profile.name}
+                elderPhone={profile.phone}
+                onCall={handleCall}
+              />
 
               <SectionHeader
-                title="Nhắc thuốc hôm nay"
-                subtitle={`${takenCount}/${meds.length} đã uống`}
+                title={medsView === "day" ? "Nhắc thuốc hôm nay" : "Lịch thuốc 7 ngày"}
+                subtitle={
+                  medsView === "day"
+                    ? `${takenCount}/${meds.length} đã uống · ${profile.name}`
+                    : `${profile.name} · tự cập nhật`
+                }
                 onAction={() => setShowAddMed((s) => !s)}
                 actionLabel="Thêm"
               />
-              <Pressable style={styles.weekToggle} onPress={() => setShowWeek((s) => !s)}>
-                <Text style={styles.weekToggleText}>
-                  {showWeek ? "Ẩn lịch 7 ngày" : "Xem lịch uống thuốc 7 ngày"}
-                </Text>
-              </Pressable>
-              {showWeek && (weekQ.data ?? []).length > 0 && (
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }}>
-                  <View style={styles.weekRow}>
-                    {(weekQ.data ?? []).map((day) => {
-                      const taken = day.entries.filter((e) => e.taken).length;
-                      return (
-                        <Card key={day.date} style={styles.weekCard}>
-                          <Text style={styles.mutedSmall}>{day.date.slice(5)}</Text>
-                          <Text style={styles.weekStat}>
-                            {taken}/{day.entries.length}
-                          </Text>
-                        </Card>
-                      );
-                    })}
-                  </View>
-                </ScrollView>
-              )}
-              {showAddMed && profile && (
+              <View style={styles.medsToggleRow}>
+                {(["day", "week"] as const).map((v) => (
+                  <Pressable
+                    key={v}
+                    style={[styles.medsToggle, medsView === v && styles.medsToggleActive]}
+                    onPress={() => setMedsView(v)}
+                  >
+                    <Text style={[styles.medsToggleText, medsView === v && styles.medsToggleTextActive]}>
+                      {v === "day" ? "Theo ngày" : "Theo tuần"}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+
+              {showAddMed && (
                 <AddMedForm
                   pending={createMed.isPending}
                   onSubmit={(m) =>
@@ -485,28 +698,65 @@ export default function ChamSocOngBaScreen() {
                   }
                 />
               )}
-              {meds.length === 0 ? (
-                <Card><Text style={styles.muted}>Chưa có nhắc thuốc.</Text></Card>
+
+              {medsView === "week" ? (
+                <MedicineWeekView
+                  days={weekQ.data ?? []}
+                  isLoading={weekQ.isLoading}
+                  onMark={markWeekMed}
+                  pending={takenMut.isPending}
+                />
+              ) : meds.length === 0 ? (
+                <Card>
+                  <Text style={styles.emptyMed}>Chưa có nhắc thuốc — bấm Thêm ở trên.</Text>
+                </Card>
               ) : (
                 meds.map((m) => (
                   <Card key={m.id} style={styles.medRow}>
-                    <Pill color={m.taken_today ? colors.success : colors.warning} size={20} />
+                    <View
+                      style={[
+                        styles.medIcon,
+                        { backgroundColor: m.taken_today ? themeColors.tintGreen : themeColors.tintOrange },
+                      ]}
+                    >
+                      <Pill color={m.taken_today ? themeColors.success : themeColors.warning} size={22} />
+                    </View>
                     <View style={{ flex: 1 }}>
                       <Text style={[styles.medTitle, m.taken_today && styles.medDone]}>{m.medicine}</Text>
-                      <Text style={styles.muted}>{m.time_of_day ?? "—"}</Text>
+                      {m.dosage ? <Text style={styles.muted}>{m.dosage}</Text> : null}
+                      <Text style={styles.muted}>
+                        {m.time_of_day ?? "—"}
+                        {m.taken_today && m.taken_at ? ` · Đã uống lúc ${fmtTime(m.taken_at)}` : ""}
+                      </Text>
                     </View>
                     <Pressable
                       style={[styles.medBtn, m.taken_today && styles.medBtnDone]}
+                      disabled={takenMut.isPending || undoMut.isPending}
                       onPress={() =>
-                        m.taken_today
-                          ? undoMut.mutate({ reminder_id: m.id })
-                          : takenMut.mutate({ reminder_id: m.id, family_id: familyId! })
+                        m.taken_today ? undoMut.mutate({ reminder_id: m.id }) : openConfirmMed(m)
                       }
                     >
-                      <Text style={styles.medBtnText}>{m.taken_today ? "Hoàn tác" : "Đã uống"}</Text>
+                      <Text style={[styles.medBtnText, m.taken_today && styles.medBtnTextMuted]}>
+                        {m.taken_today ? "Đã uống" : "Xác nhận"}
+                      </Text>
                     </Pressable>
                   </Card>
                 ))
+              )}
+
+              {vitals.length > 0 && (
+                <>
+                  <SectionHeader title="Chỉ số gần đây" subtitle={profile.name} />
+                  <View style={styles.vitalGrid}>
+                    {vitals.map((v) => (
+                      <Card key={v.id} style={styles.vitalCard}>
+                        <Text style={styles.muted}>{v.title}</Text>
+                        <Text style={styles.vitalVal}>{v.value ?? "—"}</Text>
+                        <Text style={styles.muted}>{fmtRelative(v.recorded_at)}</Text>
+                      </Card>
+                    ))}
+                  </View>
+                </>
               )}
 
               <SectionHeader
@@ -514,17 +764,7 @@ export default function ChamSocOngBaScreen() {
                 onAction={() => setShowVital((s) => !s)}
                 actionLabel={showVital ? "Đóng" : "Ghi mới"}
               />
-              {(vitalsQ.data ?? []).length > 0 && (
-                <View style={styles.vitalGrid}>
-                  {(vitalsQ.data ?? []).slice(0, 4).map((v) => (
-                    <Card key={v.id} style={styles.vitalCard}>
-                      <Text style={styles.mutedSmall}>{v.title}</Text>
-                      <Text style={styles.vitalVal}>{v.value ?? "—"}</Text>
-                    </Card>
-                  ))}
-                </View>
-              )}
-              {showVital && profile && (
+              {showVital && (
                 <AddVitalForm
                   pending={addVitalMut.isPending}
                   onSubmit={(v) =>
@@ -537,52 +777,122 @@ export default function ChamSocOngBaScreen() {
                 />
               )}
 
-              <SectionHeader title="Ghi chú chăm sóc" />
+              <SectionHeader title="Ghi chú chăm sóc" subtitle="Chia sẻ giữa các thành viên" />
               <Card>
                 <View style={styles.noteRow}>
                   <TextInput
                     style={styles.noteInput}
                     value={noteInput}
                     onChangeText={setNoteInput}
-                    placeholder="Ghi nhanh về tình trạng…"
-                    placeholderTextColor={colors.muted}
+                    placeholder="Ghi nhanh về tình trạng của ông/bà…"
+                    placeholderTextColor={themeColors.muted}
                   />
                   <Pressable
                     style={styles.sendBtn}
                     disabled={!noteInput.trim() || addNoteMut.isPending}
                     onPress={() => addNoteMut.mutate()}
                   >
-                    <Send color={colors.white} size={18} />
+                    <Send color={themeColors.white} size={18} />
                   </Pressable>
                 </View>
+                {(notesQ.data ?? []).length === 0 && !notesQ.isLoading ? (
+                  <Text style={[styles.muted, { textAlign: "center", paddingVertical: 12 }]}>Chưa có ghi chú nào.</Text>
+                ) : null}
                 {(notesQ.data ?? []).map((n) => (
                   <View key={n.id} style={styles.noteItem}>
-                    <NotebookPen color={colors.brand} size={14} />
+                    <NotebookPen color={themeColors.brand} size={14} />
                     <View style={{ flex: 1 }}>
-                      <Text style={styles.noteAuthor}>{n.author_name}</Text>
+                      <View style={{ flexDirection: "row", alignItems: "center" }}>
+                        <Text style={styles.noteAuthor}>{n.author_name}</Text>
+                        <Text style={styles.noteTime}>{fmtRelative(n.created_at)}</Text>
+                      </View>
                       <Text style={styles.noteBody}>{n.content}</Text>
                     </View>
                   </View>
                 ))}
               </Card>
 
-              <Pressable style={styles.journalLink} onPress={() => router.push("/cham-soc-ong-ba/nhat-ky")}>
-                <Activity color={colors.brand} size={18} />
-                <Text style={styles.journalText}>Nhật ký hoạt động 7/30 ngày</Text>
-                <ChevronRight color={colors.muted} size={18} />
-              </Pressable>
+              <View style={{ flexDirection: "row", alignItems: "flex-start", marginTop: 8 }}>
+                <View style={{ flex: 1 }}>
+                  <SectionHeader title="Nhật ký hoạt động" subtitle="7 ngày gần nhất" />
+                </View>
+                <Pressable style={styles.journalLink} onPress={() => router.push("/cham-soc-ong-ba/nhat-ky")}>
+                  <Text style={styles.journalText}>Xem 7/30 ngày →</Text>
+                  <ChevronRight color={themeColors.brand} size={16} />
+                </Pressable>
+              </View>
 
-              {(actQ.data ?? []).slice(0, 5).map((a) => (
-                <Card key={a.id} style={styles.actRow}>
-                  <Text style={styles.actTitle}>{a.title}</Text>
-                  <Text style={styles.mutedSmall}>{fmtRelative(a.at)}</Text>
+              {activity.length === 0 ? (
+                <Card>
+                  <Text style={styles.emptyMed}>Chưa có hoạt động.</Text>
                 </Card>
-              ))}
+              ) : (
+                <Card style={{ padding: 0, overflow: "hidden" }}>
+                  {activity.map((a, idx) => {
+                    const ks = actKindStyle(themeColors, a.kind);
+                    return (
+                      <View
+                        key={a.id}
+                        style={[styles.actRow, idx === activity.length - 1 && { borderBottomWidth: 0 }]}
+                      >
+                        <View style={[styles.actIcon, { backgroundColor: ks.bg }]}>
+                          <Activity color={ks.fg} size={16} />
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                            <Text style={styles.actTitle} numberOfLines={1}>
+                              {a.title}
+                            </Text>
+                            <Text style={styles.actTime}>{fmtRelative(a.at)}</Text>
+                          </View>
+                          {a.detail ? (
+                            <Text style={styles.actDetail} numberOfLines={2}>
+                              {a.detail}
+                            </Text>
+                          ) : null}
+                        </View>
+                      </View>
+                    );
+                  })}
+                </Card>
+              )}
+
+              {profile.doctor ? (
+                <Card style={styles.doctorCard}>
+                  <View
+                    style={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: radius.md,
+                      backgroundColor: themeColors.card,
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <Stethoscope color={themeColors.brand} size={20} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.doctorLabel}>Bác sĩ phụ trách</Text>
+                    <Text style={styles.doctorName}>{profile.doctor}</Text>
+                  </View>
+                </Card>
+              ) : null}
             </>
           )}
           <View style={{ height: 40 }} />
         </ScrollView>
       )}
+
+      <MedicineConfirmModal
+        med={confirmMed}
+        time={confirmTime}
+        note={confirmNote}
+        onTimeChange={setConfirmTime}
+        onNoteChange={setConfirmNote}
+        onCancel={() => setConfirmMed(null)}
+        onConfirm={submitConfirmMed}
+        pending={takenMut.isPending}
+      />
     </Screen>
   );
 }
@@ -608,7 +918,7 @@ function AddProfileForm({
 
   return (
     <Card style={{ marginBottom: 12 }}>
-      <Text style={styles.formTitle}>Hồ sơ mới</Text>
+      <Text style={formStyles.formTitle}>Hồ sơ mới</Text>
       <TextField label="Tên" value={name} onChangeText={setName} placeholder="Bà Hoa" />
       <TextField label="Mối quan hệ" value={relation} onChangeText={setRelation} />
       <TextField label="Tuổi" value={age} onChangeText={setAge} keyboardType="numeric" />
@@ -739,111 +1049,6 @@ function AddMedForm({
   );
 }
 
-const styles = StyleSheet.create({
-  chipRow: { flexDirection: "row", gap: 8 },
-  chip: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.cardBorder,
-    backgroundColor: colors.card,
-  },
-  chipActive: { backgroundColor: colors.brandDeep, borderColor: colors.brandDeep },
-  chipText: { fontWeight: "600", color: colors.foreground },
-  chipTextActive: { color: colors.white },
-  chipAdd: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderStyle: "dashed",
-    borderColor: colors.cardBorder,
-  },
-  chipAddText: { color: colors.muted, fontWeight: "600" },
-  profileRow: { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 12 },
-  avatarBig: { fontSize: 40 },
-  profileName: { fontSize: 18, fontWeight: "800", color: colors.foreground },
-  muted: { fontSize: 12, color: colors.muted, marginTop: 2 },
-  mutedSmall: { fontSize: 10, color: colors.muted, marginTop: 2 },
-  safeBanner: { flexDirection: "row", gap: 10, padding: 12, borderRadius: radius.lg, marginBottom: 12 },
-  safeTitle: { fontWeight: "700", color: colors.foreground },
-  statusRow: { flexDirection: "row", gap: 8, marginBottom: 8 },
-  statusChip: {
-    flex: 1,
-    paddingVertical: 8,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.cardBorder,
-    alignItems: "center",
-  },
-  statusChipActive: { backgroundColor: colors.brandDeep, borderColor: colors.brandDeep },
-  statusChipText: { fontSize: 11, fontWeight: "700", color: colors.foreground },
-  contactGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginBottom: 16 },
-  contactBtn: {
-    width: "47%",
-    minHeight: 96,
-    padding: 12,
-    borderRadius: radius.xl,
-    backgroundColor: colors.tintBlue,
-    justifyContent: "space-between",
-  },
-  contactSos: { backgroundColor: colors.emergency },
-  contactLabel: { fontWeight: "800", fontSize: 14, color: colors.foreground },
-  contactSub: { fontSize: 11, color: colors.muted },
-  medRow: { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 8 },
-  medTitle: { fontWeight: "700", color: colors.foreground },
-  medDone: { textDecorationLine: "line-through", color: colors.muted },
-  medBtn: { backgroundColor: colors.brandDeep, paddingHorizontal: 10, paddingVertical: 8, borderRadius: radius.md },
-  medBtnDone: { backgroundColor: colors.mutedBg },
-  medBtnText: { color: colors.white, fontSize: 11, fontWeight: "700" },
-  vitalGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 16 },
-  vitalCard: { width: "47%", padding: 12 },
-  vitalVal: { fontSize: 18, fontWeight: "800", marginTop: 4 },
-  noteRow: { flexDirection: "row", gap: 8, marginBottom: 12 },
-  noteInput: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: colors.cardBorder,
-    borderRadius: radius.lg,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    color: colors.foreground,
-  },
-  sendBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: colors.brandDeep,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  noteItem: { flexDirection: "row", gap: 8, marginBottom: 10 },
-  noteAuthor: { fontSize: 11, fontWeight: "700", color: colors.foreground },
-  noteBody: { fontSize: 13, color: colors.muted, marginTop: 2 },
-  journalLink: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    padding: 14,
-    backgroundColor: colors.tintBlue,
-    borderRadius: radius.lg,
-    marginVertical: 12,
-  },
-  journalText: { flex: 1, fontWeight: "700", color: colors.brand },
-  actRow: { marginBottom: 6 },
-  actTitle: { fontWeight: "600", color: colors.foreground },
+const formStyles = StyleSheet.create({
   formTitle: { fontWeight: "700", marginBottom: 8, color: colors.foreground },
-  editLink: { color: colors.brand, fontWeight: "700", fontSize: 13, marginRight: 8 },
-  weekToggle: { marginBottom: 10 },
-  weekToggleText: { color: colors.brand, fontWeight: "700", fontSize: 13 },
-  weekRow: { flexDirection: "row", gap: 8 },
-  weekCard: { minWidth: 72, padding: 10, alignItems: "center" },
-  weekStat: { fontSize: 16, fontWeight: "800", color: colors.foreground, marginTop: 4 },
 });

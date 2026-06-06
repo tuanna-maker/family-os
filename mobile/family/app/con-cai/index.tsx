@@ -51,7 +51,12 @@ export default function ConCaiScreen() {
   });
 
   const childHw = (q.data?.homeworks ?? []).filter((h) => h.child_id === activeChildId);
-  const childRm = (q.data?.reminders ?? []).filter((r) => r.child_id === activeChildId || !r.child_id);
+  const allReminders = q.data?.reminders ?? [];
+  const childNameById = useMemo(() => {
+    const m = new Map<string, string>();
+    (q.data?.children ?? []).forEach((c) => m.set(c.id, c.name));
+    return m;
+  }, [q.data?.children]);
 
   return (
     <Screen contentStyle={{ paddingTop: 0 }}>
@@ -94,7 +99,29 @@ export default function ConCaiScreen() {
           )}
 
           <SectionHeader
-            title="Bài tập"
+            title="Thời khoá biểu"
+            onAction={() => router.push(`/con-cai/them?type=schedule&childId=${activeChildId ?? ""}`)}
+          />
+          {(q.data.schedules ?? [])
+            .filter((s) => s.child_id === activeChildId)
+            .length === 0 ? (
+            <Text style={styles.muted}>Chưa có lịch học.</Text>
+          ) : (
+            (q.data.schedules ?? [])
+              .filter((s) => s.child_id === activeChildId)
+              .map((s) => (
+                <Card key={s.id} style={styles.listRow}>
+                  <Text style={styles.badge}>{DAYS[s.day_of_week] ?? "?"}</Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.rowTitle}>{s.subject}</Text>
+                    <Text style={styles.muted}>{s.time_start?.slice(0, 5) ?? "—"}</Text>
+                  </View>
+                </Card>
+              ))
+          )}
+
+          <SectionHeader
+            title="Bài tập về nhà"
             onAction={() => router.push(`/con-cai/them?type=homework&childId=${activeChildId ?? ""}`)}
           />
           {childHw.length === 0 ? (
@@ -124,33 +151,47 @@ export default function ConCaiScreen() {
           )}
 
           <SectionHeader
-            title="Nhắc nhở"
-            onAction={() => router.push(`/con-cai/them?type=reminder&childId=${activeChildId ?? ""}`)}
+            title="Thành tích"
+            onAction={() => router.push(`/con-cai/them?type=achievement&childId=${activeChildId ?? ""}`)}
           />
-          {childRm.slice(0, 8).map((r) => (
+          {(q.data.achievements ?? []).filter((a) => a.child_id === activeChildId).length === 0 ? (
+            <Text style={styles.muted}>Chưa có thành tích.</Text>
+          ) : (
+            (q.data.achievements ?? [])
+              .filter((a) => a.child_id === activeChildId)
+              .map((a) => (
+                <Card key={a.id} style={styles.listRow}>
+                  <Text style={{ fontSize: 18 }}>🏆</Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.rowTitle}>{a.title}</Text>
+                    <Text style={styles.muted}>{a.earned_at}</Text>
+                  </View>
+                </Card>
+              ))
+          )}
+
+          <SectionHeader
+            title="Nhắc phụ huynh"
+            onAction={() => router.push(`/con-cai/them?type=reminder`)}
+          />
+          {allReminders.length === 0 ? (
+            <Text style={styles.muted}>Chưa có lời nhắc.</Text>
+          ) : (
+          allReminders.map((r) => (
             <Card key={r.id} style={styles.listRow}>
               <Pressable onPress={() => rmMut.mutate({ id: r.id, done: !r.done })} style={styles.check}>
                 {r.done ? <Check color={colors.success} size={18} /> : null}
               </Pressable>
               <View style={{ flex: 1 }}>
                 <Text style={[styles.rowTitle, r.done && styles.done]}>{r.title}</Text>
-                <Text style={styles.muted}>{new Date(r.remind_at).toLocaleString("vi-VN")}</Text>
+                <Text style={styles.muted}>
+                  {new Date(r.remind_at).toLocaleString("vi-VN")}
+                  {r.child_id && childNameById.get(r.child_id) ? ` · ${childNameById.get(r.child_id)}` : ""}
+                </Text>
               </View>
             </Card>
-          ))}
+          )))}
 
-          <SectionHeader title="Thời khoá biểu" />
-          {(q.data.schedules ?? [])
-            .filter((s) => s.child_id === activeChildId)
-            .map((s) => (
-              <Card key={s.id} style={styles.listRow}>
-                <Text style={styles.badge}>{DAYS[s.day_of_week] ?? "?"}</Text>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.rowTitle}>{s.subject}</Text>
-                  <Text style={styles.muted}>{s.time_start?.slice(0, 5) ?? "—"}</Text>
-                </View>
-              </Card>
-            ))}
           <View style={{ height: 32 }} />
         </>
       )}

@@ -7,7 +7,7 @@ export declare function createServiceBooking(data: {
   contact_phone?: string;
   scheduled_at?: string;
   notes?: string;
-}): Promise<{ ok: boolean }>;
+}): Promise<{ id: string; status: string; created_at: string }>;
 export declare function listCommunityEvents(): Promise<
   Array<{ id: string; title: string; starts_at: string; place: string }>
 >;

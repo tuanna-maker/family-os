@@ -1,5 +1,6 @@
 import React from 'react';
 import { TextInput, TextInputProps, View, Text } from 'react-native';
+import { useTheme } from '@mobile/theme/themeStore';
 
 interface InputProps extends TextInputProps {
   label?: string;
@@ -8,18 +9,23 @@ interface InputProps extends TextInputProps {
 
 export const Input = React.forwardRef<TextInput, InputProps>(
   ({ className, label, error, ...props }, ref) => {
+    const { colors } = useTheme();
     return (
-      <View className="flex flex-col gap-1.5 w-full">
-        {label && <Text className="text-sm font-medium text-foreground">{label}</Text>}
+      <View className="flex flex-col gap-1 w-full">
+        {label && (
+          <Text className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+            {label}
+          </Text>
+        )}
         <TextInput
           ref={ref}
-          className={`flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base text-foreground focus:border-ring ${
-            error ? 'border-destructive' : ''
+          className={`flex h-12 w-full rounded-xl bg-muted/80 px-4 text-sm font-medium text-foreground focus:border focus:border-brand ${
+            error ? 'border border-emergency/50' : 'border border-border'
           } ${className || ""}`}
-          placeholderTextColor="#6b7280"
+          placeholderTextColor={colors.muted}
           {...props}
         />
-        {error && <Text className="text-[13px] text-destructive">{error}</Text>}
+        {error && <Text className="mt-1 block text-xs text-emergency font-medium">{error}</Text>}
       </View>
     );
   }

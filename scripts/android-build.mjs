@@ -14,6 +14,7 @@ const APP_ROOTS = {
   family: ["apps", "family"],
   guard: ["apps", "guard"],
   "mobile-family": ["mobile", "family"],
+  "mobile-guard": ["mobile", "guard"],
 };
 
 const app = process.argv[2];
@@ -21,7 +22,7 @@ const task = process.argv[3] ?? "assembleDebug";
 
 if (!app || !APP_ROOTS[app]) {
   console.error(
-    "Usage: node scripts/android-build.mjs family|guard|mobile-family [assembleDebug|assembleRelease]",
+    "Usage: node scripts/android-build.mjs family|guard|mobile-family|mobile-guard [assembleDebug|assembleRelease]",
   );
   process.exit(1);
 }
@@ -83,16 +84,72 @@ const env = {
 };
 
 const mobileFamilyRoot = path.join(ROOT, "mobile", "family");
+const mobileGuardRoot = path.join(ROOT, "mobile", "guard");
 if (app === "mobile-family") {
   env.EXPO_NO_METRO_WORKSPACE_ROOT = "1";
   env.METRO_CONFIG = path.join(mobileFamilyRoot, "metro.config.js");
   env.EXPO_ROUTER_APP_ROOT = "./app";
 }
+if (app === "mobile-guard") {
+  env.EXPO_NO_METRO_WORKSPACE_ROOT = "1";
+  env.METRO_CONFIG = path.join(mobileGuardRoot, "metro.config.js");
+  env.EXPO_ROUTER_APP_ROOT = "./src/app";
+}
 
 const androidDir = resolveAndroidCwd();
 await ensureGradleWrapper(androidDir);
 
+function ensureLocalProperties(dir) {
+  const lp = path.join(dir, "local.properties");
+  if (fs.existsSync(lp)) return;
+  const sdk = (env.ANDROID_HOME ?? "").replace(/\\/g, "\\\\");
+  if (sdk) fs.writeFileSync(lp, `sdk.dir=${sdk}\n`);
+}
+
+function clearApkOutputDir(dir) {
+  if (!fs.existsSync(dir)) return;
+  const stale = `${dir}.old.${Date.now()}`;
+  try {
+    fs.renameSync(dir, stale);
+    fs.rmSync(stale, { recursive: true, force: true });
+  } catch {
+    try {
+      fs.rmSync(dir, { recursive: true, force: true });
+    } catch {
+      console.warn(`WARN: Could not clear ${dir} — close Explorer/IDE if build fails.`);
+    }
+  }
+}
+
+function ensureGuardNodeLinks(guardRoot) {
+  const guardNm = path.join(guardRoot, "node_modules");
+  const rootNm = path.join(ROOT, "node_modules");
+  for (const pkg of ["react-native", "nativewind", "tailwindcss", "react-native-css-interop"]) {
+    const local = path.join(guardNm, pkg);
+    const src = path.join(rootNm, pkg);
+    if (fs.existsSync(local) || !fs.existsSync(src)) continue;
+    console.log(`Linking ${pkg} → mobile/guard/node_modules …`);
+    if (process.platform === "win32") {
+      spawnSync("cmd", ["/c", "mklink", "/J", local, src], { shell: true, stdio: "inherit" });
+    } else {
+      fs.symlinkSync(src, local, "dir");
+    }
+  }
+}
+
+ensureLocalProperties(androidDir);
+if (app === "mobile-guard") ensureGuardNodeLinks(mobileGuardRoot);
+
 const gradle = process.platform === "win32" ? "gradlew.bat" : "./gradlew";
+spawnSync(gradle, ["--stop"], { cwd: androidDir, shell: true, stdio: "ignore" });
+if (task.includes("Release")) {
+  const releaseApkDirs = [
+    path.join(androidDirFromRoot(ROOT), "..", "release", "gradle-app-build", "outputs", "apk", "release"),
+    path.join(androidDir, "app", "build", "outputs", "apk", "release"),
+  ];
+  for (const d of releaseApkDirs) clearApkOutputDir(d);
+}
+
 const result = spawnSync(gradle, [task], {
   cwd: androidDir,
   stdio: "inherit",
@@ -103,14 +160,25 @@ const result = spawnSync(gradle, [task], {
 if (result.status === 0 && (task === "assembleRelease" || task === "assembleDebug")) {
   const androidRoot = androidDirFromRoot(ROOT);
   const variant = task === "assembleRelease" ? "release" : "debug";
-  const apkDir = path.join(androidRoot, "app", "build", "outputs", "apk", variant);
+  const apkCandidates = [
+    path.join(androidRoot, "..", "release", "gradle-app-build", "outputs", "apk", variant),
+    path.join(androidRoot, "app", "build", "outputs", "apk", variant),
+  ];
+  const apkDir = apkCandidates.find((d) => fs.existsSync(path.join(d, `app-${variant}.apk`)) || fs.existsSync(path.join(d, `app-${variant}-unsigned.apk`))) ?? apkCandidates[0];
   const signed = path.join(apkDir, `app-${variant}.apk`);
   const unsigned = path.join(apkDir, `app-${variant}-unsigned.apk`);
   const src = fs.existsSync(signed) ? signed : unsigned;
   if (fs.existsSync(src)) {
     const destDir = releaseDirFromRoot(ROOT);
     fs.mkdirSync(destDir, { recursive: true });
-    const destName = variant === "release" ? "app-release.apk" : "app-debug.apk";
+    const destName =
+      app === "mobile-guard"
+        ? variant === "release"
+          ? "guard-app-release.apk"
+          : "guard-app-debug.apk"
+        : variant === "release"
+          ? "app-release.apk"
+          : "app-debug.apk";
     const dest = path.join(destDir, destName);
     fs.copyFileSync(src, dest);
     console.log(`\nAPK: ${dest}`);

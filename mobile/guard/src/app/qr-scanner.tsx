@@ -1,13 +1,16 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, Alert, TouchableOpacity } from 'react-native';
-import { CameraView, useCameraPermissions } from 'expo-camera';
-import { useRouter } from 'expo-router';
-import { Button } from '@/components/ui/Button';
+import React, { useState } from "react";
+import { View, Text, StyleSheet, Alert } from "react-native";
+import { CameraView, useCameraPermissions } from "expo-camera";
+import { useRouter } from "expo-router";
+import * as Location from "expo-location";
+import { Button } from "@mobile/components/ui/Button";
+import { logPatrolCheckpoint } from "@guard/api/guard-shifts";
 
 export default function QRScannerScreen() {
   const router = useRouter();
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   if (!permission) {
     return <View />;
@@ -22,29 +25,45 @@ export default function QRScannerScreen() {
     );
   }
 
-  const handleBarCodeScanned = ({ type, data }: { type: string; data: string }) => {
+  const handleBarCodeScanned = async ({ data }: { type: string; data: string }) => {
+    if (scanned || submitting) return;
     setScanned(true);
-    // Xử lý dữ liệu QR
-    Alert.alert('Quét thành công', `Mã điểm tuần tra: ${data}`, [
-      {
-        text: 'Tiếp tục',
-        onPress: () => setScanned(false),
-      },
-      {
-        text: 'Đóng',
-        onPress: () => router.back(),
-        style: 'cancel',
+    setSubmitting(true);
+    try {
+      let location: { lat: number; lng: number; accuracy?: number } | undefined;
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status === "granted") {
+        const loc = await Location.getCurrentPositionAsync({});
+        location = {
+          lat: loc.coords.latitude,
+          lng: loc.coords.longitude,
+          accuracy: loc.coords.accuracy ?? undefined,
+        };
       }
-    ]);
+      await logPatrolCheckpoint({
+        checkpoint_code: data.trim(),
+        scan_method: "qr",
+        location,
+      });
+      Alert.alert("Quét thành công", `Đã ghi nhận điểm: ${data}`, [
+        { text: "Quét tiếp", onPress: () => setScanned(false) },
+        { text: "Đóng", onPress: () => router.back() },
+      ]);
+    } catch (e) {
+      Alert.alert("Lỗi", (e as Error).message || "Không ghi nhận được", [
+        { text: "Thử lại", onPress: () => setScanned(false) },
+        { text: "Đóng", onPress: () => router.back() },
+      ]);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
     <View className="flex-1 bg-black">
       <CameraView
         onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
-        barcodeScannerSettings={{
-          barcodeTypes: ["qr"],
-        }}
+        barcodeScannerSettings={{ barcodeTypes: ["qr"] }}
         style={StyleSheet.absoluteFillObject}
       >
         <View className="flex-1 bg-transparent flex-row justify-center mt-[15%]">

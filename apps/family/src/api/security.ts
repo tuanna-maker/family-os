@@ -263,6 +263,8 @@ export async function getSecurityStatus(data: any) {
   const { supabase, userId } = await requireUser();
 
         const fid = data.family_id;
+    const nowMs = Date.now();
+    const STALE_REQ_MS = 24 * 60 * 60 * 1000; // 24h: tránh cảnh báo treo mãi do request cũ không được đóng
 
     // 1) Resolve family member user ids
     const [{ data: fam }, { data: roles }] = await Promise.all([
@@ -291,7 +293,10 @@ export async function getSecurityStatus(data: any) {
         .in("status", ["open", "in_progress"])
         .order("created_at", { ascending: false })
         .limit(100);
-      openReqs = reqs ?? [];
+      openReqs = (reqs ?? []).filter((r) => {
+        const t = new Date(r.created_at).getTime();
+        return Number.isFinite(t) ? nowMs - t <= STALE_REQ_MS : true;
+      });
     }
 
     // 3) Elderly safety alerts → treat as emergency/warning signal

@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Screen } from "@mobile/components/Screen";
 import { PageHeader, PrimaryButton, TextField } from "@mobile/components/ui";
 import { DateField, DateTimeField, toLocalIso } from "@mobile/components/DateTimeField";
+import { EmojiPicker } from "@mobile/components/EmojiPicker";
 import { LoadingState } from "@mobile/components/states";
 import { useFamilyContext } from "@mobile/hooks/useFamilyContext";
 import {
@@ -53,6 +54,9 @@ export default function ConCaiThemScreen() {
   const [name, setName] = useState("");
   const [school, setSchool] = useState("");
   const [grade, setGrade] = useState("");
+  const [avatar, setAvatar] = useState("🧒");
+  const [dob, setDob] = useState("");
+  const [notes, setNotes] = useState("");
   const [title, setTitle] = useState("");
   const [subject, setSubject] = useState("");
   const [dueDate, setDueDate] = useState(toLocalIso(new Date()));
@@ -62,10 +66,20 @@ export default function ConCaiThemScreen() {
   useEffect(() => {
     if (existing) {
       if (formType === "child") {
-        const c = existing as { name: string; school?: string | null; grade?: string | null };
+        const c = existing as {
+          name: string;
+          school?: string | null;
+          grade?: string | null;
+          avatar?: string | null;
+          dob?: string | null;
+          notes?: string | null;
+        };
         setName(c.name);
         setSchool(c.school ?? "");
         setGrade(c.grade ?? "");
+        setAvatar(c.avatar?.trim() || "🧒");
+        setDob(c.dob ?? "");
+        setNotes((c as { notes?: string | null }).notes ?? "");
       }
       if (formType === "homework") {
         const h = existing as { title: string; subject: string; child_id: string; due_date?: string | null };
@@ -94,12 +108,16 @@ export default function ConCaiThemScreen() {
     mutationFn: async () => {
       if (!familyId) throw new Error("Chưa có gia đình");
       if (formType === "child") {
+        if (!name.trim()) throw new Error("Nhập tên bé");
         return upsertChild({
           id,
           family_id: familyId,
           name: name.trim(),
           school: school.trim() || null,
           grade: grade.trim() || null,
+          avatar: avatar.trim() || "🧒",
+          dob: dob || null,
+          notes: notes.trim() || null,
         });
       }
       if (formType === "homework") {
@@ -154,9 +172,12 @@ export default function ConCaiThemScreen() {
 
       {formType === "child" && (
         <>
-          <TextField label="Tên bé" value={name} onChangeText={setName} placeholder="Bé Minh" />
-          <TextField label="Trường" value={school} onChangeText={setSchool} />
-          <TextField label="Lớp" value={grade} onChangeText={setGrade} />
+          <EmojiPicker value={avatar} onChange={setAvatar} />
+          <TextField label="Tên bé *" value={name} onChangeText={setName} placeholder="Bé Minh" />
+          <DateField label="Ngày sinh" value={dob} onChange={setDob} />
+          <TextField label="Trường" value={school} onChangeText={setSchool} placeholder="TH Nguyễn Du" />
+          <TextField label="Lớp" value={grade} onChangeText={setGrade} placeholder="Lớp 3A" />
+          <TextField label="Ghi chú" value={notes} onChangeText={setNotes} multiline placeholder="Sở thích, dị ứng…" />
         </>
       )}
 

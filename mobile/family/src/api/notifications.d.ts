@@ -1,7 +1,10 @@
 export type NotificationRow = {
   id: string;
+  type: string;
+  ref_id: string | null;
   title: string;
   body: string | null;
+  due_at: string | null;
   read_at: string | null;
   created_at: string;
 };

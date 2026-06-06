@@ -17,15 +17,20 @@ export const spacing = {
   screen: 16,
 } as const;
 
+export function isDarkPalette(colors: AppColors) {
+  return colors.background === "#0B0F17" || colors.background === "#141B2D";
+}
+
 export function cardShadow(colors: AppColors): ViewStyle {
+  const dark = isDarkPalette(colors);
   return Platform.select({
     ios: {
-      shadowColor: colors.navy === colors.foreground ? "#000" : colors.navy,
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.1,
-      shadowRadius: 12,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: dark ? 2 : 4 },
+      shadowOpacity: dark ? 0.35 : 0.1,
+      shadowRadius: dark ? 8 : 12,
     },
-    android: { elevation: 3 },
+    android: { elevation: dark ? 2 : 3 },
     default: {},
   }) as ViewStyle;
 }

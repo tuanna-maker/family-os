@@ -1,0 +1,10 @@
+const { getDefaultConfig } = require("expo/metro-config");
+const path = require("path");
+const projectRoot = __dirname;
+const monorepoRoot = path.resolve(projectRoot, "../..");
+process.env.EXPO_ROUTER_APP_ROOT = "./src/app";
+const config = getDefaultConfig(projectRoot);
+config.watchFolders = [monorepoRoot];
+config.resolver.nodeModulesPaths = [path.join(projectRoot,"node_modules"), path.join(monorepoRoot,"node_modules")];
+config.resolver.alias = { "react-native": path.join(projectRoot, "node_modules/react-native") };
+module.exports = config;

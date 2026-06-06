@@ -8,16 +8,13 @@ import { radius } from "@mobile/theme/colors";
 import { useTheme } from "@mobile/theme/themeStore";
 import {
   TAB_BAR_CONTENT_HEIGHT,
+  TAB_BAR_FEATURED_LIFT,
   TAB_BAR_FEATURED_SIZE,
   TAB_BAR_FLOAT_MARGIN,
+  TAB_BAR_ICON_SLOT,
+  TAB_BAR_SHELL_PADDING_TOP,
 } from "@mobile/theme/tabBar";
 
-/**
- * Thanh menu dưới kiểu Telegram / iOS:
- * - iOS: BlurView (UIBlurEffect) + lớp phủ rgba mỏng
- * - Android: nền alpha cao (fallback khi blur yếu)
- * Layout tham chiếu BottomNav web: viên thuốc nổi, tab Bảo an giữa nổi bật.
- */
 export function GlassTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
   const { colors, theme } = useTheme();
@@ -29,10 +26,7 @@ export function GlassTabBar({ state, descriptors, navigation }: BottomTabBarProp
   const borderColor = isDark ? "rgba(255, 255, 255, 0.12)" : "rgba(15, 23, 42, 0.08)";
 
   return (
-    <View
-      style={[styles.outer, { paddingBottom: bottomPad }]}
-      pointerEvents="box-none"
-    >
+    <View style={[styles.outer, { paddingBottom: bottomPad }]} pointerEvents="box-none">
       <View
         style={[
           styles.shell,
@@ -41,36 +35,28 @@ export function GlassTabBar({ state, descriptors, navigation }: BottomTabBarProp
             ...Platform.select({
               ios: {
                 shadowColor: "#000",
-                shadowOffset: { width: 0, height: 8 },
-                shadowOpacity: isDark ? 0.35 : 0.12,
-                shadowRadius: 16,
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: isDark ? 0.3 : 0.1,
+                shadowRadius: 10,
               },
-              android: { elevation: 16 },
+              android: { elevation: 12 },
             }),
           },
         ]}
       >
-        {Platform.OS === "ios" ? (
+        <View style={styles.blurClip}>
           <BlurView
-            intensity={isDark ? 70 : 90}
+            intensity={isDark ? 64 : 80}
             tint={isDark ? "dark" : "light"}
             style={StyleSheet.absoluteFillObject}
           />
-        ) : (
-          <BlurView
-            intensity={isDark ? 48 : 64}
-            tint={isDark ? "dark" : "light"}
-            style={StyleSheet.absoluteFillObject}
+          <View
+            style={[
+              StyleSheet.absoluteFillObject,
+              { backgroundColor: Platform.OS === "ios" ? overlay : androidSolid },
+            ]}
           />
-        )}
-        <View
-          style={[
-            StyleSheet.absoluteFillObject,
-            {
-              backgroundColor: Platform.OS === "ios" ? overlay : androidSolid,
-            },
-          ]}
-        />
+        </View>
 
         <View style={styles.row}>
           {state.routes.map((route, index) => {
@@ -94,42 +80,14 @@ export function GlassTabBar({ state, descriptors, navigation }: BottomTabBarProp
             };
 
             const tint = isFeatured ? colors.emergency : isFocused ? colors.brand : colors.muted;
+            const iconSize = isFeatured ? 20 : 18;
             const icon = options.tabBarIcon
               ? (options.tabBarIcon({
                   focused: isFocused,
                   color: isFeatured ? colors.white : tint,
-                  size: isFeatured ? 22 : 20,
+                  size: iconSize,
                 }) as ReactElement)
               : null;
-
-            if (isFeatured) {
-              return (
-                <Pressable
-                  key={route.key}
-                  accessibilityRole="button"
-                  accessibilityState={isFocused ? { selected: true } : {}}
-                  accessibilityLabel={label}
-                  onPress={onPress}
-                  style={styles.tabFeatured}
-                >
-                  <LinearGradient
-                    colors={[colors.emergency, colors.pink]}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={[
-                      styles.featuredBtn,
-                      { borderColor: colors.card },
-                      isFocused && styles.featuredBtnActive,
-                    ]}
-                  >
-                    {icon}
-                  </LinearGradient>
-                  <Text style={[styles.label, { color: tint, fontWeight: "700" }]} numberOfLines={1}>
-                    {label}
-                  </Text>
-                </Pressable>
-              );
-            }
 
             return (
               <Pressable
@@ -140,15 +98,34 @@ export function GlassTabBar({ state, descriptors, navigation }: BottomTabBarProp
                 onPress={onPress}
                 style={styles.tab}
               >
-                <View
-                  style={[
-                    styles.iconWrap,
-                    isFocused && { backgroundColor: colors.tintBlue, transform: [{ scale: 1.04 }] },
-                  ]}
-                >
-                  {icon}
+                <View style={[styles.iconSlot, isFeatured && styles.featuredIconSlot]}>
+                  {isFeatured ? (
+                    <LinearGradient
+                      colors={[colors.emergency, colors.pink]}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={[
+                        styles.featuredBtn,
+                        { borderColor: colors.card },
+                        isFocused && styles.featuredBtnActive,
+                      ]}
+                    >
+                      {icon}
+                    </LinearGradient>
+                  ) : (
+                    <View style={styles.iconWrap}>{icon}</View>
+                  )}
                 </View>
-                <Text style={[styles.label, { color: tint }]} numberOfLines={1}>
+                <Text
+                  style={[
+                    styles.label,
+                    {
+                      color: tint,
+                      fontWeight: isFeatured || isFocused ? "700" : "500",
+                    },
+                  ]}
+                  numberOfLines={1}
+                >
                   {label}
                 </Text>
               </Pressable>
@@ -169,35 +146,45 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
   },
   shell: {
-    height: TAB_BAR_CONTENT_HEIGHT,
+    height: TAB_BAR_CONTENT_HEIGHT + TAB_BAR_SHELL_PADDING_TOP,
+    paddingTop: TAB_BAR_SHELL_PADDING_TOP,
     borderRadius: radius.xl,
     borderWidth: StyleSheet.hairlineWidth,
+    overflow: "visible",
+  },
+  blurClip: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: radius.xl,
     overflow: "hidden",
   },
   row: {
     flex: 1,
     flexDirection: "row",
     alignItems: "flex-end",
-    paddingBottom: 4,
+    paddingBottom: 6,
+    paddingHorizontal: 2,
   },
   tab: {
     flex: 1,
     alignItems: "center",
     justifyContent: "flex-end",
     gap: 2,
-    minHeight: TAB_BAR_CONTENT_HEIGHT - 8,
-    paddingTop: 8,
+    paddingBottom: 2,
   },
-  tabFeatured: {
-    flex: 1,
+  iconSlot: {
+    width: TAB_BAR_ICON_SLOT,
+    height: TAB_BAR_ICON_SLOT,
     alignItems: "center",
-    marginTop: -(TAB_BAR_FEATURED_SIZE / 2 - 4),
-    gap: 2,
+    justifyContent: "center",
+  },
+  featuredIconSlot: {
+    marginTop: -TAB_BAR_FEATURED_LIFT,
+    height: TAB_BAR_FEATURED_SIZE,
+    justifyContent: "center",
   },
   iconWrap: {
-    width: 40,
-    height: 40,
-    borderRadius: radius.md,
+    width: TAB_BAR_ICON_SLOT,
+    height: TAB_BAR_ICON_SLOT,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -205,17 +192,25 @@ const styles = StyleSheet.create({
     width: TAB_BAR_FEATURED_SIZE,
     height: TAB_BAR_FEATURED_SIZE,
     borderRadius: TAB_BAR_FEATURED_SIZE / 2,
+    borderWidth: 3,
     alignItems: "center",
     justifyContent: "center",
-    borderWidth: 4,
+    ...Platform.select({
+      ios: {
+        shadowColor: "#EF4444",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.4,
+        shadowRadius: 8,
+      },
+      android: { elevation: 6 },
+    }),
   },
   featuredBtnActive: {
-    transform: [{ scale: 1.08 }],
+    transform: [{ scale: 1.06 }],
   },
   label: {
-    fontSize: 10,
-    fontWeight: "600",
-    maxWidth: 72,
+    fontSize: 9,
+    maxWidth: 64,
     textAlign: "center",
   },
 });

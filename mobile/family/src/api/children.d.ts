@@ -1,4 +1,12 @@
-export type ChildRow = { id: string; name: string; dob: string | null; school: string | null; grade: string | null; avatar: string | null };
+export type ChildRow = {
+  id: string;
+  name: string;
+  dob: string | null;
+  school: string | null;
+  grade: string | null;
+  avatar: string | null;
+  notes?: string | null;
+};
 export type HomeworkRow = { id: string; child_id: string; subject: string; title: string; due_date: string | null; done: boolean };
 export type ParentReminderRow = { id: string; child_id: string | null; title: string; remind_at: string; done: boolean };
 export type ScheduleRow = { id: string; child_id: string; day_of_week: number; subject: string; time_start: string | null };

@@ -1,6 +1,14 @@
-import { Image, Pressable, Text, View, ActivityIndicator } from "react-native";
+import { useState } from "react";
+import {
+  ImageBackground,
+  Pressable,
+  ScrollView,
+  Text,
+  View,
+} from "react-native";
 import { useRouter } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
+import { LinearGradient } from "expo-linear-gradient";
 import {
   ShieldCheck,
   Phone,
@@ -9,49 +17,106 @@ import {
   Bell,
   Moon,
   Sun,
-  Wallet,
-  HeartHandshake,
-  Calendar,
-  QrCode,
-  LayoutDashboard,
+  Clock,
+  UserCheck,
+  Loader2,
 } from "lucide-react-native";
-import { LinearGradient } from "expo-linear-gradient";
 import { useAppPrefs } from "@mobile/hooks/useAppPrefs";
 import { unreadCount } from "@mobile/api/notifications";
+import { listNotifications } from "@mobile/api/notifications";
+import { getFamilyToday } from "@mobile/api/family-today";
+import { getSecurityStatus, type SecurityChip, type SecurityTone } from "@mobile/api/security";
 import { Screen } from "@mobile/components/Screen";
 import { Card, SectionTitle } from "@mobile/components/ui";
+import { FamilyMemberRow } from "@mobile/components/home/FamilyMemberRow";
+import {
+  SECURITY_HERO,
+  SERVICES,
+  SECURITY_CHIP_ICONS,
+  securityToneStyle,
+  formatActivityTime,
+  getActivityVisual,
+  colorFromKey,
+} from "@mobile/components/home/homeVisuals";
 import { cardShadow, radius } from "@mobile/theme/colors";
 import { useTheme } from "@mobile/theme/themeStore";
 import { useThemedStyles } from "@mobile/theme/useThemedStyles";
 import { useFamilyContext } from "@mobile/hooks/useFamilyContext";
-import { listNotifications } from "@mobile/api/notifications";
-import { getFamilyToday } from "@mobile/api/family-today";
 
-const HERO_URI =
-  "https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=800&q=70&auto=format";
+const ACTIVITY_PAGE_SIZE = 5;
 
-const APP_ICON = require("../../assets/icon.webp");
-
-const QUICK = [
-  { icon: Wallet, label: "Chi tiêu", href: "/chi-tieu" as const, tint: "tintBlue" as const },
-  { icon: Calendar, label: "Lịch", href: "/lich-gia-dinh" as const, tint: "tintPurple" as const },
-  { icon: HeartHandshake, label: "Ông bà", href: "/cham-soc-ong-ba" as const, tint: "tintPink" as const },
-  { icon: QrCode, label: "QR khách", href: "/qr-vao-ra" as const, tint: "tintGreen" as const },
-  { icon: LayoutDashboard, label: "Cổng", href: "/portal" as const, tint: "tintOrange" as const },
+const DEFAULT_CHIPS: SecurityChip[] = [
+  { key: "camera", label: "Camera & An ninh", value: "—", tone: "muted", count: 0 },
+  { key: "fire", label: "PCCC", value: "—", tone: "muted", count: 0 },
+  { key: "elevator", label: "Thang máy", value: "—", tone: "muted", count: 0 },
 ];
+
+function FeatureBadge({
+  Icon,
+  title,
+  sub,
+}: {
+  Icon: typeof ShieldCheck;
+  title: string;
+  sub: string;
+}) {
+  return (
+    <View
+      style={{
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 6,
+        borderRadius: radius.md,
+        backgroundColor: "rgba(255,255,255,0.1)",
+        borderWidth: 1,
+        borderColor: "rgba(255,255,255,0.15)",
+        paddingHorizontal: 8,
+        paddingVertical: 6,
+        maxWidth: 160,
+      }}
+    >
+      <View
+        style={{
+          width: 24,
+          height: 24,
+          borderRadius: 6,
+          backgroundColor: "rgba(37,99,235,0.4)",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <Icon color="#fff" size={12} />
+      </View>
+      <View>
+        <Text style={{ color: "#fff", fontSize: 11, fontWeight: "600" }}>{title}</Text>
+        <Text style={{ color: "rgba(255,255,255,0.7)", fontSize: 11 }}>{sub}</Text>
+      </View>
+    </View>
+  );
+}
 
 function useHomeStyles() {
   return useThemedStyles((colors, fontScale) => ({
-    header: { flexDirection: "row" as const, alignItems: "center" as const, gap: 8, marginBottom: 16 },
-    logoRow: { flexDirection: "row" as const, alignItems: "center" as const, gap: 10, maxWidth: "48%" as const },
-    logoImg: {
+    header: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      gap: 8,
+      marginBottom: 12,
+    },
+    logoGradient: {
       width: 40,
       height: 40,
       borderRadius: radius.md,
-      backgroundColor: colors.card,
-      borderWidth: 1,
-      borderColor: colors.cardBorder,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+      ...cardShadow(colors),
     },
+    logoTextBlock: { flexShrink: 1, minWidth: 0, maxWidth: 120 },
+    logoText: { fontSize: 17 * fontScale, fontWeight: "800" as const, color: colors.foreground, letterSpacing: -0.3 },
+    logoSub: { fontSize: 10 * fontScale, color: colors.muted, marginTop: 2, lineHeight: 13 },
+    greetBlock: { flex: 1, minWidth: 72, alignItems: "flex-end" as const },
+    hello: { fontSize: 12 * fontScale, color: colors.muted },
+    name: { fontSize: 14 * fontScale, fontWeight: "700" as const, color: colors.foreground },
     headerActions: { flexDirection: "row" as const, alignItems: "center" as const, gap: 6, flexShrink: 0 },
     iconBtn: {
       position: "relative" as const,
@@ -80,12 +145,8 @@ function useHomeStyles() {
       borderColor: colors.card,
     },
     bellBadgeText: { color: colors.white, fontSize: 9, fontWeight: "800" as const },
-    logoText: { fontSize: 17 * fontScale, fontWeight: "800" as const, color: colors.foreground, letterSpacing: -0.3 },
-    logoSub: { fontSize: 9 * fontScale, color: colors.muted, marginTop: 2 },
-    hello: { fontSize: 12 * fontScale, color: colors.muted },
-    name: { fontSize: 14 * fontScale, fontWeight: "700" as const, color: colors.foreground, maxWidth: 130 },
-    heroWrap: { borderRadius: radius.xl, overflow: "hidden" as const, minHeight: 300, ...cardShadow(colors) },
-    heroContent: { padding: 20 },
+    heroWrap: { borderRadius: radius.xl, overflow: "hidden" as const, minHeight: 340, ...cardShadow(colors) },
+    heroInner: { padding: 20 },
     heroBadge: { flexDirection: "row" as const, alignItems: "center" as const, gap: 6 },
     heroBadgeText: {
       color: "rgba(255,255,255,0.85)",
@@ -94,35 +155,25 @@ function useHomeStyles() {
       textTransform: "uppercase" as const,
       letterSpacing: 0.6,
     },
-    heroTitle: { color: colors.white, fontSize: 24 * fontScale, fontWeight: "800" as const, marginTop: 8, lineHeight: 30 },
-    quickRow: { flexDirection: "row" as const, gap: 8, marginTop: 16 },
-    quickItem: {
-      flex: 1,
-      alignItems: "center" as const,
-      gap: 8,
-      paddingVertical: 14,
-      backgroundColor: colors.card,
-      borderRadius: radius.lg,
-      borderWidth: 1,
-      borderColor: colors.cardBorder,
-      ...cardShadow(colors),
-    },
-    quickIcon: {
-      width: 44,
-      height: 44,
+    heroTitle: { color: colors.white, fontSize: 24 * fontScale, fontWeight: "800" as const, marginTop: 8, lineHeight: 30, maxWidth: 280 },
+    badgeRow: { flexDirection: "row" as const, flexWrap: "wrap" as const, gap: 8, marginTop: 14, maxWidth: 300 },
+    ctaIcon: {
+      width: 40,
+      height: 40,
       borderRadius: radius.md,
+      backgroundColor: "rgba(255,255,255,0.15)",
       alignItems: "center" as const,
       justifyContent: "center" as const,
     },
-    quickLabel: { fontSize: 11 * fontScale, fontWeight: "700" as const, color: colors.foreground, textAlign: "center" as const },
     sosBtn: {
-      marginTop: 20,
+      marginTop: 18,
       flexDirection: "row" as const,
       alignItems: "center" as const,
       gap: 12,
       backgroundColor: colors.emergency,
       borderRadius: radius.lg,
       padding: 14,
+      maxWidth: 320,
     },
     sosTitle: { color: colors.white, fontSize: 17 * fontScale, fontWeight: "800" as const },
     sosSub: { color: "rgba(255,255,255,0.8)", fontSize: 12 * fontScale },
@@ -136,31 +187,108 @@ function useHomeStyles() {
       padding: 14,
       borderWidth: 1,
       borderColor: "rgba(255,255,255,0.28)",
+      maxWidth: 320,
     },
     chatTitle: { color: colors.white, fontSize: 17 * fontScale, fontWeight: "800" as const },
     chatSub: { color: "rgba(255,255,255,0.65)", fontSize: 12 * fontScale },
-    memberRow: {
+    pill247: {
+      marginTop: 16,
       flexDirection: "row" as const,
-      justifyContent: "space-between" as const,
-      paddingVertical: 10,
-      borderBottomWidth: 1,
-      borderBottomColor: colors.cardBorder,
+      alignItems: "center" as const,
+      gap: 6,
+      alignSelf: "flex-start" as const,
+      borderRadius: 999,
+      backgroundColor: "rgba(255,255,255,0.12)",
+      borderWidth: 1,
+      borderColor: "rgba(255,255,255,0.2)",
+      paddingHorizontal: 12,
+      paddingVertical: 6,
     },
-    memberName: { fontWeight: "700" as const, color: colors.foreground, fontSize: 15 * fontScale },
-    memberStatus: { color: colors.muted, fontSize: 13 * fontScale },
-    linkRow: { flexDirection: "row" as const, alignItems: "center" as const, marginTop: 8 },
+    pill247Text: { color: colors.white, fontSize: 14 * fontScale, fontWeight: "600" as const },
+    securityCard: {
+      marginTop: 16,
+      borderRadius: radius.xl,
+      backgroundColor: colors.card,
+      borderWidth: 1,
+      padding: 14,
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      gap: 10,
+      ...cardShadow(colors),
+    },
+    securityMain: { flexDirection: "row" as const, alignItems: "center" as const, gap: 10, flexShrink: 0 },
+    securityIcon: { width: 44, height: 44, borderRadius: radius.lg, alignItems: "center" as const, justifyContent: "center" as const },
+    securityLabel: { fontSize: 14 * fontScale, color: colors.muted },
+    securityHeadline: { fontSize: 16 * fontScale, fontWeight: "700" as const },
+    securitySub: { fontSize: 12 * fontScale, color: colors.muted, marginTop: 2 },
+    divider: { width: 1, height: 40, backgroundColor: colors.cardBorder },
+    chipScroll: { flexGrow: 0 },
+    chipItem: { flexDirection: "row" as const, alignItems: "center" as const, gap: 8, marginRight: 12 },
+    chipIcon: { width: 36, height: 36, borderRadius: radius.md, alignItems: "center" as const, justifyContent: "center" as const },
+    chipLabel: { fontSize: 14 * fontScale, fontWeight: "600" as const, color: colors.foreground, maxWidth: 100 },
+    chipValue: { fontSize: 12 * fontScale },
+    chipCount: {
+      position: "absolute" as const,
+      top: -4,
+      right: -4,
+      minWidth: 16,
+      height: 16,
+      borderRadius: 8,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+      paddingHorizontal: 4,
+    },
+    chipCountText: { color: colors.white, fontSize: 10, fontWeight: "800" as const },
+    servicesGrid: { flexDirection: "row" as const, flexWrap: "wrap" as const, marginHorizontal: -6 },
+    serviceCell: { width: "33.33%" as const, paddingHorizontal: 6, marginBottom: 20, alignItems: "center" as const },
+    serviceIconBox: {
+      width: "100%" as const,
+      height: 64,
+      borderRadius: radius.lg,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+    },
+    serviceLabel: { fontSize: 13 * fontScale, fontWeight: "600" as const, color: colors.foreground, textAlign: "center" as const, marginTop: 8 },
+    serviceSub: { fontSize: 12 * fontScale, fontWeight: "500" as const, color: colors.muted },
+    sosCircle: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: colors.emergency,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+    },
+    sosCircleText: { color: colors.white, fontSize: 13, fontWeight: "900" as const },
+    cardHeader: { flexDirection: "row" as const, justifyContent: "space-between" as const, alignItems: "center" as const, marginBottom: 12 },
     link: { color: colors.brand, fontWeight: "700" as const, fontSize: 14 * fontScale },
-    muted: { color: colors.muted, fontSize: 14 * fontScale },
+    muted: { color: colors.muted, fontSize: 14 * fontScale, textAlign: "center" as const, paddingVertical: 16 },
+    skeleton: { height: 64, borderRadius: radius.lg, backgroundColor: colors.mutedBg, marginBottom: 8 },
     activityRow: {
       flexDirection: "row" as const,
       alignItems: "center" as const,
+      gap: 12,
       paddingVertical: 10,
       borderBottomWidth: 1,
       borderBottomColor: colors.cardBorder,
-      gap: 8,
     },
-    activityTitle: { flex: 1, fontWeight: "600" as const, color: colors.foreground, fontSize: 15 * fontScale },
+    activityIcon: { width: 36, height: 36, borderRadius: 18, alignItems: "center" as const, justifyContent: "center" as const },
+    activityTitle: { fontSize: 14 * fontScale, fontWeight: "600" as const, color: colors.foreground },
+    activityBody: { fontSize: 14 * fontScale, color: colors.muted },
+    activityTime: { fontSize: 14 * fontScale, color: colors.muted },
     unreadDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.brand },
+    loadMore: {
+      marginTop: 12,
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+      gap: 6,
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      borderColor: colors.cardBorder,
+      backgroundColor: colors.mutedBg,
+      paddingVertical: 12,
+    },
+    loadMoreText: { fontSize: 14 * fontScale, fontWeight: "600" as const, color: colors.foreground },
   }));
 }
 
@@ -171,6 +299,8 @@ export default function HomeScreen() {
   const styles = useHomeStyles();
   const { familyId, family } = useFamilyContext();
   const displayName = family?.name ?? "Gia đình";
+  const [pageCount, setPageCount] = useState(1);
+  const limit = pageCount * ACTIVITY_PAGE_SIZE;
 
   const unreadQ = useQuery({
     queryKey: ["notifications-unread"],
@@ -180,8 +310,8 @@ export default function HomeScreen() {
   const unread = unreadQ.data?.count ?? 0;
 
   const activitiesQ = useQuery({
-    queryKey: ["home-activities", 5],
-    queryFn: () => listNotifications({ limit: 5, offset: 0 }),
+    queryKey: ["home-activities", limit],
+    queryFn: () => listNotifications({ limit, offset: 0 }),
   });
 
   const todayQ = useQuery({
@@ -190,20 +320,54 @@ export default function HomeScreen() {
     enabled: !!familyId,
   });
 
+  const securityQ = useQuery({
+    queryKey: ["security-status", familyId],
+    queryFn: () => getSecurityStatus({ family_id: familyId! }),
+    enabled: !!familyId,
+    refetchInterval: 30_000,
+  });
+
+  const activities = activitiesQ.data?.rows ?? [];
+  const total = activitiesQ.data?.total ?? 0;
+  const hasMore = activities.length < total;
+  const todayMembers = todayQ.data?.members ?? [];
+  const security = securityQ.data;
+  const securityTone: SecurityTone = security?.overall ?? "success";
+  const securityStyle = securityToneStyle(colors, securityTone);
+  const securityHeadline =
+    security?.headline ?? (securityQ.isLoading ? "Đang kiểm tra…" : "Tất cả bình thường");
+  const securityChips = security?.chips ?? DEFAULT_CHIPS;
+  const securityUpdated = security?.updated_at
+    ? `Cập nhật ${formatActivityTime(security.updated_at)}`
+    : security?.subline ?? "Theo dõi liên tục";
+
+  const securityBorder =
+    securityTone === "emergency"
+      ? colors.emergency
+      : securityTone === "warning"
+        ? colors.warning
+        : colors.cardBorder;
+
+  const logoGrad: [string, string] =
+    theme === "dark" ? [colors.brand, colors.brandDeep] : [colors.brand, "#071A3D"];
+
   return (
     <Screen contentStyle={{ paddingTop: 12 }}>
       <View style={styles.header}>
-        <View style={styles.logoRow}>
-          <Image source={APP_ICON} style={styles.logoImg} resizeMode="cover" accessibilityLabel="STOS Family" />
-          <View>
-            <Text style={styles.logoText}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 8, flexShrink: 1, minWidth: 0 }}>
+          <LinearGradient colors={logoGrad} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.logoGradient}>
+            <ShieldCheck color={colors.white} size={20} fill={colors.white} />
+          </LinearGradient>
+          <View style={styles.logoTextBlock}>
+            <Text style={styles.logoText} numberOfLines={1}>
               STOS <Text style={{ color: colors.brand }}>Life</Text>
             </Text>
-            <Text style={styles.logoSub}>Operating System for Residential Life</Text>
+            <Text style={styles.logoSub} numberOfLines={2}>
+              Operating System for Residential Life
+            </Text>
           </View>
         </View>
-        <View style={{ flex: 1 }} />
-        <View style={{ alignItems: "flex-end", flex: 1, minWidth: 0, marginHorizontal: 4 }}>
+        <View style={styles.greetBlock}>
           <Text style={styles.hello}>Xin chào,</Text>
           <Text style={styles.name} numberOfLines={1}>
             {displayName} 👋
@@ -216,7 +380,11 @@ export default function HomeScreen() {
             accessibilityLabel={prefTheme === "dark" ? "Chuyển sang chế độ sáng" : "Chuyển sang chế độ tối"}
             accessibilityRole="button"
           >
-            {theme === "dark" ? <Sun color={colors.foreground} size={18} /> : <Moon color={colors.foreground} size={18} />}
+            {theme === "dark" ? (
+              <Sun color={colors.foreground} size={18} />
+            ) : (
+              <Moon color={colors.foreground} size={18} />
+            )}
           </Pressable>
           <Pressable
             style={styles.iconBtn}
@@ -235,77 +403,234 @@ export default function HomeScreen() {
       </View>
 
       <View style={styles.heroWrap}>
-        <Image source={{ uri: HERO_URI }} style={{ position: "absolute", width: "100%", height: "100%" }} />
-        <LinearGradient colors={["#071A3DE6", "#071A3D88", "#071A3D44"]} style={{ position: "absolute", width: "100%", height: "100%" }} />
-        <View style={styles.heroContent}>
-          <View style={styles.heroBadge}>
-            <ShieldCheck color="rgba(255,255,255,0.8)" size={14} />
-            <Text style={styles.heroBadgeText}>Dịch vụ bảo an gia đình</Text>
-          </View>
-          <Text style={styles.heroTitle}>An toàn gia đình{"\n"}là ưu tiên hàng đầu</Text>
-          <Pressable style={styles.sosBtn} onPress={() => router.push("/(tabs)/bao-an")}>
-            <Phone color={colors.white} size={22} fill={colors.white} />
-            <View>
-              <Text style={styles.sosTitle}>Gọi hỗ trợ ngay</Text>
-              <Text style={styles.sosSub}>Nhấn để gọi đội ngũ bảo an</Text>
+        <ImageBackground source={SECURITY_HERO} style={{ flex: 1 }} imageStyle={{ opacity: 0.9 }}>
+          <LinearGradient
+            colors={["#071A3DE6", "#071A3DCC", "#071A3D33"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={{ flex: 1 }}
+          >
+            <View style={styles.heroInner}>
+              <View style={styles.heroBadge}>
+                <ShieldCheck color="rgba(255,255,255,0.8)" size={14} />
+                <Text style={styles.heroBadgeText}>Dịch vụ bảo an gia đình</Text>
+              </View>
+              <Text style={styles.heroTitle}>
+                An toàn gia đình{"\n"}là ưu tiên hàng đầu
+              </Text>
+              <View style={styles.badgeRow}>
+                <FeatureBadge Icon={ShieldCheck} title="Hỗ trợ nhanh" sub="24/7" />
+                <FeatureBadge Icon={Clock} title="Có mặt nhanh" sub="5–10 phút" />
+                <FeatureBadge Icon={UserCheck} title="Đội ngũ chuyên nghiệp" sub="Tận tâm – Tin cậy" />
+              </View>
+              <Pressable style={styles.sosBtn} onPress={() => router.push("/(tabs)/bao-an")}>
+                <View style={styles.ctaIcon}>
+                  <Phone color={colors.white} size={20} fill={colors.white} />
+                </View>
+                <View>
+                  <Text style={styles.sosTitle}>Gọi hỗ trợ ngay</Text>
+                  <Text style={styles.sosSub}>Nhấn để gọi đội ngũ bảo an</Text>
+                </View>
+              </Pressable>
+              <Pressable style={styles.chatBtn} onPress={() => router.push("/bao-an/chat")}>
+                <View style={styles.ctaIcon}>
+                  <MessageSquare color={colors.white} size={20} />
+                </View>
+                <View>
+                  <Text style={styles.chatTitle}>Nhắn tin cho bảo an</Text>
+                  <Text style={styles.chatSub}>Trao đổi – Yêu cầu</Text>
+                </View>
+              </Pressable>
+              <View style={styles.pill247}>
+                <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: colors.success }} />
+                <Text style={styles.pill247Text}>Hỗ trợ 24/7</Text>
+              </View>
             </View>
-          </Pressable>
-          <Pressable style={styles.chatBtn} onPress={() => router.push("/bao-an/chat")}>
-            <MessageSquare color={colors.white} size={22} />
-            <View>
-              <Text style={styles.chatTitle}>Nhắn tin cho bảo an</Text>
-              <Text style={styles.chatSub}>Trao đổi – Yêu cầu</Text>
-            </View>
-          </Pressable>
-        </View>
+          </LinearGradient>
+        </ImageBackground>
       </View>
 
-      <View style={styles.quickRow}>
-        {QUICK.map((item) => (
-          <Pressable key={item.href} style={styles.quickItem} onPress={() => router.push(item.href)}>
-            <View style={[styles.quickIcon, { backgroundColor: colors[item.tint] }]}>
-              <item.icon color={colors.brand} size={22} />
-            </View>
-            <Text style={styles.quickLabel}>{item.label}</Text>
-          </Pressable>
-        ))}
-      </View>
+      <Pressable
+        style={[styles.securityCard, { borderColor: securityBorder }]}
+        onPress={() => router.push("/(tabs)/bao-an")}
+      >
+        <View style={styles.securityMain}>
+          <View style={[styles.securityIcon, { backgroundColor: securityStyle.chip }]}>
+            <ShieldCheck color={securityStyle.text} size={20} />
+            {securityTone !== "success" && (
+              <View
+                style={{
+                  position: "absolute",
+                  top: -2,
+                  right: -2,
+                  width: 10,
+                  height: 10,
+                  borderRadius: 5,
+                  backgroundColor: securityStyle.dot,
+                  borderWidth: 2,
+                  borderColor: colors.card,
+                }}
+              />
+            )}
+          </View>
+          <View>
+            <Text style={styles.securityLabel}>Tình trạng an toàn</Text>
+            <Text style={[styles.securityHeadline, { color: securityStyle.headline }]}>{securityHeadline}</Text>
+            <Text style={styles.securitySub}>{securityUpdated}</Text>
+          </View>
+        </View>
+        <View style={styles.divider} />
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll} contentContainerStyle={{ alignItems: "center" }}>
+          {securityChips.map((c) => {
+            const Icon = SECURITY_CHIP_ICONS[c.key] ?? ShieldCheck;
+            const chipStyle = securityToneStyle(colors, c.tone);
+            return (
+              <View key={c.key} style={styles.chipItem}>
+                <View style={{ position: "relative" }}>
+                  <View style={[styles.chipIcon, { backgroundColor: chipStyle.chip }]}>
+                    <Icon color={chipStyle.text} size={16} />
+                  </View>
+                  {c.count > 0 && (
+                    <View style={[styles.chipCount, { backgroundColor: chipStyle.dot }]}>
+                      <Text style={styles.chipCountText}>{c.count}</Text>
+                    </View>
+                  )}
+                </View>
+                <View>
+                  <Text style={styles.chipLabel} numberOfLines={1}>
+                    {c.label}
+                  </Text>
+                  <Text
+                    style={[styles.chipValue, { color: c.tone === "success" ? colors.muted : chipStyle.text }]}
+                    numberOfLines={1}
+                  >
+                    {c.value}
+                  </Text>
+                </View>
+              </View>
+            );
+          })}
+        </ScrollView>
+        <ChevronRight color={colors.muted} size={16} />
+      </Pressable>
 
       <Card style={{ marginTop: 16 }}>
-        <SectionTitle>Gia đình hôm nay</SectionTitle>
-        {todayQ.isLoading ? (
-          <ActivityIndicator color={colors.brand} />
-        ) : (todayQ.data?.members ?? []).length === 0 ? (
-          <Text style={styles.muted}>Chưa có dữ liệu hôm nay.</Text>
+        <Text style={{ fontSize: 18, fontWeight: "700", color: colors.foreground, marginBottom: 12 }}>
+          Dịch vụ bảo an
+        </Text>
+        <View style={styles.servicesGrid}>
+          {SERVICES.map((s) => {
+            const Icon = s.Icon;
+            const iconColor = colorFromKey(colors, s.colorKey);
+            const bg = colorFromKey(colors, s.bgKey);
+            return (
+              <Pressable key={s.id} style={styles.serviceCell} onPress={() => router.push(s.href)}>
+                <View style={[styles.serviceIconBox, { backgroundColor: bg }]}>
+                  {s.id === "sos" ? (
+                    <View style={styles.sosCircle}>
+                      <Text style={styles.sosCircleText}>SOS</Text>
+                    </View>
+                  ) : (
+                    <Icon color={iconColor} size={28} strokeWidth={2.2} />
+                  )}
+                </View>
+                <Text style={styles.serviceLabel}>
+                  {s.label}
+                  {s.sub ? `\n${s.sub}` : ""}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      </Card>
+
+      <Card style={{ marginTop: 16 }}>
+        <View style={styles.cardHeader}>
+          <SectionTitle>Gia đình hôm nay</SectionTitle>
+          <Pressable onPress={() => router.push("/(tabs)/gia-dinh")} style={{ flexDirection: "row", alignItems: "center" }}>
+            <Text style={styles.link}>Xem tất cả</Text>
+            <ChevronRight color={colors.brand} size={14} />
+          </Pressable>
+        </View>
+        {todayQ.isLoading || !familyId ? (
+          <>
+            <View style={styles.skeleton} />
+            <View style={styles.skeleton} />
+            <View style={styles.skeleton} />
+          </>
+        ) : todayMembers.length === 0 ? (
+          <>
+            <Text style={styles.muted}>Chưa có thành viên nào trong gia đình.</Text>
+            <Pressable onPress={() => router.push("/(tabs)/gia-dinh")} style={{ alignItems: "center", marginTop: 8 }}>
+              <Text style={styles.link}>Thêm thành viên →</Text>
+            </Pressable>
+          </>
         ) : (
-          (todayQ.data?.members ?? []).slice(0, 4).map((m) => (
-            <View key={m.id} style={styles.memberRow}>
-              <Text style={styles.memberName}>{m.name}</Text>
-              <Text style={styles.memberStatus}>{m.status}</Text>
-            </View>
-          ))
+          todayMembers.map((m) => <FamilyMemberRow key={m.id} member={m} />)
         )}
-        <Pressable onPress={() => router.push("/(tabs)/gia-dinh")} style={styles.linkRow}>
-          <Text style={styles.link}>Xem tất cả</Text>
-          <ChevronRight color={colors.brand} size={16} />
-        </Pressable>
       </Card>
 
       <Card style={{ marginTop: 16, marginBottom: 24 }}>
-        <SectionTitle>Hoạt động gần đây</SectionTitle>
+        <View style={styles.cardHeader}>
+          <SectionTitle>Hoạt động gần đây</SectionTitle>
+          <Pressable onPress={() => router.push("/thong-bao")} style={{ flexDirection: "row", alignItems: "center" }}>
+            <Text style={styles.link}>Xem tất cả</Text>
+            <ChevronRight color={colors.brand} size={14} />
+          </Pressable>
+        </View>
         {activitiesQ.isLoading ? (
-          <ActivityIndicator color={colors.brand} />
-        ) : (activitiesQ.data?.rows ?? []).length === 0 ? (
-          <Text style={styles.muted}>Chưa có hoạt động.</Text>
+          <>
+            <View style={[styles.skeleton, { height: 48 }]} />
+            <View style={[styles.skeleton, { height: 48 }]} />
+          </>
+        ) : activitiesQ.isError ? (
+          <Text style={styles.muted}>Không tải được hoạt động. Vui lòng thử lại.</Text>
+        ) : activities.length === 0 ? (
+          <Text style={styles.muted}>Chưa có hoạt động nào.</Text>
         ) : (
-          (activitiesQ.data?.rows ?? []).map((a) => (
-            <View key={a.id} style={styles.activityRow}>
-              <Text style={styles.activityTitle} numberOfLines={1}>
-                {a.title}
-              </Text>
-              {!a.read_at && <View style={styles.unreadDot} />}
-            </View>
-          ))
+          <>
+            {activities.map((a) => {
+              const v = getActivityVisual(a.type);
+              const ActIcon = v.Icon;
+              return (
+                <View key={a.id} style={styles.activityRow}>
+                  <View style={[styles.activityIcon, { backgroundColor: colorFromKey(colors, v.bgKey) }]}>
+                    <ActIcon color={colorFromKey(colors, v.colorKey)} size={16} />
+                  </View>
+                  <View style={{ flex: 1, minWidth: 0 }}>
+                    <Text style={styles.activityTitle} numberOfLines={1}>
+                      {a.title}
+                    </Text>
+                    {a.body ? (
+                      <Text style={styles.activityBody} numberOfLines={1}>
+                        {a.body}
+                      </Text>
+                    ) : null}
+                  </View>
+                  <Text style={styles.activityTime}>{formatActivityTime(a.created_at)}</Text>
+                  {!a.read_at && <View style={styles.unreadDot} />}
+                </View>
+              );
+            })}
+            {hasMore && (
+              <Pressable
+                style={styles.loadMore}
+                disabled={activitiesQ.isFetching}
+                onPress={() => setPageCount((p) => p + 1)}
+              >
+                {activitiesQ.isFetching ? (
+                  <>
+                    <Loader2 color={colors.foreground} size={14} />
+                    <Text style={styles.loadMoreText}>Đang tải…</Text>
+                  </>
+                ) : (
+                  <Text style={styles.loadMoreText}>
+                    Xem thêm ({activities.length}/{total})
+                  </Text>
+                )}
+              </Pressable>
+            )}
+          </>
         )}
       </Card>
     </Screen>

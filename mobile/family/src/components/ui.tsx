@@ -43,6 +43,12 @@ function useUiStyles() {
       color: colors.foreground,
       letterSpacing: -0.3,
     },
+    subtitle: {
+      fontSize: 14 * fontScale,
+      color: colors.muted,
+      marginTop: 4,
+      lineHeight: 20,
+    },
     card: {
       backgroundColor: colors.card,
       borderRadius: radius.xl,
@@ -82,10 +88,13 @@ function useUiStyles() {
       letterSpacing: -0.2,
     },
     primaryBtn: {
-      backgroundColor: colors.brandDeep,
+      backgroundColor: colors.brand,
       borderRadius: radius.lg,
-      paddingVertical: 16,
+      paddingVertical: 14,
+      paddingHorizontal: 20,
       alignItems: "center" as const,
+      justifyContent: "center" as const,
+      minHeight: 48,
     },
     primaryBtnDisabled: {
       opacity: 0.5,
@@ -122,15 +131,54 @@ function useUiStyles() {
   }));
 }
 
+/** Nút tròn góc phải header (khớp web: album + thêm). */
+export function HeaderIconButton({
+  onPress,
+  accessibilityLabel,
+  variant = "outline",
+  children,
+}: {
+  onPress: () => void;
+  accessibilityLabel: string;
+  variant?: "outline" | "primary";
+  children: ReactNode;
+}) {
+  const { colors } = useTheme();
+  const isPrimary = variant === "primary";
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityLabel={accessibilityLabel}
+      style={{
+        width: 40,
+        height: 40,
+        borderRadius: radius.lg,
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: isPrimary ? colors.brand : colors.card,
+        borderWidth: isPrimary ? 0 : 1,
+        borderColor: colors.cardBorder,
+      }}
+    >
+      {children}
+    </Pressable>
+  );
+}
+
 export function PageHeader({
   title,
   eyebrow,
+  subtitle,
   back,
+  showBack,
   right,
 }: {
   title: string;
   eyebrow?: string;
+  subtitle?: string;
   back?: string;
+  /** Tab gốc: false để ẩn nút back dù stack có history. */
+  showBack?: boolean;
   right?: ReactNode;
 }) {
   const router = useRouter();
@@ -146,7 +194,7 @@ export function PageHeader({
   return (
     <View style={[styles.wrap, { paddingTop: insets.top + 8 }]}>
       <View style={styles.headerRow}>
-        {(back !== undefined || router.canGoBack()) && (
+        {showBack !== false && (back !== undefined || router.canGoBack()) && (
           <Pressable onPress={goBack} style={styles.backBtn} hitSlop={8}>
             <ChevronLeft color={colors.foreground} size={24} />
           </Pressable>
@@ -154,6 +202,7 @@ export function PageHeader({
         <View style={styles.headerText}>
           {eyebrow ? <Text style={styles.eyebrow}>{eyebrow}</Text> : null}
           <Text style={styles.title}>{title}</Text>
+          {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
         </View>
         {right}
       </View>

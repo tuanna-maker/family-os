@@ -1,92 +1,188 @@
-import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { Clock, Siren, ChevronLeft, RefreshCw } from 'lucide-react-native';
-import { useRouter } from 'expo-router';
-import { Button } from '@/components/ui/Button';
+import React, { useEffect, useMemo, useState } from "react";
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from "react-native";
+import { Clock, Siren, RefreshCw } from "lucide-react-native";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { getSupabase } from "@shared/supabase/get-client";
+import { SubHeader } from "@mobile/components/SubHeader";
+import { Button } from "@mobile/components/ui/Button";
+import { SosTicketDrawer } from "@mobile/components/SosTicketDrawer";
+import {
+  listOpenResidentRequests,
+  updateSecurityRequest,
+  type OpenSosRow,
+  type SecurityRequest,
+} from "@guard/api/security";
+import { formatAge, REQUEST_STATUS_LABEL, REQUEST_TYPE_LABEL } from "@mobile/utils/guardFormat";
 
-// Giả lập dữ liệu
-const MOCK_REQUESTS = [
-  { id: '1', type: 'sos', title: 'SOS khẩn cấp', location: 'Tầng 12 - Tòa A', time: '2 phút trước', status: 'open' },
-  { id: '2', type: 'noise', title: 'Tiếng ồn', location: 'Căn 0504 - Tòa B', time: '15 phút trước', status: 'open' },
-];
+const TONE: Record<string, string> = {
+  sos: "bg-red-100 text-red-700",
+  fire: "bg-red-100 text-red-700",
+  intrusion: "bg-amber-100 text-amber-800",
+  package: "bg-blue-100 text-blue-700",
+  noise: "bg-sky-100 text-sky-700",
+  other: "bg-muted text-muted-foreground",
+};
+
+function unitLabel(r: SecurityRequest) {
+  const parts = [r.apartment, r.building].filter(Boolean);
+  return parts.length ? parts.join(" · ") : "Cư dân";
+}
+
+function toOpenSosRow(r: SecurityRequest): OpenSosRow {
+  const p = (r.payload ?? {}) as Record<string, unknown>;
+  const team = (p.team as Record<string, unknown> | undefined) ?? null;
+  const created = r.created_at;
+  return {
+    id: r.id,
+    ticket_code: (p.ticket_code as string) ?? `SOS-${r.id.slice(0, 6).toUpperCase()}`,
+    priority: (p.priority as OpenSosRow["priority"]) ?? "—",
+    incident_type: (p.incident_type as string) ?? REQUEST_TYPE_LABEL.sos,
+    zone: ((p.zone as string | undefined) ?? r.building) ?? null,
+    location: ((p.location as string | undefined) ?? r.apartment) ?? null,
+    team_name: ((team?.name as string | undefined) ?? (p.team_name as string | undefined)) ?? null,
+    status: r.status,
+    created_at: created,
+    age_seconds: Math.max(0, Math.floor((Date.now() - new Date(created).getTime()) / 1000)),
+  };
+}
 
 export default function RequestsScreen() {
-  const router = useRouter();
-  const [loading, setLoading] = useState(false);
-  const [requests, setRequests] = useState(MOCK_REQUESTS);
+  const qc = useQueryClient();
+  const { data, isLoading, refetch, isFetching } = useQuery({
+    queryKey: ["guard-open-requests"],
+    queryFn: () => listOpenResidentRequests(),
+    refetchInterval: 60_000,
+  });
+  const [selectedSos, setSelectedSos] = useState<OpenSosRow | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
-  const handleRefresh = () => {
-    setLoading(true);
-    setTimeout(() => setLoading(false), 1000);
-  };
+  useEffect(() => {
+    const supabase = getSupabase();
+    const ch = supabase
+      .channel("guard-requests-stream")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "security_requests" },
+        () => qc.invalidateQueries({ queryKey: ["guard-open-requests"] }),
+      )
+      .subscribe();
+    return () => {
+      void supabase.removeChannel(ch);
+    };
+  }, [qc]);
 
-  const handleStatusUpdate = (id: string, newStatus: string) => {
-    setRequests(requests.filter(r => r.id !== id));
-  };
+  const rows = useMemo(() => data ?? [], [data]);
+
+  const statusMut = useMutation({
+    mutationFn: (vars: { id: string; status: "in_progress" | "resolved" }) =>
+      updateSecurityRequest(vars),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["guard-open-requests"] }),
+  });
 
   return (
     <View className="flex-1 bg-background">
-      {/* Header */}
-      <View className="px-4 pt-12 pb-4 bg-white flex-row items-center border-b border-border">
-        <TouchableOpacity onPress={() => router.back()} className="p-2 -ml-2 mr-2">
-          <ChevronLeft size={24} color="#111827" />
-        </TouchableOpacity>
-        <Text className="text-lg font-bold flex-1 text-foreground">YÊU CẦU CƯ DÂN</Text>
-        <TouchableOpacity onPress={handleRefresh} disabled={loading} className="p-2">
-          <RefreshCw size={20} color="#6b7280" />
-        </TouchableOpacity>
-      </View>
+      <SubHeader
+        title="YÊU CẦU CƯ DÂN"
+        right={
+          <TouchableOpacity onPress={() => refetch()} disabled={isFetching} className="p-2">
+            <RefreshCw size={20} color="#6b7280" />
+          </TouchableOpacity>
+        }
+      />
 
       <ScrollView className="flex-1 p-4">
         <View className="mb-3 flex-row">
-          <View className="bg-gray-100 px-3 py-1 rounded-full border border-gray-200">
-            <Text className="text-xs text-gray-700 font-medium">{requests.length} đang mở</Text>
+          <View className="bg-muted px-3 py-1 rounded-full border border-border">
+            <Text className="text-xs text-muted-foreground font-medium">{rows.length} đang mở</Text>
           </View>
         </View>
 
-        {loading ? (
+        {isLoading ? (
           <ActivityIndicator size="small" className="mt-10" />
-        ) : requests.length === 0 ? (
-          <Text className="text-center text-gray-500 mt-10">Không có yêu cầu nào đang chờ xử lý.</Text>
+        ) : rows.length === 0 ? (
+          <Text className="text-center text-muted-foreground mt-10">
+            Không có yêu cầu nào đang chờ xử lý.
+          </Text>
         ) : (
-          requests.map((r) => (
-            <View key={r.id} className="bg-white rounded-2xl p-4 mb-3 border border-border shadow-sm">
-              <View className="flex-row justify-between items-start">
-                <View className="flex-1">
-                  <View className="flex-row items-center gap-2">
-                    {r.type === 'sos' && <Siren size={16} color="#ef4444" />}
-                    <Text className="text-sm font-bold text-foreground">{r.location}</Text>
+          rows.map((r) => {
+            const isSos = r.request_type === "sos";
+            const tone = TONE[r.request_type] ?? TONE.other;
+            return (
+              <View key={r.id} className="bg-card rounded-2xl p-4 mb-3 border border-border shadow-sm">
+                <View className="flex-row justify-between items-start">
+                  <View className="flex-1">
+                    <View className="flex-row items-center gap-2">
+                      {isSos && <Siren size={16} color="#ef4444" />}
+                      <Text className="text-sm font-bold text-foreground">{unitLabel(r)}</Text>
+                    </View>
+                    <View className={`mt-1.5 self-start px-2 py-0.5 rounded-full ${tone}`}>
+                      <Text className="text-[11px] font-medium">
+                        {REQUEST_TYPE_LABEL[r.request_type] ?? r.request_type}
+                      </Text>
+                    </View>
                   </View>
-                  <View className={`mt-1.5 self-start px-2 py-0.5 rounded-full ${r.type === 'sos' ? 'bg-red-100' : 'bg-blue-100'}`}>
-                    <Text className={`text-[11px] font-medium ${r.type === 'sos' ? 'text-red-700' : 'text-blue-700'}`}>
-                      {r.title}
+                  <View className="items-end">
+                    <View className="flex-row items-center">
+                      <Clock size={12} color="#6b7280" />
+                      <Text className="text-[11px] text-muted-foreground ml-1">
+                        {formatAge(r.created_at)}
+                      </Text>
+                    </View>
+                    <Text className="text-[10px] text-muted-foreground mt-1">
+                      {REQUEST_STATUS_LABEL[r.status] ?? r.status}
                     </Text>
                   </View>
                 </View>
-
-                <View className="items-end">
-                  <View className="flex-row items-center">
-                    <Clock size={12} color="#6b7280" />
-                    <Text className="text-[11px] text-gray-500 ml-1">{r.time}</Text>
-                  </View>
-                  <Text className="text-[10px] text-gray-500 mt-1">Chờ xử lý</Text>
+                <View className="mt-4 flex-row flex-wrap gap-2">
+                  {isSos ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8"
+                      onPress={() => {
+                        setSelectedSos(toOpenSosRow(r));
+                        setDrawerOpen(true);
+                      }}
+                    >
+                      Xem SOS
+                    </Button>
+                  ) : (
+                    <>
+                      {r.status === "open" && (
+                        <Button
+                          size="sm"
+                          className="h-8"
+                          disabled={statusMut.isPending}
+                          onPress={() =>
+                            statusMut.mutate({ id: r.id, status: "in_progress" })
+                          }
+                        >
+                          Tiếp nhận
+                        </Button>
+                      )}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8"
+                        disabled={statusMut.isPending}
+                        onPress={() => statusMut.mutate({ id: r.id, status: "resolved" })}
+                      >
+                        Hoàn thành
+                      </Button>
+                    </>
+                  )}
                 </View>
               </View>
-
-              <View className="mt-4 flex-row flex-wrap gap-2">
-                {r.type === 'sos' ? (
-                  <Button variant="outline" size="sm" className="h-8">Xem SOS</Button>
-                ) : (
-                  <>
-                    <Button size="sm" className="h-8" onPress={() => handleStatusUpdate(r.id, 'in_progress')}>Tiếp nhận</Button>
-                    <Button variant="outline" size="sm" className="h-8" onPress={() => handleStatusUpdate(r.id, 'resolved')}>Hoàn thành</Button>
-                  </>
-                )}
-              </View>
-            </View>
-          ))
+            );
+          })
         )}
       </ScrollView>
+
+      <SosTicketDrawer
+        row={selectedSos}
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+      />
     </View>
   );
 }

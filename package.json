@@ -27,6 +27,8 @@
     "mobile:family:android": "npm run android -w @mobile/family",
     "android:mobile-family": "node scripts/android-build.mjs mobile-family assembleRelease",
     "android:mobile-family:debug": "node scripts/android-build.mjs mobile-family assembleDebug",
+    "android:mobile-guard": "node scripts/android-build.mjs mobile-guard assembleRelease",
+    "android:mobile-guard:debug": "node scripts/android-build.mjs mobile-guard assembleDebug",
     "ios:family": "npm run build:family && npm run cap:open:ios -w @apps/family",
     "ios:guard": "npm run build:guard && npm run cap:open:ios -w @apps/guard",
     "native:setup": "node scripts/setup-native.mjs",
@@ -45,6 +47,7 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.52.0",
+    "babel-plugin-module-resolver": "^5.0.2",
     "sharp": "^0.34.2"
   },
   "dependencies": {

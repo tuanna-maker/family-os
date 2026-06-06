@@ -1,7 +1,14 @@
 import { z } from "zod";
 import { requireUser } from "@shared/supabase/auth";
-import { firePushDispatch } from "@shared/supabase";
+import { getSupabase } from "@shared/supabase/get-client";
 import { sosDispatchSchema, SOS_SCHEMA_VERSION } from "@/features/security-ops/dashboard/sosSchema";
+
+/** Tránh import barrel @shared/supabase (kéo Capacitor vào React Native). */
+function firePushDispatch() {
+  void getSupabase()
+    .functions.invoke("dispatch-push", { body: {} })
+    .catch(() => {});
+}
 
 export type SecurityRequest = {
   id: string;

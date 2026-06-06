@@ -3,7 +3,7 @@ import { useRouter } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
 import { FolderOpen, Plus } from "lucide-react-native";
 import { Screen } from "@mobile/components/Screen";
-import { Card, PageHeader } from "@mobile/components/ui";
+import { Card, HeaderIconButton, PageHeader } from "@mobile/components/ui";
 import { EmptyState, LoadingState } from "@mobile/components/states";
 import { useFamilyContext } from "@mobile/hooks/useFamilyContext";
 import { listAlbums } from "@mobile/api/albums";
@@ -28,13 +28,13 @@ export default function AlbumListScreen() {
         title="Album"
         back="/ky-niem-gia-dinh"
         right={
-          <Pressable
-            style={styles.addIcon}
-            onPress={() => router.push("/ky-niem-gia-dinh/album/tao")}
+          <HeaderIconButton
+            variant="primary"
             accessibilityLabel="Tạo album"
+            onPress={() => router.push("/ky-niem-gia-dinh/album/tao")}
           >
-            <Plus color={colors.white} size={22} />
-          </Pressable>
+            <Plus color={colors.white} size={20} />
+          </HeaderIconButton>
         }
       />
 
@@ -71,14 +71,6 @@ export default function AlbumListScreen() {
 }
 
 const styles = StyleSheet.create({
-  addIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: colors.brandDeep,
-    alignItems: "center",
-    justifyContent: "center",
-  },
   row: { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 10 },
   emoji: { fontSize: 32 },
   title: { fontWeight: "700", fontSize: 16, color: colors.foreground },

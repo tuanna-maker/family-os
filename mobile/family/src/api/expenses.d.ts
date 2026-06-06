@@ -4,6 +4,7 @@ export type ExpenseRow = {
   category: string;
   amount: number;
   spent_on: string;
+  source?: string;
 };
 
 export declare function listExpenses(data: { family_id: string }): Promise<ExpenseRow[]>;

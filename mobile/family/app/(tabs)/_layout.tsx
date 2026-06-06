@@ -1,7 +1,14 @@
+import { View } from "react-native";
 import { Tabs } from "expo-router";
 import { Home, Users, ShieldCheck, Sparkles, User } from "lucide-react-native";
 import { GlassTabBar } from "@mobile/components/GlassTabBar";
 import { useTheme } from "@mobile/theme/themeStore";
+
+function BaoAnTabIcon({ color, size, focused }: { color: string; size: number; focused: boolean }) {
+  return (
+    <ShieldCheck color={color} size={size} strokeWidth={focused ? 2.4 : 2.2} />
+  );
+}
 
 export default function TabsLayout() {
   const { colors } = useTheme();
@@ -33,7 +40,9 @@ export default function TabsLayout() {
         name="bao-an"
         options={{
           title: "Bảo an",
-          tabBarIcon: ({ color, size }) => <ShieldCheck color={color} size={size} />,
+          tabBarIcon: ({ color, size, focused }) => (
+            <BaoAnTabIcon color={color} size={size ?? 20} focused={focused} />
+          ),
         }}
       />
       <Tabs.Screen

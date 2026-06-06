@@ -2,9 +2,9 @@ import { useMemo } from "react";
 import { Alert, Pressable, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ChefHat, Leaf, Plus } from "lucide-react-native";
+import { ChefHat, Leaf } from "lucide-react-native";
 import { Screen } from "@mobile/components/Screen";
-import { Card, PageHeader, PrimaryButton } from "@mobile/components/ui";
+import { Card, PageHeader } from "@mobile/components/ui";
 import { SectionHeader } from "@mobile/components/SectionHeader";
 import { useFamilyContext } from "@mobile/hooks/useFamilyContext";
 import {
@@ -83,16 +83,32 @@ export default function ThucPhamScreen() {
 
   return (
     <Screen contentStyle={{ paddingTop: 0 }}>
-      <PageHeader title="Thực phẩm & Tủ lạnh" back="/(tabs)/gia-dinh" />
+      <PageHeader eyebrow="Family Core" title="Thực phẩm & Tủ lạnh" back="/(tabs)/gia-dinh" />
 
       {farmService && (
         <Card style={styles.farmCard}>
           <Leaf color={colors.success} size={22} />
-          <View style={{ flex: 1 }}>
+          <View style={{ flex: 1, minWidth: 0 }}>
             <Text style={styles.title}>Farm Fresh</Text>
             <Text style={styles.sub}>Đặt rau củ tươi giao tận căn hộ</Text>
           </View>
-          <PrimaryButton label="Đặt" onPress={() => farmBook.mutate()} loading={farmBook.isPending} />
+          <Pressable
+            style={({ pressed }) => [
+              styles.farmBookBtn,
+              (!familyId || farmBook.isPending) && styles.farmBookBtnDisabled,
+              pressed && familyId && !farmBook.isPending && { opacity: 0.9 },
+            ]}
+            disabled={!familyId || farmBook.isPending}
+            onPress={() => {
+              if (!familyId) {
+                toast.error("Chưa có hộ gia đình");
+                return;
+              }
+              farmBook.mutate();
+            }}
+          >
+            <Text style={styles.farmBookBtnText}>{farmBook.isPending ? "…" : "Đặt"}</Text>
+          </Pressable>
         </Card>
       )}
 
@@ -177,17 +193,36 @@ export default function ThucPhamScreen() {
         </Card>
       ))}
 
-      <Pressable style={styles.fab} onPress={() => router.push({ pathname: "/thuc-pham/them", params: { type: "food" } })}>
-        <Plus color={colors.white} size={24} />
-      </Pressable>
-      <View style={{ height: 48 }} />
+      <View style={{ height: 32 }} />
     </Screen>
   );
 }
 
 function useFoodStyles() {
   return useThemedStyles((colors, fontScale) => ({
-    farmCard: { flexDirection: "row" as const, alignItems: "center" as const, gap: 12, marginBottom: 12 },
+    farmCard: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      gap: 12,
+      marginBottom: 12,
+    },
+    farmBookBtn: {
+      flexShrink: 0,
+      minWidth: 64,
+      height: 40,
+      paddingHorizontal: 16,
+      borderRadius: radius.pill,
+      backgroundColor: colors.brand,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+    },
+    farmBookBtnDisabled: { opacity: 0.45 },
+    farmBookBtnText: {
+      color: colors.white,
+      fontSize: 14 * fontScale,
+      fontWeight: "700" as const,
+      lineHeight: 18,
+    },
     alert: { backgroundColor: colors.tintOrange, marginBottom: 12 },
     alertText: { color: colors.foreground, fontWeight: "600" as const, fontSize: 13 * fontScale },
     row: { marginBottom: 10, gap: 4 },
@@ -203,16 +238,5 @@ function useFoodStyles() {
     title: { fontWeight: "700" as const, color: colors.foreground, fontSize: 16 * fontScale },
     sub: { fontSize: 12 * fontScale, color: colors.muted },
     done: { textDecorationLine: "line-through" as const, color: colors.muted },
-    fab: {
-      position: "absolute" as const,
-      right: 20,
-      bottom: 24,
-      width: 56,
-      height: 56,
-      borderRadius: 28,
-      backgroundColor: colors.brandDeep,
-      alignItems: "center" as const,
-      justifyContent: "center" as const,
-    },
   }));
 }
