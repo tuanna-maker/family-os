@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { getMyContext } from "@/lib/auth.functions";
 import { resolveDestinationPure } from "@/lib/resolve-destination";
-import { MOBILE_APK, apkDownloadUrl } from "@/lib/mobile-apk";
+import { MOBILE_APK, apkDownloadUrl, apkWebDownloadUrl } from "@/lib/mobile-apk";
 import {
   Shield, Building2, Users, Bell, MapPin, Phone, ArrowRight, CheckCircle2,
   Sparkles, Truck, Leaf, MessageCircle, Activity, Smartphone, Lock,
@@ -1763,14 +1763,17 @@ function BqlCaseStudy() {
 }
 
 function InstallQrSection() {
-  const familyApkUrl = useMemo(() => apkDownloadUrl("family"), []);
-  const guardApkUrl = useMemo(() => apkDownloadUrl("guard"), []);
+  const familyQrUrl = useMemo(() => apkDownloadUrl("family"), []);
+  const guardQrUrl = useMemo(() => apkDownloadUrl("guard"), []);
+  const familyWebUrl = useMemo(() => apkWebDownloadUrl("family"), []);
+  const guardWebUrl = useMemo(() => apkWebDownloadUrl("guard"), []);
 
   const cards = [
     {
       title: MOBILE_APK.family.title,
       desc: "Quét QR bằng camera Android để tải file APK và cài app Gia đình (STOS Life).",
-      url: familyApkUrl,
+      qrUrl: familyQrUrl,
+      webUrl: familyWebUrl,
       fg: "#2563eb",
       cta: "Tải APK Gia đình",
       icon: Heart,
@@ -1780,7 +1783,8 @@ function InstallQrSection() {
     {
       title: MOBILE_APK.guard.title,
       desc: "Dành cho đội ngũ bảo vệ. Quét QR để tải APK và cài app Bảo vệ trên thiết bị trực.",
-      url: guardApkUrl,
+      qrUrl: guardQrUrl,
+      webUrl: guardWebUrl,
       fg: "#0f172a",
       cta: "Tải APK Bảo vệ",
       icon: ShieldCheck,
@@ -1813,7 +1817,7 @@ function InstallQrSection() {
                 <div className="rounded-2xl bg-white p-4 border border-slate-200 shadow-sm shrink-0">
                   <Suspense fallback={<div style={{ width: 176, height: 176 }} className="bg-slate-100 rounded-md animate-pulse" />}>
                     <QRCodeSVG
-                      value={c.url}
+                      value={c.qrUrl}
                       size={176}
                       fgColor={c.fg}
                       bgColor="#ffffff"
@@ -1828,7 +1832,7 @@ function InstallQrSection() {
                   </div>
                   <p className="text-slate-600 mt-2 text-sm leading-relaxed">{c.desc}</p>
                   <a
-                    href={c.url}
+                    href={c.webUrl}
                     download={c.fileName}
                     className="inline-flex items-center gap-1 mt-4 text-sm font-medium text-blue-600 hover:underline"
                   >

@@ -38,8 +38,18 @@ export function directApkUrl(app: keyof typeof MOBILE_APK): string | null {
   return url || null;
 }
 
-/** URL trong mã QR. */
-export function apkDownloadUrl(app: keyof typeof MOBILE_APK, origin = PUBLIC_SITE_ORIGIN) {
+/**
+ * URL trong mã QR — phải là cross-origin (Supabase/GitHub…).
+ * Cùng domain stoslife.lovable.app bị PWA manifest-family (scope "/") chặn → /login?source=pwa-family.
+ */
+export function apkDownloadUrl(app: keyof typeof MOBILE_APK) {
+  const direct = directApkUrl(app);
+  if (direct) return direct;
+  return supabasePublicApkUrl(MOBILE_APK[app].fileName);
+}
+
+/** Link tải trên web (cùng domain, dùng API redirect). */
+export function apkWebDownloadUrl(app: keyof typeof MOBILE_APK, origin = PUBLIC_SITE_ORIGIN) {
   const direct = directApkUrl(app);
   if (direct) return direct;
   return `${origin}${MOBILE_APK[app].apiPath}`;
