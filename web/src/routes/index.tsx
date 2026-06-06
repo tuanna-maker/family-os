@@ -1763,28 +1763,29 @@ function BqlCaseStudy() {
 
 function InstallQrSection() {
   const origin = typeof window !== "undefined" ? window.location.origin : "https://stoslife.lovable.app";
-  // Dùng start_url của PWA manifest để QR/link không bị redirect về /login khi chưa đăng nhập
-  const familyUrl = useMemo(() => `${origin}/login?source=pwa-family`, [origin]);
-  const guardUrl = useMemo(() => `${origin}/login?source=pwa-guard`, [origin]);
+  const familyApkUrl = useMemo(() => `${origin}/downloads/stos-family.apk`, [origin]);
+  const guardApkUrl = useMemo(() => `${origin}/downloads/stos-guard.apk`, [origin]);
 
   const cards = [
     {
       title: "App Gia đình",
-      desc: "Quét QR bằng camera điện thoại để mở và cài app Gia đình lên màn hình chính.",
-      url: familyUrl,
+      desc: "Quét QR bằng camera Android để tải file APK và cài app Gia đình (STOS Life).",
+      url: familyApkUrl,
       fg: "#2563eb",
-      cta: "Mở /gia-dinh",
+      cta: "Tải APK Gia đình",
       icon: Heart,
       tone: "from-blue-50 to-white",
+      fileName: "stos-family.apk",
     },
     {
       title: "App Bảo vệ",
-      desc: "Dành cho đội ngũ bảo vệ. Quét QR để mở và cài app Bảo vệ trên thiết bị trực.",
-      url: guardUrl,
+      desc: "Dành cho đội ngũ bảo vệ. Quét QR để tải APK và cài app Bảo vệ trên thiết bị trực.",
+      url: guardApkUrl,
       fg: "#0f172a",
-      cta: "Mở /guard",
+      cta: "Tải APK Bảo vệ",
       icon: ShieldCheck,
       tone: "from-slate-50 to-white",
+      fileName: "stos-guard.apk",
     },
   ];
 
@@ -1795,9 +1796,9 @@ function InstallQrSection() {
           <div className="inline-flex items-center gap-2 text-sm font-medium text-blue-600 mb-3">
             <QrCode className="w-4 h-4" /> Cài đặt nhanh
           </div>
-          <h2 className="text-3xl md:text-4xl font-bold text-slate-900">Quét QR để cài app</h2>
+          <h2 className="text-3xl md:text-4xl font-bold text-slate-900">Quét QR để tải app</h2>
           <p className="text-slate-600 mt-3 max-w-2xl mx-auto">
-            Mở camera, quét mã, rồi chọn "Thêm vào màn hình chính" để cài như app gốc.
+            Mở camera điện thoại Android, quét mã QR → trình duyệt tải file APK → mở file và cài đặt.
           </p>
         </div>
 
@@ -1828,7 +1829,8 @@ function InstallQrSection() {
                   <p className="text-slate-600 mt-2 text-sm leading-relaxed">{c.desc}</p>
                   <a
                     href={c.url}
-                    className="inline-flex items-center gap-1 mt-4 text-sm font-medium text-blue-600 hover:underline break-all"
+                    download={c.fileName}
+                    className="inline-flex items-center gap-1 mt-4 text-sm font-medium text-blue-600 hover:underline"
                   >
                     {c.cta} <ArrowRight className="w-4 h-4" />
                   </a>
@@ -1839,7 +1841,7 @@ function InstallQrSection() {
         </div>
 
         <p className="text-center text-xs text-slate-500 mt-6">
-          PWA chỉ cài được trên bản đã xuất bản. Mở trên Chrome (Android) hoặc Safari (iOS) → "Thêm vào màn hình chính".
+          Chỉ hỗ trợ Android. Sau khi tải, bật &quot;Cài từ nguồn không xác định&quot; nếu hệ thống yêu cầu.
         </p>
       </div>
     </section>
