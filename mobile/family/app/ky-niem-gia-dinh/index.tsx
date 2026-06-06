@@ -1,13 +1,14 @@
-import { useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Image,
   Pressable,
+  RefreshControl,
   ScrollView,
   Text,
   View,
 } from "react-native";
-import { useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
 import { FolderOpen, Lock, Plus } from "lucide-react-native";
 import { Screen } from "@mobile/components/Screen";
@@ -16,9 +17,10 @@ import { SectionHeader } from "@mobile/components/SectionHeader";
 import { EmptyState, LoadingState } from "@mobile/components/states";
 import { useFamilyContext } from "@mobile/hooks/useFamilyContext";
 import { listMoments, type Moment } from "@mobile/api/moments";
+import { momentQueryKeys } from "@mobile/constants/momentQueryKeys";
 import { useTheme } from "@mobile/theme/themeStore";
 import { useThemedStyles } from "@mobile/theme/useThemedStyles";
-import { radius } from "@mobile/theme/colors";
+import { cardShadow, radius } from "@mobile/theme/colors";
 
 function groupByMonth(moments: Moment[]) {
   const map = new Map<string, Moment[]>();
@@ -31,53 +33,75 @@ function groupByMonth(moments: Moment[]) {
   return Array.from(map.entries());
 }
 
+function MomentThumb({
+  moment,
+  caption,
+  onPress,
+}: {
+  moment: Moment;
+  caption: string;
+  onPress: () => void;
+}) {
+  const styles = useKyNiemStyles();
+  const { colors } = useTheme();
+  const [imgFailed, setImgFailed] = useState(false);
+  const showImage = moment.media_url && !imgFailed;
+
+  return (
+    <Pressable style={styles.cell} onPress={onPress}>
+      <Card style={styles.photoCard}>
+        {showImage ? (
+          <Image
+            source={{ uri: moment.media_url }}
+            style={styles.photo}
+            onError={() => setImgFailed(true)}
+          />
+        ) : (
+          <View style={styles.placeholder}>
+            <Text style={styles.placeholderEmoji}>📸</Text>
+            {caption ? (
+              <Text style={styles.placeholderCaption} numberOfLines={2}>
+                {caption}
+              </Text>
+            ) : null}
+          </View>
+        )}
+        {caption && showImage ? (
+          <Text style={styles.caption} numberOfLines={1}>
+            {caption}
+          </Text>
+        ) : null}
+      </Card>
+    </Pressable>
+  );
+}
+
 export default function KyNiemScreen() {
   const router = useRouter();
   const { familyId, isLoading: famLoading } = useFamilyContext();
   const { colors } = useTheme();
-  const styles = useThemedStyles((c, fontScale) => ({
-    headerActions: { flexDirection: "row" as const, gap: 8 },
-    privacy: {
-      flexDirection: "row" as const,
-      alignItems: "center" as const,
-      gap: 8,
-      backgroundColor: c.tintGreen,
-      paddingHorizontal: 12,
-      paddingVertical: 10,
-      borderRadius: radius.lg,
-      marginBottom: 16,
-    },
-    privacyText: { fontSize: 11 * fontScale, color: c.success, flex: 1 },
-    grid: { flexDirection: "row" as const, flexWrap: "wrap" as const, gap: 8 },
-    cell: { width: "47.5%" as const, marginBottom: 8 },
-    photoCard: { padding: 0, overflow: "hidden" as const },
-    photo: { width: "100%" as const, aspectRatio: 1 },
-    placeholder: {
-      width: "100%" as const,
-      aspectRatio: 1,
-      backgroundColor: c.mutedBg,
-      alignItems: "center" as const,
-      justifyContent: "center" as const,
-    },
-    caption: {
-      fontSize: 11 * fontScale,
-      color: c.muted,
-      paddingHorizontal: 8,
-      paddingVertical: 6,
-    },
-    monthBlock: { marginBottom: 20 },
-  }));
+  const styles = useKyNiemStyles();
 
   const q = useQuery({
-    queryKey: ["family-moments", familyId],
+    queryKey: momentQueryKeys(familyId).list,
     queryFn: () => listMoments({ family_id: familyId! }),
     enabled: !!familyId,
   });
 
+  useFocusEffect(
+    useCallback(() => {
+      if (familyId) void q.refetch();
+    }, [familyId, q.refetch]),
+  );
+
   const grouped = useMemo(() => groupByMonth(q.data?.moments ?? []), [q.data]);
 
+  const onRefresh = useCallback(() => {
+    void q.refetch();
+  }, [q.refetch]);
+
   return (
-    <Screen contentStyle={{ paddingTop: 0 }}>
+    <Screen scroll={false} contentStyle={{ paddingTop: 0 }}>
       <PageHeader
         eyebrow="Family Core"
         title="Kỷ niệm gia đình"
@@ -120,7 +144,10 @@ export default function KyNiemScreen() {
           onAction={() => router.push("/ky-niem-gia-dinh/upload")}
         />
       ) : (
-        <ScrollView showsVerticalScrollIndicator={false}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          refreshControl={<RefreshControl refreshing={q.isFetching} onRefresh={onRefresh} tintColor={colors.brand} />}
+        >
           {grouped.map(([month, items]) => (
             <View key={month} style={styles.monthBlock}>
               <SectionHeader title={month} />
@@ -128,26 +155,12 @@ export default function KyNiemScreen() {
                 {items.map((m) => {
                   const caption = (m.caption ?? "").replace(/^\[Pilot\]\s*/, "");
                   return (
-                    <Pressable
+                    <MomentThumb
                       key={m.id}
-                      style={styles.cell}
+                      moment={m}
+                      caption={caption}
                       onPress={() => router.push(`/ky-niem-gia-dinh/${m.id}`)}
-                    >
-                      <Card style={styles.photoCard}>
-                        {m.media_url ? (
-                          <Image source={{ uri: m.media_url }} style={styles.photo} />
-                        ) : (
-                          <View style={styles.placeholder}>
-                            <Text style={{ fontSize: 28 }}>📸</Text>
-                          </View>
-                        )}
-                        {caption ? (
-                          <Text style={styles.caption} numberOfLines={1}>
-                            {caption}
-                          </Text>
-                        ) : null}
-                      </Card>
-                    </Pressable>
+                    />
                   );
                 })}
               </View>
@@ -161,4 +174,48 @@ export default function KyNiemScreen() {
       )}
     </Screen>
   );
+}
+
+function useKyNiemStyles() {
+  return useThemedStyles((c, fontScale) => ({
+    headerActions: { flexDirection: "row" as const, gap: 8 },
+    privacy: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      gap: 8,
+      backgroundColor: c.tintGreen,
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+      borderRadius: radius.lg,
+      marginBottom: 16,
+    },
+    privacyText: { fontSize: 11 * fontScale, color: c.success, flex: 1 },
+    grid: { flexDirection: "row" as const, flexWrap: "wrap" as const, gap: 8 },
+    cell: { width: "47.5%" as const, marginBottom: 8 },
+    photoCard: { padding: 0, overflow: "hidden" as const, ...cardShadow(c) },
+    photo: { width: "100%" as const, aspectRatio: 1 },
+    placeholder: {
+      width: "100%" as const,
+      aspectRatio: 1,
+      backgroundColor: c.mutedBg,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+      padding: 12,
+      gap: 6,
+    },
+    placeholderEmoji: { fontSize: 28 },
+    placeholderCaption: {
+      fontSize: 11 * fontScale,
+      color: c.muted,
+      textAlign: "center" as const,
+    },
+    caption: {
+      fontSize: 11 * fontScale,
+      color: c.foreground,
+      paddingHorizontal: 8,
+      paddingVertical: 6,
+      fontWeight: "600" as const,
+    },
+    monthBlock: { marginBottom: 20 },
+  }));
 }

@@ -6,6 +6,7 @@ import {
   Text,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
 import { LinearGradient } from "expo-linear-gradient";
@@ -294,6 +295,7 @@ function useHomeStyles() {
 
 export default function HomeScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { colors, theme } = useTheme();
   const { theme: prefTheme, setTheme } = useAppPrefs();
   const styles = useHomeStyles();
@@ -352,7 +354,7 @@ export default function HomeScreen() {
     theme === "dark" ? [colors.brand, colors.brandDeep] : [colors.brand, "#071A3D"];
 
   return (
-    <Screen contentStyle={{ paddingTop: 12 }}>
+    <Screen contentStyle={{ paddingTop: Math.max(insets.top + 8, 16) }}>
       <View style={styles.header}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 8, flexShrink: 1, minWidth: 0 }}>
           <LinearGradient colors={logoGrad} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.logoGradient}>

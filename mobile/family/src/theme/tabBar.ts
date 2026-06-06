@@ -1,23 +1,28 @@
 import type { EdgeInsets } from "react-native-safe-area-context";
 
 /** Ô icon tab thường (khớp BottomNav web ~40px). */
-export const TAB_BAR_ICON_SLOT = 34;
+export const TAB_BAR_ICON_SLOT = 40;
 
 /** Chiều cao thanh tab — web `min-h-14` ≈ 56px. */
-export const TAB_BAR_CONTENT_HEIGHT = 56;
+export const TAB_BAR_CONTENT_HEIGHT = 58;
 
 /** Khoảng nổi dưới màn hình. */
-export const TAB_BAR_FLOAT_MARGIN = 8;
+export const TAB_BAR_FLOAT_MARGIN = 12;
 
-/** Nút Bảo an giữa — web `h-12 w-12` = 48px. */
-export const TAB_BAR_FEATURED_SIZE = 44;
+/** Đẩy thanh tab lên thêm so với mép dưới điện thoại (~10–15px). */
+export const TAB_BAR_BOTTOM_OFFSET = 12;
 
-/** Căn tâm nút giữa với icon tab thường: (featured − slot) / 2. */
-export const TAB_BAR_FEATURED_LIFT = Math.round((TAB_BAR_FEATURED_SIZE - TAB_BAR_ICON_SLOT) / 2);
+/** Nút Bảo an giữa — cùng kích thước ô icon để căn hàng. */
+export const TAB_BAR_FEATURED_SIZE = 40;
 
-/** Padding trên shell — cân đối với nút giữa. */
+/** Padding trên shell. */
 export const TAB_BAR_SHELL_PADDING_TOP = 8;
 
 export function getTabBarBottomInset(insets: EdgeInsets): number {
-  return TAB_BAR_CONTENT_HEIGHT + TAB_BAR_FLOAT_MARGIN + Math.max(insets.bottom, 6);
+  return (
+    TAB_BAR_CONTENT_HEIGHT +
+    TAB_BAR_FLOAT_MARGIN +
+    TAB_BAR_BOTTOM_OFFSET +
+    Math.max(insets.bottom, 6)
+  );
 }

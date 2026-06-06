@@ -48,12 +48,12 @@ export function ContactQuickGrid({
 }) {
   const { colors } = useTheme();
   const styles = useThemedStyles((c) => ({
-    grid: { flexDirection: "row" as const, flexWrap: "wrap" as const, gap: 10 },
+    grid: { flexDirection: "row" as const, flexWrap: "wrap" as const, gap: 10, marginBottom: 4 },
     btn: {
       width: "47%" as const,
-      minHeight: 104,
-      padding: 14,
-      borderRadius: radius.xl,
+      minHeight: 96,
+      padding: 12,
+      borderRadius: radius.lg,
       justifyContent: "space-between" as const,
     },
     iconWrap: {

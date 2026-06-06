@@ -7,8 +7,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { radius } from "@mobile/theme/colors";
 import { useTheme } from "@mobile/theme/themeStore";
 import {
+  TAB_BAR_BOTTOM_OFFSET,
   TAB_BAR_CONTENT_HEIGHT,
-  TAB_BAR_FEATURED_LIFT,
   TAB_BAR_FEATURED_SIZE,
   TAB_BAR_FLOAT_MARGIN,
   TAB_BAR_ICON_SLOT,
@@ -19,7 +19,7 @@ export function GlassTabBar({ state, descriptors, navigation }: BottomTabBarProp
   const insets = useSafeAreaInsets();
   const { colors, theme } = useTheme();
   const isDark = theme === "dark";
-  const bottomPad = Math.max(insets.bottom, TAB_BAR_FLOAT_MARGIN);
+  const bottomPad = Math.max(insets.bottom, TAB_BAR_FLOAT_MARGIN) + TAB_BAR_BOTTOM_OFFSET;
 
   const overlay = isDark ? "rgba(30, 30, 30, 0.5)" : "rgba(255, 255, 255, 0.5)";
   const androidSolid = isDark ? "rgba(30, 30, 30, 0.9)" : "rgba(255, 255, 255, 0.94)";
@@ -160,16 +160,15 @@ const styles = StyleSheet.create({
   row: {
     flex: 1,
     flexDirection: "row",
-    alignItems: "flex-end",
-    paddingBottom: 6,
+    alignItems: "center",
     paddingHorizontal: 2,
   },
   tab: {
     flex: 1,
     alignItems: "center",
-    justifyContent: "flex-end",
+    justifyContent: "center",
     gap: 2,
-    paddingBottom: 2,
+    paddingBottom: 4,
   },
   iconSlot: {
     width: TAB_BAR_ICON_SLOT,
@@ -178,7 +177,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   featuredIconSlot: {
-    marginTop: -TAB_BAR_FEATURED_LIFT,
     height: TAB_BAR_FEATURED_SIZE,
     justifyContent: "center",
   },
@@ -192,7 +190,7 @@ const styles = StyleSheet.create({
     width: TAB_BAR_FEATURED_SIZE,
     height: TAB_BAR_FEATURED_SIZE,
     borderRadius: TAB_BAR_FEATURED_SIZE / 2,
-    borderWidth: 3,
+    borderWidth: 2,
     alignItems: "center",
     justifyContent: "center",
     ...Platform.select({

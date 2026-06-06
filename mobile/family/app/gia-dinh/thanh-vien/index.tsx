@@ -1,9 +1,11 @@
 import { Image, Pressable, Text, View } from "react-native";
+import { useRouter } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
-import { Crown, User } from "lucide-react-native";
+import { Crown, Pencil, UserPlus } from "lucide-react-native";
 import { Screen } from "@mobile/components/Screen";
 import { Card, PageHeader } from "@mobile/components/ui";
 import { listFamilyMembers } from "@mobile/api/family-members";
+import { memberDisplayName } from "@mobile/components/family/FamilyMemberSelect";
 import { useFamilyContext } from "@mobile/hooks/useFamilyContext";
 import { useTheme } from "@mobile/theme/themeStore";
 import { useThemedStyles } from "@mobile/theme/useThemedStyles";
@@ -18,9 +20,19 @@ function initials(name: string | null, email: string | null) {
 }
 
 export default function FamilyMembersScreen() {
-  const { familyId } = useFamilyContext();
+  const router = useRouter();
+  const { familyId, family, profile } = useFamilyContext();
   const { colors } = useTheme();
   const styles = useThemedStyles((c, fontScale) => ({
+    topRow: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      justifyContent: "space-between" as const,
+      marginBottom: 12,
+    },
+    count: { fontSize: 12 * fontScale, color: c.muted },
+    inviteBtn: { flexDirection: "row" as const, alignItems: "center" as const, gap: 6 },
+    inviteText: { fontSize: 13 * fontScale, fontWeight: "700" as const, color: c.brand },
     row: { flexDirection: "row" as const, alignItems: "center" as const, gap: 12, padding: 14 },
     avatar: { width: 44, height: 44, borderRadius: 22 },
     avatarFallback: {
@@ -34,7 +46,16 @@ export default function FamilyMembersScreen() {
     avatarText: { color: c.brand, fontWeight: "800" as const, fontSize: 13 * fontScale },
     name: { fontWeight: "800" as const, color: c.foreground, fontSize: 14 * fontScale },
     meta: { fontSize: 11 * fontScale, color: c.muted, marginTop: 2 },
-    badge: {
+    selfBadge: {
+      fontSize: 10 * fontScale,
+      fontWeight: "700" as const,
+      color: c.brand,
+      backgroundColor: c.tintBlue,
+      paddingHorizontal: 6,
+      paddingVertical: 2,
+      borderRadius: radius.pill,
+    },
+    ownerBadge: {
       flexDirection: "row" as const,
       alignItems: "center" as const,
       gap: 6,
@@ -43,7 +64,18 @@ export default function FamilyMembersScreen() {
       borderRadius: radius.pill,
       backgroundColor: c.tintOrange,
     },
-    badgeText: { fontSize: 10 * fontScale, fontWeight: "800" as const, color: c.warning },
+    ownerText: { fontSize: 10 * fontScale, fontWeight: "800" as const, color: c.warning },
+    coOwnerBadge: {
+      fontSize: 10 * fontScale,
+      fontWeight: "600" as const,
+      color: c.muted,
+      borderWidth: 1,
+      borderColor: c.cardBorder,
+      paddingHorizontal: 6,
+      paddingVertical: 2,
+      borderRadius: radius.pill,
+    },
+    editHint: { fontSize: 11 * fontScale, color: c.brand, marginTop: 4, fontWeight: "600" as const },
   }));
 
   const q = useQuery({
@@ -52,46 +84,76 @@ export default function FamilyMembersScreen() {
     enabled: !!familyId,
   });
 
+  const members = q.data?.members ?? [];
+
   return (
     <Screen contentStyle={{ paddingTop: 0 }}>
-      <PageHeader title="Thành viên" back="/(tabs)/gia-dinh" />
+      <PageHeader title="Thành viên" subtitle={family?.name} eyebrow="Gia đình" back="/(tabs)/gia-dinh" />
 
-      {(q.data?.members ?? []).map((m) => (
+      <View style={styles.topRow}>
+        <Text style={styles.count}>{members.length} thành viên</Text>
         <Pressable
-          key={m.user_id}
-          onPress={() => {}}
-          style={({ pressed }) => [{ opacity: pressed ? 0.9 : 1 }]}
+          style={styles.inviteBtn}
+          onPress={() =>
+            router.push({
+              pathname: "/coming-soon",
+              params: { feature: "moi-thanh-vien", back: "/gia-dinh/thanh-vien" },
+            })
+          }
         >
-          <Card style={styles.row}>
-            {m.avatar_url ? (
-              <Image source={{ uri: m.avatar_url }} style={styles.avatar} />
-            ) : (
-              <View style={styles.avatarFallback}>
-                <Text style={styles.avatarText}>{initials(m.full_name, m.email)}</Text>
-              </View>
-            )}
-            <View style={{ flex: 1, minWidth: 0 }}>
-              <Text style={styles.name} numberOfLines={1}>
-                {m.full_name ?? m.username ?? m.email ?? "Thành viên"}
-              </Text>
-              <Text style={styles.meta} numberOfLines={1}>
-                {m.email ?? "—"}
-              </Text>
-            </View>
-            {m.is_owner ? (
-              <View style={styles.badge}>
-                <Crown color={colors.warning} size={14} />
-                <Text style={styles.badgeText}>Chủ hộ</Text>
-              </View>
-            ) : (
-              <User color={colors.muted} size={18} />
-            )}
-          </Card>
+          <UserPlus color={colors.brand} size={16} />
+          <Text style={styles.inviteText}>Mời thành viên</Text>
         </Pressable>
-      ))}
+      </View>
+
+      {members.map((m) => {
+        const name = memberDisplayName(m);
+        const isSelf = profile?.id === m.user_id;
+        return (
+          <Pressable
+            key={m.user_id}
+            onPress={() => {
+              if (isSelf) router.push("/(tabs)/tai-khoan");
+            }}
+            style={({ pressed }) => [{ opacity: pressed ? 0.9 : 1 }]}
+          >
+            <Card style={styles.row}>
+              {m.avatar_url ? (
+                <Image source={{ uri: m.avatar_url }} style={styles.avatar} />
+              ) : (
+                <View style={styles.avatarFallback}>
+                  <Text style={styles.avatarText}>{initials(m.full_name, m.email)}</Text>
+                </View>
+              )}
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                  <Text style={styles.name} numberOfLines={1}>
+                    {name}
+                  </Text>
+                  {isSelf ? <Text style={styles.selfBadge}>Bạn</Text> : null}
+                  {!m.is_owner && m.role === "family_owner" ? (
+                    <Text style={styles.coOwnerBadge}>Đồng chủ hộ</Text>
+                  ) : null}
+                </View>
+                <Text style={styles.meta} numberOfLines={1}>
+                  {m.email ?? "—"}
+                </Text>
+                {isSelf ? <Text style={styles.editHint}>Nhấn để sửa thông tin tài khoản</Text> : null}
+              </View>
+              {m.is_owner ? (
+                <View style={styles.ownerBadge}>
+                  <Crown color={colors.warning} size={14} />
+                  <Text style={styles.ownerText}>Chủ hộ</Text>
+                </View>
+              ) : isSelf ? (
+                <Pencil color={colors.brand} size={18} />
+              ) : null}
+            </Card>
+          </Pressable>
+        );
+      })}
 
       <View style={{ height: 24 }} />
     </Screen>
   );
 }
-

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, ScrollView, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { useMutation } from "@tanstack/react-query";
 import { Screen } from "@mobile/components/Screen";
@@ -8,9 +8,11 @@ import { useFamilyContext } from "@mobile/hooks/useFamilyContext";
 import { createAlbum } from "@mobile/api/albums";
 import { albumCategories, type AlbumCategory } from "@mobile/constants/album-categories";
 import { toast } from "@mobile/utils/toast";
-import { colors, radius } from "@mobile/theme/colors";
+import { useThemedStyles } from "@mobile/theme/useThemedStyles";
+import { radius } from "@mobile/theme/colors";
 
 export default function TaoAlbumScreen() {
+  const styles = useTaoAlbumStyles();
   const router = useRouter();
   const { familyId } = useFamilyContext();
   const [title, setTitle] = useState("");
@@ -73,21 +75,23 @@ export default function TaoAlbumScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  label: { fontSize: 14, fontWeight: "600", color: colors.foreground, marginBottom: 8 },
-  chips: { flexDirection: "row", gap: 8 },
-  chip: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: radius.lg,
-    backgroundColor: colors.card,
-    borderWidth: 1,
-    borderColor: colors.cardBorder,
-  },
-  chipActive: { backgroundColor: colors.tintBlue, borderColor: colors.brand },
-  chipText: { fontSize: 13, fontWeight: "600", color: colors.muted },
-  chipTextActive: { color: colors.brand },
-});
+function useTaoAlbumStyles() {
+  return useThemedStyles((c, fontScale) => ({
+    label: { fontSize: 14 * fontScale, fontWeight: "600" as const, color: c.foreground, marginBottom: 8 },
+    chips: { flexDirection: "row" as const, gap: 8 },
+    chip: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      gap: 4,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      borderRadius: radius.lg,
+      backgroundColor: c.card,
+      borderWidth: 1,
+      borderColor: c.cardBorder,
+    },
+    chipActive: { backgroundColor: c.tintBlue, borderColor: c.brand },
+    chipText: { fontSize: 13 * fontScale, fontWeight: "600" as const, color: c.muted },
+    chipTextActive: { color: c.brand },
+  }));
+}

@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import {
@@ -16,17 +16,21 @@ import {
 } from "lucide-react-native";
 import { Screen } from "@mobile/components/Screen";
 import { Card, PageHeader } from "@mobile/components/ui";
-import { colors, radius } from "@mobile/theme/colors";
 import { useAuth } from "@mobile/hooks/useAuth";
 import { useFamilyContext } from "@mobile/hooks/useFamilyContext";
 import { useAppPrefs } from "@mobile/hooks/useAppPrefs";
 import { getMyContext } from "@shared/supabase/auth";
+import { useTheme } from "@mobile/theme/themeStore";
+import { useThemedStyles } from "@mobile/theme/useThemedStyles";
+import { radius } from "@mobile/theme/colors";
 
 export default function TaiKhoanScreen() {
   const { signOut, user } = useAuth();
   const { profile, family } = useFamilyContext();
   const router = useRouter();
   const { theme, setTheme } = useAppPrefs();
+  const { colors } = useTheme();
+  const styles = useAccountStyles();
 
   const ctxQ = useQuery({ queryKey: ["my-context"], queryFn: () => getMyContext() });
 
@@ -42,8 +46,16 @@ export default function TaiKhoanScreen() {
     { icon: Phone, label: "Người liên hệ khẩn cấp", onPress: () => router.push("/lien-he") },
     { icon: QrCode, label: "QR ra vào khách", onPress: () => router.push("/qr-vao-ra") },
     { icon: Wrench, label: "Dịch vụ & tiện ích", onPress: () => router.push("/dich-vu") },
-    { icon: Car, label: "Đặt xe gia đình", onPress: () => router.push("/dat-xe") },
-    { icon: Crown, label: "Gói ưu đãi", onPress: () => router.push("/goi-uu-dai") },
+    {
+      icon: Car,
+      label: "Đặt xe gia đình",
+      onPress: () => router.push({ pathname: "/coming-soon", params: { feature: "dat-xe-gia-dinh", back: "/(tabs)/tai-khoan" } }),
+    },
+    {
+      icon: Crown,
+      label: "Gói ưu đãi",
+      onPress: () => router.push({ pathname: "/coming-soon", params: { feature: "goi-uu-dai", back: "/(tabs)/tai-khoan" } }),
+    },
     {
       icon: Moon,
       label: "Giao diện tối",
@@ -56,7 +68,7 @@ export default function TaiKhoanScreen() {
 
   return (
     <Screen contentStyle={{ paddingTop: 0 }}>
-      <PageHeader title="Tài khoản" />
+      <PageHeader title="Tài khoản" showBack={false} />
       <Card style={styles.card}>
         <Text style={styles.name}>{profile?.full_name ?? "Thành viên"}</Text>
         <Text style={styles.email}>{user?.email ?? ctxQ.data?.email ?? ""}</Text>
@@ -86,24 +98,26 @@ export default function TaiKhoanScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  card: { gap: 8, marginBottom: 16 },
-  name: { fontSize: 22, fontWeight: "800", color: colors.foreground },
-  email: { fontSize: 14, color: colors.muted },
-  row: { flexDirection: "row", justifyContent: "space-between", marginTop: 8 },
-  label: { color: colors.muted },
-  value: { color: colors.foreground, fontWeight: "600" },
-  menuItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    padding: 14,
-    backgroundColor: colors.card,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.cardBorder,
-    marginBottom: 8,
-  },
-  menuLabel: { flex: 1, fontWeight: "600", color: colors.foreground },
-  menuValue: { fontSize: 12, color: colors.muted, fontWeight: "700" },
-});
+function useAccountStyles() {
+  return useThemedStyles((c, fontScale) => ({
+    card: { gap: 8, marginBottom: 16 },
+    name: { fontSize: 22 * fontScale, fontWeight: "800" as const, color: c.foreground },
+    email: { fontSize: 14 * fontScale, color: c.muted },
+    row: { flexDirection: "row" as const, justifyContent: "space-between" as const, marginTop: 8 },
+    label: { color: c.muted, fontSize: 14 * fontScale },
+    value: { color: c.foreground, fontWeight: "600" as const, fontSize: 14 * fontScale },
+    menuItem: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      gap: 12,
+      padding: 14,
+      backgroundColor: c.card,
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      borderColor: c.cardBorder,
+      marginBottom: 8,
+    },
+    menuLabel: { flex: 1, fontWeight: "600" as const, color: c.foreground, fontSize: 15 * fontScale },
+    menuValue: { fontSize: 12 * fontScale, color: c.muted, fontWeight: "700" as const },
+  }));
+}

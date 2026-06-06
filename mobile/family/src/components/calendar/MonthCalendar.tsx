@@ -168,7 +168,7 @@ export function MonthCalendar({
             borderWidth = 2;
           }
 
-          const dotColor = selected ? colors.white : count > 0 ? colors.success : "transparent";
+          const hasEvents = count > 0;
 
           return (
             <Pressable
@@ -187,7 +187,14 @@ export function MonthCalendar({
                 ]}
               >
                 <Text style={[styles.dayText, { color: textColor }]}>{cell.date.getDate()}</Text>
-                <View style={[styles.dot, { backgroundColor: dotColor }]} />
+                {hasEvents ? (
+                  <View
+                    style={[
+                      styles.dot,
+                      { backgroundColor: selected ? colors.white : colors.success },
+                    ]}
+                  />
+                ) : null}
               </View>
             </Pressable>
           );

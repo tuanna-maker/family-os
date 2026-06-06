@@ -163,7 +163,7 @@ export function SafeCheckPanel({
       ) : history.length === 0 ? (
         <Text style={styles.histNote}>Chưa có lượt kiểm tra nào.</Text>
       ) : (
-        history.slice(0, 8).map((h) => {
+        history.slice(0, 3).map((h) => {
           const sc = statusColors(colors, h.status);
           return (
             <View key={h.id} style={styles.histItem}>

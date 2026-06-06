@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, ScrollView, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, Plus, QrCode } from "lucide-react-native";
@@ -8,7 +8,6 @@ import { Screen } from "@mobile/components/Screen";
 import { Card, PageHeader, PrimaryButton } from "@mobile/components/ui";
 import { SectionHeader } from "@mobile/components/SectionHeader";
 import { LoadingState, EmptyState } from "@mobile/components/states";
-import { colors, radius } from "@mobile/theme/colors";
 import { useFamilyContext } from "@mobile/hooks/useFamilyContext";
 import {
   getHelperBundle,
@@ -18,9 +17,19 @@ import {
   toggleHelperTask,
 } from "@mobile/api/helpers";
 import { toast } from "@mobile/utils/toast";
+import { useTheme } from "@mobile/theme/themeStore";
+import { useThemedStyles } from "@mobile/theme/useThemedStyles";
+import { cardShadow, radius } from "@mobile/theme/colors";
+
+function formatSalary(value: number | null | undefined) {
+  if (value == null || Number.isNaN(value)) return "Chưa cập nhật";
+  return `${value.toLocaleString("vi-VN")}đ`;
+}
 
 export default function GiupViecScreen() {
   const router = useRouter();
+  const { colors } = useTheme();
+  const styles = useGiupViecStyles();
   const { familyId } = useFamilyContext();
   const qc = useQueryClient();
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -44,6 +53,7 @@ export default function GiupViecScreen() {
   const selected = useMemo(() => helpers.find((h) => h.id === activeId), [helpers, activeId]);
   const today = new Date().toISOString().slice(0, 10);
   const todayAtt = bundleQ.data?.attendance?.find((a) => a.att_date === today);
+  const tasks = bundleQ.data?.tasks ?? [];
 
   const issueQr = useMutation({
     mutationFn: (kind: "check_in" | "check_out") => issueHelperShiftToken({ helper_id: activeId!, kind }),
@@ -90,7 +100,7 @@ export default function GiupViecScreen() {
       {helpers.length > 0 && (
         <>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }}>
-            <View style={{ flexDirection: "row", gap: 8 }}>
+            <View style={styles.chipRow}>
               {helpers.map((h) => (
                 <Pressable
                   key={h.id}
@@ -109,32 +119,48 @@ export default function GiupViecScreen() {
           </ScrollView>
 
           {selected && (
-            <Card style={{ marginBottom: 12 }}>
+            <Card style={styles.profileCard}>
               <Text style={styles.name}>{selected.name}</Text>
-              <Text style={styles.sub}>{selected.role ?? "Giúp việc"} · {selected.phone ?? "—"}</Text>
-              <Text style={styles.sub}>Lương: {selected.salary.toLocaleString("vi-VN")}đ</Text>
+              <Text style={styles.sub}>
+                {selected.role ?? "Giúp việc"} · {selected.phone ?? "—"}
+              </Text>
+              <Text style={styles.sub}>Lương: {formatSalary(selected.salary)}</Text>
               <Pressable onPress={() => router.push(`/quan-ly-giup-viec/them?type=helper&id=${selected.id}`)}>
                 <Text style={styles.link}>Sửa hồ sơ</Text>
               </Pressable>
             </Card>
           )}
 
-          <SectionHeader title="Việc hôm nay" onAction={() => router.push(`/quan-ly-giup-viec/them?type=task&helperId=${activeId}`)} />
-          {(bundleQ.data?.tasks ?? []).map((t) => (
-            <Card key={t.id} style={styles.taskRow}>
-              <Pressable onPress={() => taskToggle.mutate({ id: t.id, done: !t.done })} style={styles.check}>
-                {t.done ? <Check color={colors.success} size={16} /> : null}
-              </Pressable>
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.taskTitle, t.done && styles.done]}>{t.title}</Text>
-                <Text style={styles.sub}>{t.time}</Text>
-              </View>
-            </Card>
-          ))}
+          <SectionHeader
+            title="Việc hôm nay"
+            onAction={() => router.push(`/quan-ly-giup-viec/them?type=task&helperId=${activeId}`)}
+          />
+          {tasks.length === 0 ? (
+            <Text style={styles.emptyTasks}>Chưa có việc hôm nay. Nhấn + Thêm để tạo công việc.</Text>
+          ) : (
+            tasks.map((t) => (
+              <Card key={t.id} style={styles.taskRow}>
+                <Pressable onPress={() => taskToggle.mutate({ id: t.id, done: !t.done })} style={styles.check}>
+                  {t.done ? <Check color={colors.success} size={16} /> : null}
+                </Pressable>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.taskTitle, t.done && styles.done]}>{t.title}</Text>
+                  <Text style={styles.sub}>{t.time}</Text>
+                </View>
+              </Card>
+            ))
+          )}
 
           <SectionHeader title="Điểm danh" />
-          <Text style={styles.sub}>Hôm nay: {todayAtt?.status ?? "Chưa chấm"}</Text>
-          <PrimaryButton label="Điểm danh có mặt" onPress={() => markPresent.mutate()} loading={markPresent.isPending} />
+          <Card style={styles.attendanceCard}>
+            <Text style={styles.sub}>
+              Hôm nay:{" "}
+              <Text style={styles.attStatus}>
+                {todayAtt?.status === "present" ? "Có mặt" : todayAtt?.status ?? "Chưa chấm"}
+              </Text>
+            </Text>
+            <PrimaryButton label="Điểm danh có mặt" onPress={() => markPresent.mutate()} loading={markPresent.isPending} />
+          </Card>
 
           <SectionHeader title="QR ca làm" />
           <View style={styles.qrRow}>
@@ -148,10 +174,12 @@ export default function GiupViecScreen() {
             </Pressable>
           </View>
           {qrToken && (
-            <View style={styles.qrWrap}>
+            <Card style={styles.qrWrap}>
               <QRCode value={qrToken} size={180} backgroundColor={colors.card} color={colors.foreground} />
-              <Text style={styles.token} selectable>{qrToken}</Text>
-            </View>
+              <Text style={styles.token} selectable>
+                {qrToken}
+              </Text>
+            </Card>
           )}
         </>
       )}
@@ -160,58 +188,66 @@ export default function GiupViecScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  addBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    backgroundColor: colors.brandDeep,
-    padding: 14,
-    borderRadius: radius.lg,
-    marginBottom: 16,
-  },
-  addText: { color: colors.white, fontWeight: "700" },
-  chip: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.cardBorder,
-    backgroundColor: colors.card,
-  },
-  chipActive: { backgroundColor: colors.brandDeep, borderColor: colors.brandDeep },
-  chipText: { fontWeight: "600", color: colors.foreground },
-  chipTextActive: { fontWeight: "600", color: colors.white },
-  name: { fontSize: 18, fontWeight: "800", color: colors.foreground },
-  sub: { fontSize: 12, color: colors.muted, marginTop: 4 },
-  link: { color: colors.brand, fontWeight: "700", marginTop: 8 },
-  taskRow: { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 8 },
-  check: {
-    width: 24,
-    height: 24,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: colors.cardBorder,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  taskTitle: { fontWeight: "700", color: colors.foreground },
-  done: { textDecorationLine: "line-through", color: colors.muted },
-  qrRow: { flexDirection: "row", gap: 12, marginBottom: 16 },
-  qrBtn: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    padding: 14,
-    borderRadius: radius.lg,
-    backgroundColor: colors.card,
-    borderWidth: 1,
-    borderColor: colors.cardBorder,
-  },
-  qrBtnText: { fontWeight: "700", color: colors.foreground },
-  qrWrap: { alignItems: "center", gap: 12, padding: 16 },
-  token: { fontSize: 11, color: colors.muted, textAlign: "center" },
-});
+function useGiupViecStyles() {
+  return useThemedStyles((c, fontScale) => ({
+    addBtn: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+      gap: 8,
+      backgroundColor: c.brandDeep,
+      padding: 14,
+      borderRadius: radius.lg,
+      marginBottom: 16,
+    },
+    addText: { color: c.white, fontWeight: "700" as const, fontSize: 15 * fontScale },
+    chipRow: { flexDirection: "row" as const, gap: 8 },
+    chip: {
+      paddingHorizontal: 14,
+      paddingVertical: 8,
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      borderColor: c.cardBorder,
+      backgroundColor: c.card,
+    },
+    chipActive: { backgroundColor: c.brandDeep, borderColor: c.brandDeep },
+    chipText: { fontWeight: "600" as const, color: c.foreground, fontSize: 13 * fontScale },
+    chipTextActive: { fontWeight: "600" as const, color: c.white, fontSize: 13 * fontScale },
+    profileCard: { marginBottom: 12, ...cardShadow(c) },
+    name: { fontSize: 18 * fontScale, fontWeight: "800" as const, color: c.foreground },
+    sub: { fontSize: 12 * fontScale, color: c.muted, marginTop: 4 },
+    link: { color: c.brand, fontWeight: "700" as const, marginTop: 8, fontSize: 13 * fontScale },
+    emptyTasks: { fontSize: 12 * fontScale, color: c.muted, marginBottom: 12, fontStyle: "italic" as const },
+    taskRow: { flexDirection: "row" as const, alignItems: "center" as const, gap: 10, marginBottom: 8 },
+    check: {
+      width: 24,
+      height: 24,
+      borderRadius: 6,
+      borderWidth: 1,
+      borderColor: c.cardBorder,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+      backgroundColor: c.mutedBg,
+    },
+    taskTitle: { fontWeight: "700" as const, color: c.foreground, fontSize: 14 * fontScale },
+    done: { textDecorationLine: "line-through" as const, color: c.muted },
+    attendanceCard: { gap: 12, marginBottom: 8 },
+    attStatus: { fontWeight: "700" as const, color: c.foreground },
+    qrRow: { flexDirection: "row" as const, gap: 12, marginBottom: 16 },
+    qrBtn: {
+      flex: 1,
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+      gap: 8,
+      padding: 14,
+      borderRadius: radius.lg,
+      backgroundColor: c.card,
+      borderWidth: 1,
+      borderColor: c.cardBorder,
+    },
+    qrBtnText: { fontWeight: "700" as const, color: c.foreground, fontSize: 14 * fontScale },
+    qrWrap: { alignItems: "center" as const, gap: 12, padding: 16, marginBottom: 8 },
+    token: { fontSize: 11 * fontScale, color: c.muted, textAlign: "center" as const },
+  }));
+}

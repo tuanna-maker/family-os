@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-import { View } from "react-native";
+import { ScrollView, Text, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Screen } from "@mobile/components/Screen";
-import { PageHeader, PrimaryButton, TextField } from "@mobile/components/ui";
-import { DateField, DateTimeField, toLocalIso } from "@mobile/components/DateTimeField";
+import { FieldLabel, PageHeader, PrimaryButton, SelectChip, TextField } from "@mobile/components/ui";
+import { DateField, DateTimeField, TimeField, toLocalIso, toDateOnly } from "@mobile/components/DateTimeField";
 import { EmojiPicker } from "@mobile/components/EmojiPicker";
 import { LoadingState } from "@mobile/components/states";
 import { useFamilyContext } from "@mobile/hooks/useFamilyContext";
@@ -17,6 +17,7 @@ import {
   upsertSchedule,
 } from "@mobile/api/children";
 import { toast } from "@mobile/utils/toast";
+import { useThemedStyles } from "@mobile/theme/useThemedStyles";
 
 type FormType = "child" | "schedule" | "homework" | "achievement" | "reminder";
 
@@ -28,8 +29,19 @@ const TITLES: Record<FormType, [string, string]> = {
   reminder: ["Thêm nhắc", "Sửa nhắc"],
 };
 
+const WEEKDAYS = [
+  { value: 1, label: "Thứ 2" },
+  { value: 2, label: "Thứ 3" },
+  { value: 3, label: "Thứ 4" },
+  { value: 4, label: "Thứ 5" },
+  { value: 5, label: "Thứ 6" },
+  { value: 6, label: "Thứ 7" },
+  { value: 0, label: "Chủ nhật" },
+];
+
 export default function ConCaiThemScreen() {
   const router = useRouter();
+  const styles = useFormStyles();
   const { type = "child", childId, id } = useLocalSearchParams<{ type?: FormType; childId?: string; id?: string }>();
   const formType = (type ?? "child") as FormType;
   const { familyId } = useFamilyContext();
@@ -62,6 +74,9 @@ export default function ConCaiThemScreen() {
   const [dueDate, setDueDate] = useState(toLocalIso(new Date()));
   const [remindAt, setRemindAt] = useState(toLocalIso(new Date()));
   const [activeChildId, setActiveChildId] = useState(childId ?? "");
+  const [dayOfWeek, setDayOfWeek] = useState(1);
+  const [timeStart, setTimeStart] = useState("08:00");
+  const [earnedAt, setEarnedAt] = useState(toDateOnly(new Date()));
 
   useEffect(() => {
     if (existing) {
@@ -93,6 +108,19 @@ export default function ConCaiThemScreen() {
         setTitle(r.title);
         setRemindAt(toLocalIso(new Date(r.remind_at)));
         if (r.child_id) setActiveChildId(r.child_id);
+      }
+      if (formType === "schedule") {
+        const s = existing as { subject: string; child_id: string; day_of_week: number; time_start?: string | null };
+        setSubject(s.subject);
+        setActiveChildId(s.child_id);
+        setDayOfWeek(s.day_of_week);
+        setTimeStart(s.time_start?.slice(0, 5) ?? "08:00");
+      }
+      if (formType === "achievement") {
+        const a = existing as { title: string; child_id: string; earned_at: string };
+        setTitle(a.title);
+        setActiveChildId(a.child_id);
+        setEarnedAt(a.earned_at.slice(0, 10));
       }
     }
   }, [existing, formType]);
@@ -140,20 +168,24 @@ export default function ConCaiThemScreen() {
         });
       }
       if (formType === "schedule") {
+        if (!subject.trim()) throw new Error("Nhập môn học");
+        if (!activeChildId) throw new Error("Chọn bé trước");
         return upsertSchedule({
           id,
           family_id: familyId,
           child_id: activeChildId,
-          day_of_week: 1,
-          subject: subject.trim() || title.trim(),
-          time_start: "08:00",
+          day_of_week: dayOfWeek,
+          subject: subject.trim(),
+          time_start: timeStart,
         });
       }
+      if (!title.trim()) throw new Error("Nhập tiêu đề");
       return upsertAchievement({
         id,
         family_id: familyId,
         child_id: activeChildId,
         title: title.trim(),
+        earned_at: earnedAt,
       });
     },
     onSuccess: () => {
@@ -165,6 +197,8 @@ export default function ConCaiThemScreen() {
   });
 
   if (q.isLoading || !familyId) return <Screen><LoadingState /></Screen>;
+
+  const children = q.data?.children ?? [];
 
   return (
     <Screen contentStyle={{ paddingTop: 0 }}>
@@ -196,8 +230,48 @@ export default function ConCaiThemScreen() {
         </>
       )}
 
-      {(formType === "schedule" || formType === "achievement") && (
-        <TextField label="Tiêu đề" value={title} onChangeText={setTitle} />
+      {formType === "schedule" && (
+        <>
+          {children.length > 1 && (
+            <>
+              <FieldLabel>Chọn bé</FieldLabel>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 16 }}>
+                <View style={styles.chipRow}>
+                  {children.map((c) => (
+                    <SelectChip
+                      key={c.id}
+                      label={c.name}
+                      active={activeChildId === c.id}
+                      onPress={() => setActiveChildId(c.id)}
+                    />
+                  ))}
+                </View>
+              </ScrollView>
+            </>
+          )}
+          <TextField label="Môn học *" value={subject} onChangeText={setSubject} placeholder="Toán" />
+          <FieldLabel>Thứ trong tuần</FieldLabel>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 16 }}>
+            <View style={styles.chipRow}>
+              {WEEKDAYS.map((d) => (
+                <SelectChip
+                  key={d.value}
+                  label={d.label}
+                  active={dayOfWeek === d.value}
+                  onPress={() => setDayOfWeek(d.value)}
+                />
+              ))}
+            </View>
+          </ScrollView>
+          <TimeField label="Giờ học" value={timeStart} onChange={setTimeStart} />
+        </>
+      )}
+
+      {formType === "achievement" && (
+        <>
+          <TextField label="Thành tích *" value={title} onChangeText={setTitle} placeholder="Học sinh giỏi tháng 5" />
+          <DateField label="Ngày đạt được" value={earnedAt} onChange={setEarnedAt} />
+        </>
       )}
 
       <View style={{ marginTop: 8 }}>
@@ -206,4 +280,10 @@ export default function ConCaiThemScreen() {
       <View style={{ height: 32 }} />
     </Screen>
   );
+}
+
+function useFormStyles() {
+  return useThemedStyles(() => ({
+    chipRow: { flexDirection: "row" as const, gap: 8, paddingBottom: 4 },
+  }));
 }

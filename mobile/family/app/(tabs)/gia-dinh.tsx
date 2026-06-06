@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Image, Pressable, ScrollView, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
@@ -34,6 +35,8 @@ import { useFamilyContext } from "@mobile/hooks/useFamilyContext";
 import { getDashboard } from "@mobile/api/dashboard";
 import { listMoments } from "@mobile/api/moments";
 import { listFamilyMembers } from "@mobile/api/family-members";
+import { FamilyMembersSheet } from "@mobile/components/family/FamilyMembersSheet";
+import { memberDisplayName } from "@mobile/components/family/FamilyMemberSelect";
 
 const HERO =
   "https://images.unsplash.com/photo-1609220136736-443140cffec6?w=240&h=240&fit=crop&crop=faces&q=70&auto=format";
@@ -94,6 +97,28 @@ function useGiaDinhStyles() {
     heroRow: { flexDirection: "row" as const, gap: 14, alignItems: "flex-start" as const },
     heroImgWrap: { position: "relative" as const },
     heroImg: { width: 100, height: 100, borderRadius: 50 },
+    avatarStack: { flexDirection: "row" as const, marginTop: 10 },
+    stackAvatar: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      borderWidth: 2,
+      borderColor: c.card,
+      marginLeft: -10,
+    },
+    stackAvatarFirst: { marginLeft: 0 },
+    stackMore: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      backgroundColor: c.tintBlue,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+      borderWidth: 2,
+      borderColor: c.card,
+      marginLeft: -10,
+    },
+    stackMoreText: { fontSize: 10 * fontScale, fontWeight: "800" as const, color: c.brand },
     camBtn: {
       position: "absolute" as const,
       bottom: 2,
@@ -232,6 +257,7 @@ export default function GiaDinhScreen() {
   const styles = useGiaDinhStyles();
   const { familyId, family, profile } = useFamilyContext();
   const familyName = family?.name ?? "Gia đình";
+  const [membersOpen, setMembersOpen] = useState(false);
 
   const dashQ = useQuery({
     queryKey: ["family-dashboard", familyId],
@@ -257,8 +283,13 @@ export default function GiaDinhScreen() {
   const expPrev = dash?.expenses_prev_month.total ?? 0;
   const expDelta = expPrev > 0 ? ((expCur - expPrev) / expPrev) * 100 : 0;
   const expDown = expDelta <= 0;
+  const members = membersQ.data?.members ?? [];
   const memberCount =
-    Math.max(membersQ.data?.members.length ?? 0, dash?.member_count ?? 0, dash?.children.length ?? 0) || 0;
+    Math.max(members.length, dash?.member_count ?? 0, dash?.children.length ?? 0) || 0;
+  const heroMember =
+    members.find((m) => m.is_owner) ?? members[0] ?? null;
+  const heroAvatar = heroMember?.avatar_url ?? profile?.avatar_url ?? HERO;
+  const stackMembers = members.slice(0, 4);
   const foodCount = (dash?.food.expiring_soon ?? 0) + (dash?.food.expired ?? 0);
   const nextMed = dash?.next_medicine;
   const nextAppt = dash?.next_appointment;
@@ -288,7 +319,7 @@ export default function GiaDinhScreen() {
         </Pressable>
         <View style={styles.heroRow}>
           <View style={styles.heroImgWrap}>
-            <Image source={{ uri: profile?.avatar_url ?? HERO }} style={styles.heroImg} />
+            <Image source={{ uri: heroAvatar }} style={styles.heroImg} />
             <View style={styles.camBtn}>
               <Camera color={colors.white} size={14} />
             </View>
@@ -297,11 +328,45 @@ export default function GiaDinhScreen() {
             <Text style={styles.familyName} numberOfLines={1}>
               {familyName}
             </Text>
-            <View style={styles.badge}>
+            <Pressable style={styles.badge} onPress={() => setMembersOpen(true)}>
               <Text style={styles.badgeText}>
                 {memberCount > 0 ? `${memberCount} thành viên` : "Gia đình"}
               </Text>
-            </View>
+            </Pressable>
+            {stackMembers.length > 0 ? (
+              <View style={styles.avatarStack}>
+                {stackMembers.map((m, i) => {
+                  const stackStyle = [styles.stackAvatar, i === 0 && styles.stackAvatarFirst];
+                  if (m.avatar_url) {
+                    return (
+                      <Image key={m.user_id} source={{ uri: m.avatar_url }} style={stackStyle} />
+                    );
+                  }
+                  return (
+                    <View
+                      key={m.user_id}
+                      style={[
+                        stackStyle,
+                        {
+                          backgroundColor: colors.tintBlue,
+                          alignItems: "center",
+                          justifyContent: "center",
+                        },
+                      ]}
+                    >
+                      <Text style={styles.stackMoreText}>
+                        {memberDisplayName(m).slice(0, 1).toUpperCase()}
+                      </Text>
+                    </View>
+                  );
+                })}
+                {members.length > 4 ? (
+                  <View style={styles.stackMore}>
+                    <Text style={styles.stackMoreText}>+{members.length - 4}</Text>
+                  </View>
+                ) : null}
+              </View>
+            ) : null}
             <Text style={styles.tagline}>
               "Cùng nhau xây dựng tổ ấm{"\n"}an toàn – hạnh phúc – tiện nghi" 💙
             </Text>
@@ -314,7 +379,7 @@ export default function GiaDinhScreen() {
             label="Thành viên"
             tint={colors.tintBlue}
             iconColor={colors.brand}
-            onPress={() => router.push("/gia-dinh/thanh-vien")}
+            onPress={() => setMembersOpen(true)}
           />
           <HeroAction
             styles={styles}
@@ -530,7 +595,7 @@ export default function GiaDinhScreen() {
           label={"Mua sắm hộ"}
           tint={colors.tintPurple}
           iconColor={colors.pink}
-          onPress={() => router.push("/mua-sam-ho")}
+          onPress={() => router.push({ pathname: "/coming-soon", params: { feature: "mua-sam-ho" } })}
         />
         <ServiceTile
           styles={styles}
@@ -538,7 +603,7 @@ export default function GiaDinhScreen() {
           label={"Gói dịch vụ\nưu đãi"}
           tint={colors.tintOrange}
           iconColor={colors.warning}
-          onPress={() => router.push("/goi-uu-dai")}
+          onPress={() => router.push({ pathname: "/coming-soon", params: { feature: "goi-uu-dai" } })}
         />
       </View>
 
@@ -561,6 +626,12 @@ export default function GiaDinhScreen() {
           ))}
         </View>
       </ScrollView>
+
+      <FamilyMembersSheet
+        visible={membersOpen}
+        onClose={() => setMembersOpen(false)}
+        back="/(tabs)/gia-dinh"
+      />
     </Screen>
   );
 }

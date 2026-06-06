@@ -63,6 +63,33 @@ export const PILOT_ACTIVITY = [
   { emoji: "📅", text: "Anh Hùng có lịch khám BS. Minh", time: "Sắp tới" },
 ];
 
+export const PILOT_RECORDS = [
+  { id: "pilot-r1", member_name: "Anh Hùng", kind: "blood_pressure", title: "Huyết áp", value: "118/76 mmHg", recorded_at: "2026-06-01" },
+  { id: "pilot-r2", member_name: "Bà Ngoại", kind: "glucose", title: "Đường huyết", value: "5.8 mmol/L", recorded_at: "2026-05-28" },
+];
+
+export const PILOT_ALLERGIES = [
+  { member: "Chị Lan", detail: "Hải sản, đậu phộng" },
+  { member: "Bé Minh", detail: "Phấn hoa" },
+];
+
+export const PILOT_CONDITIONS = [
+  { member: "Bà Ngoại", detail: "Cao huyết áp — đang điều trị Amlodipine" },
+];
+
+export const PILOT_PROFILES = [
+  { id: "p1", name: "Anh Hùng", blood_type: "O+", allergies: null, conditions: null },
+  { id: "p2", name: "Chị Lan", blood_type: "A+", allergies: "Hải sản, đậu phộng", conditions: null },
+  { id: "p3", name: "Bé Minh", blood_type: "O+", allergies: "Phấn hoa", conditions: null },
+  { id: "p4", name: "Bà Ngoại", blood_type: "B+", allergies: null, conditions: "Cao huyết áp — đang điều trị Amlodipine" },
+];
+
+export const TU_VAN_CHANNELS = [
+  { id: "chat", emoji: "💬", title: "Chat trực tuyến", desc: "Nhắn tin với bác sĩ STOS trong giờ hành chính", eta: "Phản hồi ~15 phút" },
+  { id: "video", emoji: "📹", title: "Video call", desc: "Tư vấn trực tiếp qua video với bác sĩ gia đình", eta: "Đặt lịch trước" },
+  { id: "hotline", emoji: "📞", title: "Hotline 24/7", desc: "Gọi tổng đài y tế khẩn cấp cho trường hợp cần hỗ trợ ngay", eta: "1900 xxxx" },
+];
+
 export function formatApptShort(iso: string) {
   const d = new Date(iso);
   const hhmm = d.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });

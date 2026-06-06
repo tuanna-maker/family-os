@@ -1,4 +1,4 @@
-import { Alert, Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { Alert, Image, Pressable, Text, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Camera, Pencil, Trash2 } from "lucide-react-native";
@@ -8,11 +8,16 @@ import { EmptyState, LoadingState } from "@mobile/components/states";
 import { useFamilyContext } from "@mobile/hooks/useFamilyContext";
 import { deleteAlbum, getAlbum } from "@mobile/api/albums";
 import { toast } from "@mobile/utils/toast";
-import { colors, radius } from "@mobile/theme/colors";
+import { invalidateMomentQueries } from "@mobile/constants/momentQueryKeys";
+import { useTheme } from "@mobile/theme/themeStore";
+import { useThemedStyles } from "@mobile/theme/useThemedStyles";
+import { radius } from "@mobile/theme/colors";
 
 export default function AlbumDetailScreen() {
   const { albumId } = useLocalSearchParams<{ albumId: string }>();
   const router = useRouter();
+  const { colors } = useTheme();
+  const styles = useAlbumDetailStyles();
   const { familyId } = useFamilyContext();
   const qc = useQueryClient();
 
@@ -26,7 +31,7 @@ export default function AlbumDetailScreen() {
     mutationFn: () => deleteAlbum({ id: albumId!, family_id: familyId! }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["family-albums", familyId] });
-      qc.invalidateQueries({ queryKey: ["moments", familyId] });
+      if (familyId) invalidateMomentQueries(qc, familyId);
       toast.success("Đã xóa album");
       router.replace("/ky-niem-gia-dinh/album");
     },
@@ -118,30 +123,31 @@ export default function AlbumDetailScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  headerEmoji: { fontSize: 28, marginHorizontal: 16, marginBottom: 8 },
-  category: { fontSize: 12, color: colors.muted, marginHorizontal: 16, marginBottom: 12 },
-  uploadBanner: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    backgroundColor: colors.tintOrange,
-    marginHorizontal: 16,
-    padding: 12,
-    borderRadius: radius.lg,
-    marginBottom: 16,
-  },
-  uploadText: { fontWeight: "700", color: colors.foreground },
-  grid: { flexDirection: "row", flexWrap: "wrap", gap: 8, paddingHorizontal: 16 },
-  cell: { width: "48%" },
-  img: { width: "100%", aspectRatio: 1, borderRadius: radius.md },
-  delBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    marginTop: 24,
-    paddingVertical: 12,
-  },
-  delText: { color: colors.emergency, fontWeight: "600" },
-});
+function useAlbumDetailStyles() {
+  return useThemedStyles((c, fontScale) => ({
+    headerEmoji: { fontSize: 28, marginBottom: 8 },
+    category: { fontSize: 12 * fontScale, color: c.muted, marginBottom: 12 },
+    uploadBanner: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      gap: 10,
+      backgroundColor: c.tintOrange,
+      padding: 12,
+      borderRadius: radius.lg,
+      marginBottom: 16,
+    },
+    uploadText: { fontWeight: "700" as const, color: c.foreground, fontSize: 14 * fontScale },
+    grid: { flexDirection: "row" as const, flexWrap: "wrap" as const, gap: 8 },
+    cell: { width: "48%" as const },
+    img: { width: "100%" as const, aspectRatio: 1, borderRadius: radius.md },
+    delBtn: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+      gap: 8,
+      marginTop: 24,
+      paddingVertical: 12,
+    },
+    delText: { color: c.emergency, fontWeight: "600" as const },
+  }));
+}

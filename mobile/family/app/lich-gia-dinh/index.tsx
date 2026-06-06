@@ -2,10 +2,10 @@ import { useMemo, useState } from "react";
 import { ActivityIndicator, Alert, Pressable, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Calendar, MapPin, Pencil, Plus, Trash2 } from "lucide-react-native";
+import { Calendar, MapPin, Pencil, Trash2 } from "lucide-react-native";
 import { Screen } from "@mobile/components/Screen";
 import { MonthCalendar, isSameCalendarDay } from "@mobile/components/calendar/MonthCalendar";
-import { HeaderIconButton, PageHeader } from "@mobile/components/ui";
+import { PageHeader } from "@mobile/components/ui";
 import { radius } from "@mobile/theme/colors";
 import { useTheme } from "@mobile/theme/themeStore";
 import { useThemedStyles } from "@mobile/theme/useThemedStyles";
@@ -122,20 +122,7 @@ export default function LichGiaDinhScreen() {
 
   return (
     <Screen contentStyle={{ paddingTop: 0 }}>
-      <PageHeader
-        eyebrow="Gia đình"
-        title="Lịch gia đình"
-        back="/(tabs)/gia-dinh"
-        right={
-          <HeaderIconButton
-            variant="primary"
-            accessibilityLabel="Thêm sự kiện"
-            onPress={() => router.push({ pathname: "/lich-gia-dinh/them", params: { date: dateParam } })}
-          >
-            <Plus color={colors.white} size={20} />
-          </HeaderIconButton>
-        }
-      />
+      <PageHeader eyebrow="Gia đình" title="Lịch gia đình" back="/(tabs)/gia-dinh" />
 
       <MonthCalendar
         viewDate={viewDate}

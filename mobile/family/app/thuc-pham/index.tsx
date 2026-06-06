@@ -17,7 +17,7 @@ import { listCommunityServices, createServiceBooking } from "@mobile/api/communi
 import { toast } from "@mobile/utils/toast";
 import { useTheme } from "@mobile/theme/themeStore";
 import { useThemedStyles } from "@mobile/theme/useThemedStyles";
-import { radius } from "@mobile/theme/colors";
+import { cardShadow, radius } from "@mobile/theme/colors";
 
 export default function ThucPhamScreen() {
   const router = useRouter();
@@ -127,7 +127,7 @@ export default function ThucPhamScreen() {
         onAction={() => router.push({ pathname: "/thuc-pham/them", params: { type: "food" } })}
       />
       {(q.data?.items ?? []).length === 0 ? (
-        <Card><Text style={styles.sub}>Chưa có thực phẩm.</Text></Card>
+        <Card style={styles.emptyCard}><Text style={styles.sub}>Chưa có thực phẩm.</Text></Card>
       ) : (
         (q.data?.items ?? []).map((item) => (
           <Pressable
@@ -161,7 +161,7 @@ export default function ThucPhamScreen() {
         onAction={() => router.push({ pathname: "/thuc-pham/them", params: { type: "shop" } })}
       />
       {(q.data?.shopping ?? []).length === 0 ? (
-        <Card><Text style={styles.sub}>Chưa có món cần mua.</Text></Card>
+        <Card style={styles.emptyCard}><Text style={styles.sub}>Chưa có món cần mua.</Text></Card>
       ) : (
         (q.data?.shopping ?? []).map((s) => (
           <Card key={s.id} style={styles.shopRow}>
@@ -225,18 +225,20 @@ function useFoodStyles() {
     },
     alert: { backgroundColor: colors.tintOrange, marginBottom: 12 },
     alertText: { color: colors.foreground, fontWeight: "600" as const, fontSize: 13 * fontScale },
-    row: { marginBottom: 10, gap: 4 },
+    row: { marginBottom: 10, gap: 4, ...cardShadow(colors) },
     shopRow: { flexDirection: "row" as const, alignItems: "center" as const, gap: 10, marginBottom: 8 },
     check: {
-      width: 22,
-      height: 22,
+      width: 24,
+      height: 24,
       borderRadius: 6,
       borderWidth: 2,
-      borderColor: colors.cardBorder,
+      borderColor: colors.muted,
+      backgroundColor: colors.surfaceElevated,
     },
     checkOn: { backgroundColor: colors.brand, borderColor: colors.brand },
     title: { fontWeight: "700" as const, color: colors.foreground, fontSize: 16 * fontScale },
-    sub: { fontSize: 12 * fontScale, color: colors.muted },
+    sub: { fontSize: 12 * fontScale, color: colors.muted, lineHeight: 18 },
     done: { textDecorationLine: "line-through" as const, color: colors.muted },
+    emptyCard: { marginBottom: 10 },
   }));
 }

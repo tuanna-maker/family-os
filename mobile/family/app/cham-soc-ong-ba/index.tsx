@@ -4,12 +4,12 @@ import {
   Linking,
   Pressable,
   ScrollView,
-  StyleSheet,
   Text,
   TextInput,
   View,
 } from "react-native";
 import { useRouter } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Activity,
@@ -60,7 +60,8 @@ import { supabase } from "@shared/supabase/get-client";
 import { toast } from "@mobile/utils/toast";
 import { useTheme } from "@mobile/theme/themeStore";
 import { useThemedStyles } from "@mobile/theme/useThemedStyles";
-import { colors, radius } from "@mobile/theme/colors";
+import { radius } from "@mobile/theme/colors";
+import { TimeField } from "@mobile/components/DateTimeField";
 
 function fmtRelative(iso: string) {
   const diff = Date.now() - new Date(iso).getTime();
@@ -76,7 +77,7 @@ function fmtTime(iso: string) {
   return new Date(iso).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
 }
 
-const actKindStyle = (c: typeof colors, kind: ActivityRow["kind"]) => {
+const actKindStyle = (c: ReturnType<typeof useTheme>["colors"], kind: ActivityRow["kind"]) => {
   if (kind === "med") return { bg: c.tintGreen, fg: c.success };
   if (kind === "vital") return { bg: c.tintOrange, fg: c.warning };
   if (kind === "check") return { bg: c.tintBlue, fg: c.brand };
@@ -85,6 +86,7 @@ const actKindStyle = (c: typeof colors, kind: ActivityRow["kind"]) => {
 
 export default function ChamSocOngBaScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { familyId } = useFamilyContext();
   const { user } = useAuth();
   const { colors: themeColors } = useTheme();
@@ -136,17 +138,18 @@ export default function ChamSocOngBaScreen() {
       borderColor: c.cardBorder,
     },
     chipAddText: { color: c.muted, fontWeight: "600" as const },
-    profileRow: { flexDirection: "row" as const, alignItems: "center" as const, gap: 12, marginBottom: 12 },
+    profileRow: { flexDirection: "row" as const, alignItems: "center" as const, gap: 12 },
     avatarBox: {
-      width: 64,
-      height: 64,
-      borderRadius: radius.lg,
+      width: 52,
+      height: 52,
+      borderRadius: radius.md,
       backgroundColor: c.tintPink,
       alignItems: "center" as const,
       justifyContent: "center" as const,
     },
-    avatarBig: { fontSize: 32 },
-    profileName: { fontSize: 17 * fontScale, fontWeight: "800" as const, color: c.foreground },
+    avatarBig: { fontSize: 26 },
+    profileName: { fontSize: 16 * fontScale, fontWeight: "800" as const, color: c.foreground },
+    profileActions: { flexDirection: "row" as const, alignItems: "center" as const, gap: 8 },
     muted: { fontSize: 12 * fontScale, color: c.muted, marginTop: 2 },
     addressRow: { flexDirection: "row" as const, alignItems: "center" as const, gap: 4, marginTop: 4 },
     conditionChip: {
@@ -159,7 +162,8 @@ export default function ChamSocOngBaScreen() {
       fontWeight: "600" as const,
       overflow: "hidden" as const,
     },
-    conditionsWrap: { flexDirection: "row" as const, flexWrap: "wrap" as const, gap: 6, marginBottom: 12 },
+    conditionsWrap: { flexDirection: "row" as const, flexWrap: "wrap" as const, gap: 6, marginTop: 10 },
+    sectionGap: { marginBottom: 16 },
     editLink: { color: c.brand, fontWeight: "700" as const, fontSize: 13 * fontScale, marginRight: 8 },
     medsToggleRow: { flexDirection: "row" as const, gap: 8, marginBottom: 12 },
     medsToggle: {
@@ -531,7 +535,7 @@ export default function ChamSocOngBaScreen() {
   const vitals = vitalsQ.data ?? [];
 
   return (
-    <Screen contentStyle={{ paddingTop: 0 }}>
+    <Screen scroll={false} contentStyle={{ paddingTop: 0 }}>
       <PageHeader eyebrow="Family Core" title="Chăm sóc ông bà" back="/(tabs)/gia-dinh" />
       <Text style={styles.pageSub}>Quan tâm mỗi ngày — Safe Check, thuốc và liên hệ khẩn cấp 👵</Text>
 
@@ -551,8 +555,11 @@ export default function ChamSocOngBaScreen() {
       )}
 
       {profiles.length > 0 && (
-        <ScrollView showsVerticalScrollIndicator={false}>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 20) + 24 }}
+        >
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 14 }}>
             <View style={styles.chipRow}>
               {profiles.map((p) => (
                 <Pressable
@@ -580,13 +587,13 @@ export default function ChamSocOngBaScreen() {
 
           {profile && (
             <>
-              <Card>
+              <Card style={styles.sectionGap}>
                 <View style={styles.profileRow}>
                   <View style={styles.avatarBox}>
                     <Text style={styles.avatarBig}>{profile.avatar ?? "👵"}</Text>
                   </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.profileName}>
+                  <View style={{ flex: 1, minWidth: 0 }}>
+                    <Text style={styles.profileName} numberOfLines={1}>
                       {profile.name}
                       {profile.age != null ? (
                         <Text style={styles.muted}> · {profile.age} tuổi</Text>
@@ -596,25 +603,27 @@ export default function ChamSocOngBaScreen() {
                     {profile.address ? (
                       <View style={styles.addressRow}>
                         <MapPin color={themeColors.muted} size={12} />
-                        <Text style={styles.muted} numberOfLines={2}>
+                        <Text style={styles.muted} numberOfLines={1}>
                           {profile.address}
                         </Text>
                       </View>
                     ) : null}
                   </View>
-                  <Pressable onPress={() => setShowEditProfile((s) => !s)}>
-                    <Text style={styles.editLink}>Sửa</Text>
-                  </Pressable>
-                  <Pressable
-                    onPress={() =>
-                      Alert.alert("Xóa hồ sơ?", profile.name, [
-                        { text: "Huỷ", style: "cancel" },
-                        { text: "Xóa", style: "destructive", onPress: () => delProfile.mutate({ id: profile.id }) },
-                      ])
-                    }
-                  >
-                    <Trash2 color={themeColors.emergency} size={18} />
-                  </Pressable>
+                  <View style={styles.profileActions}>
+                    <Pressable onPress={() => setShowEditProfile((s) => !s)}>
+                      <Text style={styles.editLink}>Sửa</Text>
+                    </Pressable>
+                    <Pressable
+                      onPress={() =>
+                        Alert.alert("Xóa hồ sơ?", profile.name, [
+                          { text: "Huỷ", style: "cancel" },
+                          { text: "Xóa", style: "destructive", onPress: () => delProfile.mutate({ id: profile.id }) },
+                        ])
+                      }
+                    >
+                      <Trash2 color={themeColors.emergency} size={18} />
+                    </Pressable>
+                  </View>
                 </View>
 
                 {profile.conditions.length > 0 && (
@@ -634,7 +643,9 @@ export default function ChamSocOngBaScreen() {
                     onSubmit={(p) => updateProfileMut.mutate({ id: profile.id, ...p })}
                   />
                 )}
+              </Card>
 
+              <Card style={styles.sectionGap}>
                 <SafeCheckPanel
                   profile={profile}
                   history={safeQ.data ?? []}
@@ -646,6 +657,7 @@ export default function ChamSocOngBaScreen() {
                 />
               </Card>
 
+              <View style={styles.sectionGap}>
               <SectionHeader
                 title="Liên hệ nhanh"
                 subtitle="Nút lớn — dễ bấm cho mọi người"
@@ -661,6 +673,7 @@ export default function ChamSocOngBaScreen() {
                 elderPhone={profile.phone}
                 onCall={handleCall}
               />
+              </View>
 
               <SectionHeader
                 title={medsView === "day" ? "Nhắc thuốc hôm nay" : "Lịch thuốc 7 ngày"}
@@ -879,7 +892,6 @@ export default function ChamSocOngBaScreen() {
               ) : null}
             </>
           )}
-          <View style={{ height: 40 }} />
         </ScrollView>
       )}
 
@@ -897,6 +909,12 @@ export default function ChamSocOngBaScreen() {
   );
 }
 
+function useFormTitleStyles() {
+  return useThemedStyles((c, fontScale) => ({
+    formTitle: { fontWeight: "700" as const, marginBottom: 8, color: c.foreground, fontSize: 15 * fontScale },
+  }));
+}
+
 function AddProfileForm({
   onSubmit,
   pending,
@@ -910,6 +928,7 @@ function AddProfileForm({
   }) => void;
   pending: boolean;
 }) {
+  const formStyles = useFormTitleStyles();
   const [name, setName] = useState("");
   const [age, setAge] = useState("");
   const [relation, setRelation] = useState("");
@@ -957,6 +976,7 @@ function EditProfileForm({
     relation?: string | null;
     phone?: string | null;
     doctor?: string | null;
+    conditions?: string[];
   }) => void;
   pending: boolean;
 }) {
@@ -965,6 +985,7 @@ function EditProfileForm({
   const [relation, setRelation] = useState(profile.relation ?? "");
   const [phone, setPhone] = useState(profile.phone ?? "");
   const [doctor, setDoctor] = useState(profile.doctor ?? "");
+  const [conditions, setConditions] = useState(profile.conditions.join(", "));
 
   return (
     <Card style={{ marginBottom: 12 }}>
@@ -973,6 +994,7 @@ function EditProfileForm({
       <TextField label="Tuổi" value={age} onChangeText={setAge} keyboardType="numeric" />
       <TextField label="Số điện thoại" value={phone} onChangeText={setPhone} />
       <TextField label="Bác sĩ" value={doctor} onChangeText={setDoctor} />
+      <TextField label="Bệnh nền (phẩy)" value={conditions} onChangeText={setConditions} />
       <PrimaryButton
         label="Lưu hồ sơ"
         disabled={!name.trim() || pending}
@@ -984,6 +1006,10 @@ function EditProfileForm({
             relation: relation.trim() || null,
             phone: phone.trim() || null,
             doctor: doctor.trim() || null,
+            conditions: conditions
+              .split(",")
+              .map((s) => s.trim())
+              .filter(Boolean),
           })
         }
       />
@@ -1032,7 +1058,7 @@ function AddMedForm({
     <Card style={{ marginBottom: 12 }}>
       <TextField label="Tên thuốc" value={medicine} onChangeText={setMedicine} />
       <TextField label="Liều" value={dosage} onChangeText={setDosage} />
-      <TextField label="Giờ (HH:MM)" value={time} onChangeText={setTime} />
+      <TimeField label="Giờ uống" value={time} onChange={setTime} />
       <PrimaryButton
         label="Lưu nhắc thuốc"
         disabled={!medicine.trim() || pending}
@@ -1049,6 +1075,3 @@ function AddMedForm({
   );
 }
 
-const formStyles = StyleSheet.create({
-  formTitle: { fontWeight: "700", marginBottom: 8, color: colors.foreground },
-});

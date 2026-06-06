@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Pressable, ScrollView, Text, View } from "react-native";
+import { useTheme } from "@mobile/theme/themeStore";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -10,9 +11,13 @@ import { createMoment } from "@mobile/api/moments";
 import { listAlbums } from "@mobile/api/albums";
 import { uploadMomentFromUri } from "@mobile/lib/upload-moment";
 import { toast } from "@mobile/utils/toast";
-import { colors, radius } from "@mobile/theme/colors";
+import { invalidateMomentQueries } from "@mobile/constants/momentQueryKeys";
+import { useThemedStyles } from "@mobile/theme/useThemedStyles";
+import { radius } from "@mobile/theme/colors";
 
 export default function KyNiemUploadScreen() {
+  const { colors } = useTheme();
+  const styles = useUploadStyles();
   const router = useRouter();
   const { album_id: albumIdParam } = useLocalSearchParams<{ album_id?: string }>();
   const { familyId } = useFamilyContext();
@@ -64,7 +69,7 @@ export default function KyNiemUploadScreen() {
         });
         count++;
       }
-      qc.invalidateQueries({ queryKey: ["moments", familyId] });
+      invalidateMomentQueries(qc, familyId);
       qc.invalidateQueries({ queryKey: ["family-albums", familyId] });
       if (album_id) qc.invalidateQueries({ queryKey: ["family-album", album_id, familyId] });
       toast.success(`Đã tải lên ${count} ảnh`);
@@ -126,24 +131,26 @@ export default function KyNiemUploadScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  label: { fontSize: 14, fontWeight: "600", color: colors.foreground, marginBottom: 8 },
-  chips: { flexDirection: "row", gap: 8, maxWidth: 320 },
-  chip: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: radius.lg,
-    backgroundColor: colors.card,
-    borderWidth: 1,
-    borderColor: colors.cardBorder,
-    maxWidth: 160,
-  },
-  chipActive: { backgroundColor: colors.tintBlue, borderColor: colors.brand },
-  chipText: { fontSize: 13, fontWeight: "600", color: colors.muted },
-  chipTextActive: { color: colors.brand },
-  loading: { alignItems: "center", gap: 12, paddingVertical: 32 },
-  loadingText: { color: colors.muted },
-});
+function useUploadStyles() {
+  return useThemedStyles((c, fontScale) => ({
+    label: { fontSize: 14 * fontScale, fontWeight: "600" as const, color: c.foreground, marginBottom: 8 },
+    chips: { flexDirection: "row" as const, gap: 8, maxWidth: 320 },
+    chip: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      gap: 4,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      borderRadius: radius.lg,
+      backgroundColor: c.card,
+      borderWidth: 1,
+      borderColor: c.cardBorder,
+      maxWidth: 160,
+    },
+    chipActive: { backgroundColor: c.tintBlue, borderColor: c.brand },
+    chipText: { fontSize: 13 * fontScale, fontWeight: "600" as const, color: c.muted },
+    chipTextActive: { color: c.brand },
+    loading: { alignItems: "center" as const, gap: 12, paddingVertical: 32 },
+    loadingText: { color: c.muted, fontSize: 14 * fontScale },
+  }));
+}

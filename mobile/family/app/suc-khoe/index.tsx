@@ -1,15 +1,13 @@
 import { useMemo, useState } from "react";
 import { Image, Pressable, ScrollView, Text, View } from "react-native";
 import { useRouter } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useQuery } from "@tanstack/react-query";
 import {
-  AlertTriangle,
   Bell,
   Brain,
   ChevronLeft,
   ChevronRight,
-  ClipboardList,
-  FileHeart,
   FolderHeart,
   Heart,
   MessageCircle,
@@ -18,13 +16,12 @@ import {
   Shield,
   ShieldCheck,
   Stethoscope,
-  Syringe,
-  TestTube,
 } from "lucide-react-native";
 import type { LucideIcon } from "lucide-react-native";
 import { Screen } from "@mobile/components/Screen";
 import { Card } from "@mobile/components/ui";
 import { LoadingState } from "@mobile/components/states";
+import { HealthRecordTiles } from "@mobile/components/health/HealthRecordTiles";
 import {
   MEMBER_AVATAR_URL,
   PILOT_ACTIVITY,
@@ -47,12 +44,12 @@ const QUICK_ACTIONS: {
   label: string;
   tintKey: "tintBlue" | "tintGreen" | "tintPurple" | "tintOrange";
   colorKey: "brand" | "success" | "pink" | "warning";
-  href?: string;
+  href: string;
 }[] = [
-  { icon: Stethoscope, label: "Đặt lịch khám", tintKey: "tintBlue", colorKey: "brand", href: "/suc-khoe/quan-ly" },
-  { icon: MessageCircle, label: "Tư vấn bác sĩ", tintKey: "tintGreen", colorKey: "success" },
-  { icon: Pill, label: "Nhắc uống thuốc", tintKey: "tintPurple", colorKey: "pink", href: "/suc-khoe/quan-ly" },
-  { icon: FolderHeart, label: "Hồ sơ sức khỏe", tintKey: "tintOrange", colorKey: "warning", href: "/suc-khoe/quan-ly" },
+  { icon: Stethoscope, label: "Đặt lịch khám", tintKey: "tintBlue", colorKey: "brand", href: "/suc-khoe/dat-lich" },
+  { icon: MessageCircle, label: "Tư vấn bác sĩ", tintKey: "tintGreen", colorKey: "success", href: "/suc-khoe/tu-van" },
+  { icon: Pill, label: "Nhắc uống thuốc", tintKey: "tintPurple", colorKey: "pink", href: "/suc-khoe/nhac-thuoc" },
+  { icon: FolderHeart, label: "Hồ sơ sức khỏe", tintKey: "tintOrange", colorKey: "warning", href: "/suc-khoe/ho-so" },
 ];
 
 const VITALS = [
@@ -64,6 +61,7 @@ const VITALS = [
 
 export default function SucKhoeScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { colors } = useTheme();
   const styles = useHealthStyles();
   const { familyId } = useFamilyContext();
@@ -117,7 +115,9 @@ export default function SucKhoeScreen() {
   const notifCount = upcomingAppts.length + todayMeds.length;
 
   const recordCounts = useMemo(() => {
-    const recs = filterMember((data?.records ?? []) as Array<{ kind?: string; title?: string }>);
+    const recs = filterMember(
+      (data?.records ?? []) as Array<{ kind?: string; title?: string; member_name?: string; name?: string }>,
+    );
     const profs = filterMember(data?.profiles ?? []);
     const medsAll = filterMember(data?.meds?.length ? data.meds : PILOT_MEDS).filter((m) => m.active);
     const apptsAll = filterMember(data?.appts?.length ? data.appts : PILOT_APPTS);
@@ -177,7 +177,7 @@ export default function SucKhoeScreen() {
 
   return (
     <Screen contentStyle={{ paddingTop: 0 }}>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
         <Pressable style={styles.backBtn} onPress={() => router.push("/(tabs)/gia-dinh")}>
           <ChevronLeft color={colors.foreground} size={22} />
         </Pressable>
@@ -188,7 +188,7 @@ export default function SucKhoeScreen() {
             <Text style={styles.subtitle}>Chăm sóc sức khỏe – An tâm mỗi ngày</Text>
           </View>
         </View>
-        <Pressable style={styles.bellBtn} onPress={() => router.push("/suc-khoe/quan-ly")}>
+        <Pressable style={styles.bellBtn} onPress={() => router.push("/suc-khoe/nhac-thuoc" as never)}>
           <Bell color={colors.foreground} size={18} />
           {notifCount > 0 && (
             <View style={styles.bellBadge}>
@@ -217,7 +217,7 @@ export default function SucKhoeScreen() {
               </Pressable>
             );
           })}
-          <Pressable style={styles.memberTab} onPress={() => router.push("/suc-khoe/quan-ly")}>
+          <Pressable style={styles.memberTab} onPress={() => router.push("/suc-khoe/them?type=profile" as never)}>
             <View style={[styles.memberAvatar, styles.addAvatar]}>
               <Plus color={colors.muted} size={22} />
             </View>
@@ -239,7 +239,7 @@ export default function SucKhoeScreen() {
             ? "Không có cảnh báo nào."
             : `${notifCount} việc cần theo dõi trong 24h tới`}
         </Text>
-        <Pressable onPress={() => router.push("/suc-khoe/quan-ly")}>
+        <Pressable onPress={() => router.push("/suc-khoe/ho-so" as never)}>
           <Text style={styles.statusLink}>Quản lý hồ sơ chi tiết →</Text>
         </Pressable>
         <View style={styles.vitalsGrid}>
@@ -270,7 +270,7 @@ export default function SucKhoeScreen() {
           <Pressable
             key={a.label}
             style={styles.quickTile}
-            onPress={() => a.href && router.push(a.href as never)}
+            onPress={() => router.push(a.href as never)}
           >
             <View style={[styles.quickIcon, { backgroundColor: colors[a.tintKey], borderColor: colors.cardBorder }]}>
               <a.icon color={colors[a.colorKey]} size={22} strokeWidth={2.2} />
@@ -284,7 +284,7 @@ export default function SucKhoeScreen() {
         <Card style={styles.halfCard}>
           <View style={styles.cardHead}>
             <Text style={styles.cardTitle}>Lịch khám sắp tới</Text>
-            <Pressable onPress={() => router.push("/suc-khoe/quan-ly")}>
+            <Pressable onPress={() => router.push("/suc-khoe/lich-kham" as never)}>
               <Text style={styles.cardLink}>Xem tất cả</Text>
             </Pressable>
           </View>
@@ -292,7 +292,11 @@ export default function SucKhoeScreen() {
             <Text style={styles.emptyText}>Chưa có lịch khám sắp tới.</Text>
           ) : (
             upcomingAppts.map((a) => (
-              <View key={a.id} style={styles.listItem}>
+              <Pressable
+                key={a.id}
+                style={styles.listItem}
+                onPress={() => router.push("/suc-khoe/dat-lich" as never)}
+              >
                 <Text style={styles.listEmoji}>{avatarFor(a.member_name)}</Text>
                 <View style={{ flex: 1, minWidth: 0 }}>
                   <Text style={styles.listTitle} numberOfLines={1}>
@@ -304,7 +308,7 @@ export default function SucKhoeScreen() {
                   <Text style={styles.listSub}>{formatApptShort(a.scheduled_at)}</Text>
                 </View>
                 <ChevronRight color={colors.muted} size={14} />
-              </View>
+              </Pressable>
             ))
           )}
         </Card>
@@ -312,7 +316,7 @@ export default function SucKhoeScreen() {
         <Card style={styles.halfCard}>
           <View style={styles.cardHead}>
             <Text style={styles.cardTitle}>Nhắc uống thuốc</Text>
-            <Pressable onPress={() => router.push("/suc-khoe/quan-ly")}>
+            <Pressable onPress={() => router.push("/suc-khoe/nhac-thuoc" as never)}>
               <Text style={styles.cardLink}>Xem tất cả</Text>
             </Pressable>
           </View>
@@ -320,7 +324,11 @@ export default function SucKhoeScreen() {
             <Text style={styles.emptyText}>Chưa có nhắc thuốc.</Text>
           ) : (
             todayMeds.map((m) => (
-              <View key={m.id} style={styles.listItem}>
+              <Pressable
+                key={m.id}
+                style={styles.listItem}
+                onPress={() => router.push("/suc-khoe/nhac-thuoc" as never)}
+              >
                 <Text style={styles.listEmoji}>{avatarFor(m.member_name)}</Text>
                 <View style={{ flex: 1, minWidth: 0 }}>
                   <Text style={styles.listTitle} numberOfLines={1}>
@@ -332,7 +340,7 @@ export default function SucKhoeScreen() {
                   <Text style={styles.listSub}>Còn {medCountdown(m.time_of_day)}</Text>
                 </View>
                 <Text style={styles.medTime}>{(m.time_of_day ?? "08:00").slice(0, 5)}</Text>
-              </View>
+              </Pressable>
             ))
           )}
         </Card>
@@ -354,32 +362,28 @@ export default function SucKhoeScreen() {
 
       <View style={styles.sectionHead}>
         <Text style={styles.sectionTitle}>Hồ sơ sức khỏe</Text>
-        <Pressable onPress={() => router.push("/suc-khoe/quan-ly")}>
+        <Pressable onPress={() => router.push("/suc-khoe/ho-so" as never)}>
           <Text style={styles.cardLink}>Xem tất cả</Text>
         </Pressable>
       </View>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 16 }}>
-        <View style={styles.recordRow}>
-          <RecordTile icon={TestTube} label="Chỉ số" detail={`${recordCounts.tests} bản ghi`} onPress={() => router.push("/suc-khoe/quan-ly")} />
-          <RecordTile icon={ClipboardList} label="Đơn thuốc" detail={`${recordCounts.meds} đang dùng`} onPress={() => router.push("/suc-khoe/quan-ly")} />
-          <RecordTile icon={Syringe} label="Lịch khám" detail={`${recordCounts.appts} mục`} onPress={() => router.push("/suc-khoe/quan-ly")} />
-          <RecordTile icon={AlertTriangle} label="Dị ứng" detail={`${recordCounts.allergies} ghi nhận`} onPress={() => router.push("/suc-khoe/quan-ly")} />
-          <RecordTile icon={FileHeart} label="Bệnh nền" detail={`${recordCounts.conditions} ghi nhận`} onPress={() => router.push("/suc-khoe/quan-ly")} />
-        </View>
-      </ScrollView>
+      <View style={{ marginBottom: 20 }}>
+        <HealthRecordTiles counts={recordCounts} />
+      </View>
 
       <View style={styles.sectionHead}>
         <Text style={styles.sectionTitle}>Hoạt động gần đây</Text>
-        <Pressable onPress={() => router.push("/suc-khoe/quan-ly")}>
+        <Pressable onPress={() => router.push("/suc-khoe/hoat-dong" as never)}>
           <Text style={styles.cardLink}>Xem tất cả</Text>
         </Pressable>
       </View>
       {activity.map((a, i) => (
-        <Card key={i} style={styles.activityRow}>
-          <Text style={styles.activityEmoji}>{a.emoji}</Text>
-          <Text style={styles.activityText}>{a.text}</Text>
-          <Text style={styles.activityTime}>{a.time}</Text>
-        </Card>
+        <Pressable key={i} onPress={() => router.push("/suc-khoe/hoat-dong" as never)}>
+          <Card style={styles.activityRow}>
+            <Text style={styles.activityEmoji}>{a.emoji}</Text>
+            <Text style={styles.activityText}>{a.text}</Text>
+            <Text style={styles.activityTime}>{a.time}</Text>
+          </Card>
+        </Pressable>
       ))}
 
       {usingPilot && (
@@ -390,31 +394,9 @@ export default function SucKhoeScreen() {
   );
 }
 
-function RecordTile({
-  icon: Icon,
-  label,
-  detail,
-  onPress,
-}: {
-  icon: LucideIcon;
-  label: string;
-  detail: string;
-  onPress: () => void;
-}) {
-  const { colors } = useTheme();
-  const styles = useHealthStyles();
-  return (
-    <Pressable style={[styles.recordTile, { borderColor: colors.cardBorder, backgroundColor: colors.card }]} onPress={onPress}>
-      <Icon color={colors.pink} size={22} strokeWidth={2.2} />
-      <Text style={styles.recordLabel}>{label}</Text>
-      <Text style={styles.recordDetail}>{detail}</Text>
-    </Pressable>
-  );
-}
-
 function useHealthStyles() {
   return useThemedStyles((c, fontScale) => ({
-    header: { flexDirection: "row" as const, alignItems: "flex-start" as const, gap: 10, marginBottom: 16, paddingTop: 8 },
+    header: { flexDirection: "row" as const, alignItems: "flex-start" as const, gap: 10, marginBottom: 16 },
     backBtn: {
       width: 40,
       height: 40,
@@ -518,18 +500,6 @@ function useHealthStyles() {
     insightIcon: { width: 44, height: 44, borderRadius: radius.md, alignItems: "center" as const, justifyContent: "center" as const },
     insightTitle: { fontSize: 14 * fontScale, fontWeight: "700" as const, marginBottom: 6 },
     insightLine: { fontSize: 11 * fontScale, color: c.foreground, lineHeight: 16, marginTop: 4 },
-    recordRow: { flexDirection: "row" as const, gap: 8 },
-    recordTile: {
-      width: 88,
-      borderRadius: radius.md,
-      borderWidth: 1,
-      padding: 10,
-      alignItems: "center" as const,
-      gap: 4,
-      ...cardShadow(c),
-    },
-    recordLabel: { fontSize: 10 * fontScale, fontWeight: "700" as const, color: c.foreground, textAlign: "center" as const },
-    recordDetail: { fontSize: 9 * fontScale, color: c.muted, textAlign: "center" as const },
     activityRow: { flexDirection: "row" as const, alignItems: "center" as const, gap: 10, marginBottom: 8, padding: 12 },
     activityEmoji: { fontSize: 18 },
     activityText: { flex: 1, fontSize: 12 * fontScale, color: c.foreground },

@@ -1,12 +1,13 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Screen } from "@mobile/components/Screen";
 import { PageHeader, PrimaryButton, TextField } from "@mobile/components/ui";
 import { TimeField } from "@mobile/components/DateTimeField";
+import { LoadingState } from "@mobile/components/states";
 import { useFamilyContext } from "@mobile/hooks/useFamilyContext";
-import { upsertHelper, upsertHelperTask } from "@mobile/api/helpers";
+import { listHelpers, upsertHelper, upsertHelperTask } from "@mobile/api/helpers";
 import { toast } from "@mobile/utils/toast";
 
 type FormType = "helper" | "task";
@@ -24,6 +25,24 @@ export default function GiupViecThemScreen() {
   const [salary, setSalary] = useState("");
   const [taskTitle, setTaskTitle] = useState("");
   const [taskTime, setTaskTime] = useState("09:00");
+  const [loaded, setLoaded] = useState(!id);
+
+  const helpersQ = useQuery({
+    queryKey: ["family-helpers", familyId],
+    queryFn: () => listHelpers({ family_id: familyId! }),
+    enabled: !!familyId && formType === "helper" && !!id,
+  });
+
+  useEffect(() => {
+    if (!id || formType !== "helper" || !helpersQ.data) return;
+    const helper = helpersQ.data.find((h) => h.id === id);
+    if (!helper) return;
+    setName(helper.name);
+    setPhone(helper.phone ?? "");
+    setRole(helper.role ?? "Giúp việc");
+    setSalary(helper.salary != null ? String(helper.salary) : "");
+    setLoaded(true);
+  }, [id, formType, helpersQ.data]);
 
   const mut = useMutation({
     mutationFn: async () => {
@@ -56,6 +75,15 @@ export default function GiupViecThemScreen() {
   });
 
   const title = formType === "helper" ? (id ? "Sửa hồ sơ" : "Thêm giúp việc") : "Thêm việc";
+
+  if (id && formType === "helper" && (!loaded || helpersQ.isLoading)) {
+    return (
+      <Screen contentStyle={{ paddingTop: 0 }}>
+        <PageHeader title={title} back="/quan-ly-giup-viec" />
+        <LoadingState />
+      </Screen>
+    );
+  }
 
   return (
     <Screen contentStyle={{ paddingTop: 0 }}>

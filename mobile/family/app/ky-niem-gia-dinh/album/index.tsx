@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
 import { FolderOpen, Plus } from "lucide-react-native";
@@ -7,10 +7,14 @@ import { Card, HeaderIconButton, PageHeader } from "@mobile/components/ui";
 import { EmptyState, LoadingState } from "@mobile/components/states";
 import { useFamilyContext } from "@mobile/hooks/useFamilyContext";
 import { listAlbums } from "@mobile/api/albums";
-import { colors, radius } from "@mobile/theme/colors";
+import { useTheme } from "@mobile/theme/themeStore";
+import { useThemedStyles } from "@mobile/theme/useThemedStyles";
+import { cardShadow, radius } from "@mobile/theme/colors";
 
 export default function AlbumListScreen() {
   const router = useRouter();
+  const { colors } = useTheme();
+  const styles = useAlbumListStyles();
   const { familyId } = useFamilyContext();
 
   const q = useQuery({
@@ -70,9 +74,11 @@ export default function AlbumListScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  row: { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 10 },
-  emoji: { fontSize: 32 },
-  title: { fontWeight: "700", fontSize: 16, color: colors.foreground },
-  sub: { fontSize: 11, color: colors.muted, marginTop: 4 },
-});
+function useAlbumListStyles() {
+  return useThemedStyles((c, fontScale) => ({
+    row: { flexDirection: "row" as const, alignItems: "center" as const, gap: 12, marginBottom: 10, ...cardShadow(c) },
+    emoji: { fontSize: 32 },
+    title: { fontWeight: "700" as const, fontSize: 16 * fontScale, color: c.foreground },
+    sub: { fontSize: 11 * fontScale, color: c.muted, marginTop: 4 },
+  }));
+}
