@@ -11,24 +11,18 @@ export const MOBILE_APK = {
   family: {
     title: "App Gia đình",
     fileName: "stos-family.apk",
-    storagePath: "/downloads/stos-family.apk",
     apiPath: "/api/public/downloads/family",
     directEnvKey: "VITE_FAMILY_APK_URL",
   },
   guard: {
     title: "App Bảo vệ",
     fileName: "stos-guard.apk",
-    storagePath: "/downloads/stos-guard.apk",
     apiPath: "/api/public/downloads/guard",
     directEnvKey: "VITE_GUARD_APK_URL",
   },
 } as const;
 
-export function supabasePublicApkUrl(fileName: string) {
-  return `${SUPABASE_URL}/storage/v1/object/public/${MOBILE_APK_BUCKET}/${fileName}`;
-}
-
-/** URL APK host ngoài (GitHub Releases, Drive, …) — ưu tiên hơn Supabase/API. */
+/** URL APK host ngoài (override thủ công nếu cần). */
 export function directApkUrl(app: keyof typeof MOBILE_APK): string | null {
   const raw =
     app === "guard"
@@ -39,17 +33,10 @@ export function directApkUrl(app: keyof typeof MOBILE_APK): string | null {
 }
 
 /**
- * URL trong mã QR — phải là cross-origin (Supabase/GitHub…).
- * Cùng domain stoslife.lovable.app bị PWA manifest-family (scope "/") chặn → /login?source=pwa-family.
+ * URL trong QR + link tải trên landing.
+ * Bucket mobile-apks là private → API tạo signed URL (10 phút) rồi redirect.
  */
-export function apkDownloadUrl(app: keyof typeof MOBILE_APK) {
-  const direct = directApkUrl(app);
-  if (direct) return direct;
-  return supabasePublicApkUrl(MOBILE_APK[app].fileName);
-}
-
-/** Link tải trên web (cùng domain, dùng API redirect). */
-export function apkWebDownloadUrl(app: keyof typeof MOBILE_APK, origin = PUBLIC_SITE_ORIGIN) {
+export function apkDownloadUrl(app: keyof typeof MOBILE_APK, origin = PUBLIC_SITE_ORIGIN) {
   const direct = directApkUrl(app);
   if (direct) return direct;
   return `${origin}${MOBILE_APK[app].apiPath}`;

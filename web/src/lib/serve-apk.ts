@@ -1,6 +1,9 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
-import { supabasePublicApkUrl } from "@/lib/mobile-apk";
+import { MOBILE_APK_BUCKET } from "@/lib/mobile-apk";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
+
+const SIGNED_URL_TTL_SEC = 600;
 
 const LOCAL_APK_PATHS: Record<string, string[]> = {
   "stos-guard.apk": [
@@ -22,7 +25,7 @@ function apkHeaders(fileName: string) {
   return {
     "Content-Type": "application/vnd.android.package-archive",
     "Content-Disposition": `attachment; filename="${fileName}"`,
-    "Cache-Control": "public, max-age=86400",
+    "Cache-Control": "no-store",
   };
 }
 
@@ -37,6 +40,19 @@ async function readLocalApk(fileName: string): Promise<Buffer | null> {
   return null;
 }
 
+async function redirectSignedApk(fileName: string): Promise<Response> {
+  const { data, error } = await supabaseAdmin.storage
+    .from(MOBILE_APK_BUCKET)
+    .createSignedUrl(fileName, SIGNED_URL_TTL_SEC, { download: fileName });
+
+  if (error || !data?.signedUrl) {
+    console.error(`[serve-apk] signed URL failed for ${fileName}:`, error?.message);
+    return new Response("APK chưa sẵn sàng trên server.", { status: 404 });
+  }
+
+  return Response.redirect(data.signedUrl, 302);
+}
+
 export async function serveApk(fileName: string): Promise<Response> {
   const local = await readLocalApk(fileName);
   if (local) {
@@ -48,13 +64,5 @@ export async function serveApk(fileName: string): Promise<Response> {
     return Response.redirect(external, 302);
   }
 
-  const remoteUrl = supabasePublicApkUrl(fileName);
-  const head = await fetch(remoteUrl, { method: "HEAD" });
-  if (!head.ok) {
-    return new Response("APK chưa sẵn sàng. Cấu hình VITE_GUARD_APK_URL / VITE_FAMILY_APK_URL.", {
-      status: 404,
-    });
-  }
-
-  return Response.redirect(remoteUrl, 302);
+  return redirectSignedApk(fileName);
 }
