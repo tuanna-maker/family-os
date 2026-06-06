@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { getMyContext } from "@/lib/auth.functions";
 import { resolveDestinationPure } from "@/lib/resolve-destination";
+import { MOBILE_APK, apkDownloadUrl } from "@/lib/mobile-apk";
 import {
   Shield, Building2, Users, Bell, MapPin, Phone, ArrowRight, CheckCircle2,
   Sparkles, Truck, Leaf, MessageCircle, Activity, Smartphone, Lock,
@@ -1762,30 +1763,29 @@ function BqlCaseStudy() {
 }
 
 function InstallQrSection() {
-  const origin = typeof window !== "undefined" ? window.location.origin : "https://stoslife.lovable.app";
-  const familyApkUrl = useMemo(() => `${origin}/downloads/stos-family.apk`, [origin]);
-  const guardApkUrl = useMemo(() => `${origin}/downloads/stos-guard.apk`, [origin]);
+  const familyApkUrl = useMemo(() => apkDownloadUrl("family"), []);
+  const guardApkUrl = useMemo(() => apkDownloadUrl("guard"), []);
 
   const cards = [
     {
-      title: "App Gia đình",
+      title: MOBILE_APK.family.title,
       desc: "Quét QR bằng camera Android để tải file APK và cài app Gia đình (STOS Life).",
       url: familyApkUrl,
       fg: "#2563eb",
       cta: "Tải APK Gia đình",
       icon: Heart,
       tone: "from-blue-50 to-white",
-      fileName: "stos-family.apk",
+      fileName: MOBILE_APK.family.fileName,
     },
     {
-      title: "App Bảo vệ",
+      title: MOBILE_APK.guard.title,
       desc: "Dành cho đội ngũ bảo vệ. Quét QR để tải APK và cài app Bảo vệ trên thiết bị trực.",
       url: guardApkUrl,
       fg: "#0f172a",
       cta: "Tải APK Bảo vệ",
       icon: ShieldCheck,
       tone: "from-slate-50 to-white",
-      fileName: "stos-guard.apk",
+      fileName: MOBILE_APK.guard.fileName,
     },
   ];
 

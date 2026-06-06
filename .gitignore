@@ -33,12 +33,12 @@ test-results/
 **/android/app/build/
 **/ios/App/Pods/
 
-# Android APK / AAB (build artifacts — không đẩy lên GitHub)
+# Android APK / AAB (build artifacts — không đẩy lên GitHub / Cloudflare)
 *.apk
 *.aab
 **/release/
-!web/public/downloads/
-!web/public/downloads/*.apk
+# APK host trên Supabase Storage — không đặt trong public/ (giới hạn Cloudflare 25 MiB/file)
+web/public/downloads/*.apk
 .vscode/*
 !.vscode/extensions.json
 .idea

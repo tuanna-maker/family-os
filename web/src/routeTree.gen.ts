@@ -145,6 +145,8 @@ import { Route as ApiPublicVitalsRouteImport } from './routes/api/public/vitals'
 import { Route as ApiPublicHooksOcrWorkerRouteImport } from './routes/api/public/hooks/ocr-worker'
 import { Route as ApiPublicHooksDispatchSosRouteImport } from './routes/api/public/hooks/dispatch-sos'
 import { Route as ApiPublicHooksDispatchRemindersRouteImport } from './routes/api/public/hooks/dispatch-reminders'
+import { Route as ApiPublicDownloadsGuardRouteImport } from './routes/api/public/downloads/guard'
+import { Route as ApiPublicDownloadsFamilyRouteImport } from './routes/api/public/downloads/family'
 
 const WorkspacesRoute = WorkspacesRouteImport.update({
   id: '/workspaces',
@@ -828,6 +830,17 @@ const ApiPublicHooksDispatchRemindersRoute =
     path: '/api/public/hooks/dispatch-reminders',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicDownloadsGuardRoute = ApiPublicDownloadsGuardRouteImport.update({
+  id: '/api/public/downloads/guard',
+  path: '/api/public/downloads/guard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicDownloadsFamilyRoute =
+  ApiPublicDownloadsFamilyRouteImport.update({
+    id: '/api/public/downloads/family',
+    path: '/api/public/downloads/family',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -963,6 +976,8 @@ export interface FileRoutesByFullPath {
   '/gia-dinh/invite/$token': typeof GiaDinhInviteTokenRoute
   '/guard/requests/$id': typeof GuardRequestsIdRoute
   '/guard/sos/$eventId': typeof GuardSosEventIdRoute
+  '/api/public/downloads/family': typeof ApiPublicDownloadsFamilyRoute
+  '/api/public/downloads/guard': typeof ApiPublicDownloadsGuardRoute
   '/api/public/hooks/dispatch-reminders': typeof ApiPublicHooksDispatchRemindersRoute
   '/api/public/hooks/dispatch-sos': typeof ApiPublicHooksDispatchSosRoute
   '/api/public/hooks/ocr-worker': typeof ApiPublicHooksOcrWorkerRoute
@@ -1094,6 +1109,8 @@ export interface FileRoutesByTo {
   '/gia-dinh/invite/$token': typeof GiaDinhInviteTokenRoute
   '/guard/requests/$id': typeof GuardRequestsIdRoute
   '/guard/sos/$eventId': typeof GuardSosEventIdRoute
+  '/api/public/downloads/family': typeof ApiPublicDownloadsFamilyRoute
+  '/api/public/downloads/guard': typeof ApiPublicDownloadsGuardRoute
   '/api/public/hooks/dispatch-reminders': typeof ApiPublicHooksDispatchRemindersRoute
   '/api/public/hooks/dispatch-sos': typeof ApiPublicHooksDispatchSosRoute
   '/api/public/hooks/ocr-worker': typeof ApiPublicHooksOcrWorkerRoute
@@ -1233,6 +1250,8 @@ export interface FileRoutesById {
   '/gia-dinh_/invite/$token': typeof GiaDinhInviteTokenRoute
   '/guard/requests/$id': typeof GuardRequestsIdRoute
   '/guard/sos/$eventId': typeof GuardSosEventIdRoute
+  '/api/public/downloads/family': typeof ApiPublicDownloadsFamilyRoute
+  '/api/public/downloads/guard': typeof ApiPublicDownloadsGuardRoute
   '/api/public/hooks/dispatch-reminders': typeof ApiPublicHooksDispatchRemindersRoute
   '/api/public/hooks/dispatch-sos': typeof ApiPublicHooksDispatchSosRoute
   '/api/public/hooks/ocr-worker': typeof ApiPublicHooksOcrWorkerRoute
@@ -1373,6 +1392,8 @@ export interface FileRouteTypes {
     | '/gia-dinh/invite/$token'
     | '/guard/requests/$id'
     | '/guard/sos/$eventId'
+    | '/api/public/downloads/family'
+    | '/api/public/downloads/guard'
     | '/api/public/hooks/dispatch-reminders'
     | '/api/public/hooks/dispatch-sos'
     | '/api/public/hooks/ocr-worker'
@@ -1504,6 +1525,8 @@ export interface FileRouteTypes {
     | '/gia-dinh/invite/$token'
     | '/guard/requests/$id'
     | '/guard/sos/$eventId'
+    | '/api/public/downloads/family'
+    | '/api/public/downloads/guard'
     | '/api/public/hooks/dispatch-reminders'
     | '/api/public/hooks/dispatch-sos'
     | '/api/public/hooks/ocr-worker'
@@ -1642,6 +1665,8 @@ export interface FileRouteTypes {
     | '/gia-dinh_/invite/$token'
     | '/guard/requests/$id'
     | '/guard/sos/$eventId'
+    | '/api/public/downloads/family'
+    | '/api/public/downloads/guard'
     | '/api/public/hooks/dispatch-reminders'
     | '/api/public/hooks/dispatch-sos'
     | '/api/public/hooks/ocr-worker'
@@ -1724,6 +1749,8 @@ export interface RootRouteChildren {
   AdminIndexRoute: typeof AdminIndexRoute
   ApiPublicVitalsRoute: typeof ApiPublicVitalsRoute
   GiaDinhInviteTokenRoute: typeof GiaDinhInviteTokenRoute
+  ApiPublicDownloadsFamilyRoute: typeof ApiPublicDownloadsFamilyRoute
+  ApiPublicDownloadsGuardRoute: typeof ApiPublicDownloadsGuardRoute
   ApiPublicHooksDispatchRemindersRoute: typeof ApiPublicHooksDispatchRemindersRoute
   ApiPublicHooksDispatchSosRoute: typeof ApiPublicHooksDispatchSosRoute
   ApiPublicHooksOcrWorkerRoute: typeof ApiPublicHooksOcrWorkerRoute
@@ -2683,6 +2710,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksDispatchRemindersRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/downloads/guard': {
+      id: '/api/public/downloads/guard'
+      path: '/api/public/downloads/guard'
+      fullPath: '/api/public/downloads/guard'
+      preLoaderRoute: typeof ApiPublicDownloadsGuardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/downloads/family': {
+      id: '/api/public/downloads/family'
+      path: '/api/public/downloads/family'
+      fullPath: '/api/public/downloads/family'
+      preLoaderRoute: typeof ApiPublicDownloadsFamilyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -2966,6 +3007,8 @@ const rootRouteChildren: RootRouteChildren = {
   AdminIndexRoute: AdminIndexRoute,
   ApiPublicVitalsRoute: ApiPublicVitalsRoute,
   GiaDinhInviteTokenRoute: GiaDinhInviteTokenRoute,
+  ApiPublicDownloadsFamilyRoute: ApiPublicDownloadsFamilyRoute,
+  ApiPublicDownloadsGuardRoute: ApiPublicDownloadsGuardRoute,
   ApiPublicHooksDispatchRemindersRoute: ApiPublicHooksDispatchRemindersRoute,
   ApiPublicHooksDispatchSosRoute: ApiPublicHooksDispatchSosRoute,
   ApiPublicHooksOcrWorkerRoute: ApiPublicHooksOcrWorkerRoute,
