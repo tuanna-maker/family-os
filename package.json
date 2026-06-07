@@ -31,6 +31,7 @@
     "android:mobile-guard:debug": "node scripts/android-build.mjs mobile-guard assembleDebug",
     "sync:mobile-apks": "node scripts/sync-mobile-apks.mjs",
     "upload:mobile-apks": "node scripts/upload-mobile-apks.mjs",
+    "publish:mobile-apks": "node scripts/sync-mobile-apks.mjs && node scripts/publish-mobile-apks-github.mjs",
     "ios:family": "npm run build:family && npm run cap:open:ios -w @apps/family",
     "ios:guard": "npm run build:guard && npm run cap:open:ios -w @apps/guard",
     "native:setup": "node scripts/setup-native.mjs",
