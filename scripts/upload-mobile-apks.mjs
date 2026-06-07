@@ -90,6 +90,7 @@ const targets = [
     label: "STOS Family (vn.unicom.stos.familyrn)",
     dest: "stos-family.apk",
     sources: [
+      join(ROOT, "mobile", "family", "android", "app", "build", "outputs", "apk", "release", "app-release.apk"),
       join(ROOT, "mobile", "family", "release", "app-release.apk"),
       join(ROOT, "web", "public", "downloads", "stos-family.apk"),
     ],

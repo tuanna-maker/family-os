@@ -12,14 +12,27 @@ const LOCAL_APK_PATHS: Record<string, string[]> = {
   ],
   "stos-family.apk": [
     join(process.cwd(), "public", "downloads", "stos-family.apk"),
+    join(
+      process.cwd(),
+      "..",
+      "mobile",
+      "family",
+      "android",
+      "app",
+      "build",
+      "outputs",
+      "apk",
+      "release",
+      "app-release.apk",
+    ),
     join(process.cwd(), "..", "mobile", "family", "release", "app-release.apk"),
   ],
 };
 
 /** Fallback GitHub Releases — cập nhật khi publish APK mới (npm run publish:mobile-apks). */
 const FALLBACK_APK_URLS: Record<string, string> = {
-  "stos-guard.apk": "https://github.com/tuanna-maker/family-os/releases/download/mobile-apk-20260607/stos-guard.apk",
-  "stos-family.apk": "https://github.com/tuanna-maker/family-os/releases/download/mobile-apk-20260607/stos-family.apk",
+  "stos-guard.apk": "https://github.com/tuanna-maker/family-os/releases/download/mobile-apk-20260608/stos-guard.apk",
+  "stos-family.apk": "https://github.com/tuanna-maker/family-os/releases/download/mobile-apk-20260608/stos-family.apk",
 };
 
 function externalApkUrl(fileName: string): string | null {

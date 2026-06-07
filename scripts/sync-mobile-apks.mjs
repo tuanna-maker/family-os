@@ -1,7 +1,9 @@
 #!/usr/bin/env node
 /**
  * Copy APK release mới nhất → web/public/downloads (để đính kèm Lovable / upload).
- * Nguồn chuẩn: mobile/guard|family/release/ (npm run android:mobile-guard|family)
+ * Nguồn chuẩn:
+ *   Guard  → mobile/guard/release/guard-app-release.apk
+ *   Family → mobile/family/android/app/build/outputs/apk/release/app-release.apk
  */
 import { copyFileSync, existsSync, mkdirSync, readFileSync } from "node:fs";
 import { createHash } from "node:crypto";
@@ -20,7 +22,7 @@ const PAIRS = [
   },
   {
     label: "STOS Family (vn.unicom.stos.familyrn)",
-    src: join(ROOT, "mobile", "family", "release", "app-release.apk"),
+    src: join(ROOT, "mobile", "family", "android", "app", "build", "outputs", "apk", "release", "app-release.apk"),
     dest: join(OUT_DIR, "stos-family.apk"),
     buildCmd: "npm run android:mobile-family",
   },
