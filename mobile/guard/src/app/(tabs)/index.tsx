@@ -1,9 +1,9 @@
-import React from "react";
-import { View, Text, ScrollView, TouchableOpacity } from "react-native";
-import { Shield, LogIn, LogOut, MapPin, AlertTriangle, Users } from "lucide-react-native";
-import { Link } from "expo-router";
+import React, { useCallback } from "react";
+import { View, Text, ScrollView, TouchableOpacity, Alert } from "react-native";
+import { Shield, LogIn, LogOut, MapPin, AlertTriangle, Users, Siren } from "lucide-react-native";
+import { Link, useFocusEffect, useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "@mobile/hooks/useAuth";
 import { useGuardNotifications } from "@mobile/hooks/useGuardNotifications";
@@ -14,8 +14,10 @@ import { useTabScrollPadding } from "@mobile/hooks/useTabScrollPadding";
 import { GuardHeaderActions } from "@mobile/components/GuardHeaderActions";
 
 export default function DashboardScreen() {
+  const router = useRouter();
   const insets = useSafeAreaInsets();
   const tabPad = useTabScrollPadding();
+  const qc = useQueryClient();
   const { user } = useAuth();
   const { unread } = useGuardNotifications();
   const { data: openRequests = [] } = useQuery({
@@ -29,13 +31,47 @@ export default function DashboardScreen() {
     refetchInterval: 30_000,
   });
 
+  useFocusEffect(
+    useCallback(() => {
+      void qc.invalidateQueries({ queryKey: ["guard-active-shift"] });
+      void qc.invalidateQueries({ queryKey: ["guard-open-requests"] });
+    }, [qc]),
+  );
+
+  const sosCount = openRequests.filter((r) => r.request_type === "sos").length;
+
   const fullName =
     (user?.user_metadata as { full_name?: string } | null)?.full_name ?? "Nhân viên bảo vệ";
   const initials = initialsFromName(fullName);
   const onDuty = activeShift?.status === "checked_in";
+  const canCheckIn = activeShift?.status === "scheduled";
+  const canCheckOut = onDuty;
   const shiftLine = activeShift
     ? `${shiftLabel(activeShift.shift_type)}: ${shiftTimeRange(activeShift.shift_type)}`
     : "Chưa có ca trực hôm nay";
+
+  const handleCheckInPress = () => {
+    if (canCheckIn) {
+      router.push("/check-in");
+      return;
+    }
+    if (onDuty) {
+      Alert.alert("Đã vào ca", "Bạn đang trong ca trực, không cần check-in lại.");
+      return;
+    }
+    Alert.alert(
+      "Không có ca trực",
+      "Hôm nay bạn không có ca trực được phân công. Vui lòng liên hệ quản lý an ninh.",
+    );
+  };
+
+  const handleCheckOutPress = () => {
+    if (canCheckOut) {
+      router.push("/check-out");
+      return;
+    }
+    Alert.alert("Chưa vào ca", "Bạn cần check-in ca trực trước khi kết thúc ca.");
+  };
 
   return (
     <ScrollView className="flex-1 bg-background" contentContainerStyle={tabPad}>
@@ -103,47 +139,57 @@ export default function DashboardScreen() {
       </View>
 
       <View className="px-5 mt-2 flex-row flex-wrap justify-between">
-        <Link href="/check-in" asChild>
-          <TouchableOpacity className="w-[48%] mb-4" activeOpacity={0.9}>
-            <LinearGradient
-              colors={["#22C55E", "#16A34A"]}
-              style={{
-                borderRadius: 24,
-                padding: 16,
-                alignItems: "center",
-                minHeight: 130,
-                justifyContent: "center",
-              }}
-            >
-              <View className="h-12 w-12 rounded-2xl bg-white/20 items-center justify-center mb-3">
-                <LogIn size={24} color="white" />
-              </View>
-              <Text className="text-sm font-bold text-white tracking-wide">VÀO CA</Text>
-              <Text className="text-[11px] text-white/80 mt-0.5">Check-in</Text>
-            </LinearGradient>
-          </TouchableOpacity>
-        </Link>
+        <TouchableOpacity
+          className="w-[48%] mb-4"
+          activeOpacity={canCheckIn ? 0.9 : 1}
+          onPress={handleCheckInPress}
+          style={{ opacity: canCheckIn ? 1 : 0.42 }}
+        >
+          <LinearGradient
+            colors={canCheckIn ? ["#22C55E", "#16A34A"] : ["#6B7280", "#4B5563"]}
+            style={{
+              borderRadius: 24,
+              padding: 16,
+              alignItems: "center",
+              minHeight: 130,
+              justifyContent: "center",
+            }}
+          >
+            <View className="h-12 w-12 rounded-2xl bg-white/20 items-center justify-center mb-3">
+              <LogIn size={24} color="white" />
+            </View>
+            <Text className="text-sm font-bold text-white tracking-wide">VÀO CA</Text>
+            <Text className="text-[11px] text-white/80 mt-0.5">
+              {onDuty ? "Đã vào ca" : canCheckIn ? "Check-in" : "Không có ca"}
+            </Text>
+          </LinearGradient>
+        </TouchableOpacity>
 
-        <Link href="/check-out" asChild>
-          <TouchableOpacity className="w-[48%] mb-4" activeOpacity={0.9}>
-            <LinearGradient
-              colors={["#F43F5E", "#E11D48"]}
-              style={{
-                borderRadius: 24,
-                padding: 16,
-                alignItems: "center",
-                minHeight: 130,
-                justifyContent: "center",
-              }}
-            >
-              <View className="h-12 w-12 rounded-2xl bg-white/20 items-center justify-center mb-3">
-                <LogOut size={24} color="white" />
-              </View>
-              <Text className="text-sm font-bold text-white tracking-wide">KẾT THÚC CA</Text>
-              <Text className="text-[11px] text-white/80 mt-0.5">Check-out</Text>
-            </LinearGradient>
-          </TouchableOpacity>
-        </Link>
+        <TouchableOpacity
+          className="w-[48%] mb-4"
+          activeOpacity={canCheckOut ? 0.9 : 1}
+          onPress={handleCheckOutPress}
+          style={{ opacity: canCheckOut ? 1 : 0.42 }}
+        >
+          <LinearGradient
+            colors={canCheckOut ? ["#F43F5E", "#E11D48"] : ["#6B7280", "#4B5563"]}
+            style={{
+              borderRadius: 24,
+              padding: 16,
+              alignItems: "center",
+              minHeight: 130,
+              justifyContent: "center",
+            }}
+          >
+            <View className="h-12 w-12 rounded-2xl bg-white/20 items-center justify-center mb-3">
+              <LogOut size={24} color="white" />
+            </View>
+            <Text className="text-sm font-bold text-white tracking-wide">KẾT THÚC CA</Text>
+            <Text className="text-[11px] text-white/80 mt-0.5">
+              {canCheckOut ? "Check-out" : "Chưa vào ca"}
+            </Text>
+          </LinearGradient>
+        </TouchableOpacity>
 
         <Link href="/patrol" asChild>
           <TouchableOpacity className="w-[48%] mb-4" activeOpacity={0.9}>
@@ -203,11 +249,18 @@ export default function DashboardScreen() {
                   YÊU CẦU CƯ DÂN
                 </Text>
                 <Text className="text-[12px] text-white/90 mt-0.5">
-                  {openRequests.length > 0
-                    ? `${openRequests.length} yêu cầu đang mở · Xem & xử lý`
-                    : "Xem & xử lý"}
+                  {sosCount > 0
+                    ? `${sosCount} SOS khẩn cấp · ${openRequests.length} yêu cầu mở`
+                    : openRequests.length > 0
+                      ? `${openRequests.length} yêu cầu đang mở · Xem & xử lý`
+                      : "Xem & xử lý"}
                 </Text>
               </View>
+              {sosCount > 0 ? (
+                <View className="h-10 w-10 rounded-full bg-white/20 items-center justify-center">
+                  <Siren size={20} color="white" />
+                </View>
+              ) : null}
             </LinearGradient>
           </TouchableOpacity>
         </Link>

@@ -5,6 +5,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { View, Text } from "react-native";
 import { QueryProvider } from "@mobile/providers/QueryProvider";
 import { AuthProvider } from "@mobile/hooks/useAuth";
+import { GuardPrefsProvider } from "@mobile/hooks/useGuardPrefs";
 import { ErrorBoundary } from "@mobile/components/ErrorBoundary";
 import { ThemeProvider } from "@mobile/theme/themeStore";
 import { ThemeController } from "@mobile/theme/ThemeController";
@@ -36,6 +37,7 @@ export default function RootLayout() {
             <ErrorBoundary>
               <QueryProvider>
                 <AuthProvider>
+                  <GuardPrefsProvider>
                   <Stack screenOptions={{ headerShown: false }}>
                     <Stack.Screen name="index" />
                     <Stack.Screen name="login" />
@@ -46,7 +48,9 @@ export default function RootLayout() {
                     <Stack.Screen name="incident" />
                     <Stack.Screen name="qr-scanner" />
                     <Stack.Screen name="requests" />
+                    <Stack.Screen name="account-profile" />
                   </Stack>
+                  </GuardPrefsProvider>
                 </AuthProvider>
               </QueryProvider>
             </ErrorBoundary>

@@ -1,53 +1,73 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, Alert, ActivityIndicator } from "react-native";
+import { View, Text, Alert } from "react-native";
 import { useRouter } from "expo-router";
-import * as Location from "expo-location";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@mobile/components/ui/Button";
 import { SubHeader } from "@mobile/components/SubHeader";
-import { MapPin } from "lucide-react-native";
-import { checkInShift } from "@guard/api/guard-shifts";
+import { MapPin, AlertTriangle } from "lucide-react-native";
+import { checkInShift, getActiveShift } from "@guard/api/guard-shifts";
+import { invalidateShiftQueries, resolveGuardLocation, type GuardCoords } from "@mobile/utils/guardGeo";
+import { shiftLabel, shiftTimeRange } from "@mobile/utils/guardFormat";
 
 export default function CheckInScreen() {
   const router = useRouter();
-  const [coords, setCoords] = useState<{
-    lat: number;
-    lng: number;
-    accuracy?: number;
-  } | null>(null);
+  const qc = useQueryClient();
+  const [coords, setCoords] = useState<GuardCoords | null>(null);
   const [loading, setLoading] = useState(true);
   const [checkingIn, setCheckingIn] = useState(false);
   const [geoError, setGeoError] = useState<string | null>(null);
 
+  const { data: activeShift, isLoading: shiftLoading } = useQuery({
+    queryKey: ["guard-active-shift"],
+    queryFn: () => getActiveShift(),
+  });
+
+  const onDuty = activeShift?.status === "checked_in";
+  const canCheckIn = activeShift?.status === "scheduled";
+  const noShiftToday = !shiftLoading && !activeShift;
+
   useEffect(() => {
     (async () => {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== "granted") {
-        setGeoError("Cần quyền truy cập vị trí để check-in.");
-        setLoading(false);
-        return;
-      }
-      try {
-        const loc = await Location.getCurrentPositionAsync({});
-        setCoords({
-          lat: loc.coords.latitude,
-          lng: loc.coords.longitude,
-          accuracy: loc.coords.accuracy ?? undefined,
-        });
-      } catch {
-        setGeoError("Không thể lấy vị trí");
-      }
+      const { coords: c, error } = await resolveGuardLocation();
+      setCoords(c);
+      setGeoError(error);
       setLoading(false);
     })();
   }, []);
 
+  useEffect(() => {
+    if (shiftLoading) return;
+    if (onDuty) {
+      Alert.alert("Đã vào ca", "Bạn đang trong ca trực, không cần check-in lại.", [
+        { text: "OK", onPress: () => router.replace("/(tabs)") },
+      ]);
+    } else if (noShiftToday) {
+      Alert.alert(
+        "Không có ca trực",
+        "Hôm nay bạn không có ca trực được phân công. Vui lòng liên hệ quản lý an ninh.",
+        [{ text: "OK", onPress: () => router.back() }],
+      );
+    }
+  }, [shiftLoading, onDuty, noShiftToday, router]);
+
   const handleCheckIn = async () => {
+    if (!canCheckIn) {
+      Alert.alert(
+        "Không thể vào ca",
+        noShiftToday
+          ? "Hôm nay bạn không có ca trực được phân công."
+          : "Bạn đang trong ca hoặc đã kết thúc ca hôm nay.",
+      );
+      return;
+    }
     setCheckingIn(true);
     try {
       const res = await checkInShift({ location: coords ?? undefined });
+      invalidateShiftQueries(qc);
       Alert.alert(
         "Thành công",
         res.reused ? "Đã có ca đang mở" : "Đã check-in ca trực!",
-        [{ text: "OK", onPress: () => router.back() }],
+        [{ text: "OK", onPress: () => router.replace("/(tabs)") }],
       );
     } catch (e) {
       Alert.alert("Lỗi", (e as Error).message || "Không vào ca được");
@@ -65,8 +85,22 @@ export default function CheckInScreen() {
             <MapPin size={32} color="#2563eb" />
           </View>
           <Text className="text-2xl font-bold mb-2 text-foreground">Check-in Ca trực</Text>
-          {loading ? (
-            <ActivityIndicator size="small" className="mt-4" />
+
+          {canCheckIn && activeShift ? (
+            <Text className="text-sm text-muted-foreground text-center mb-2">
+              {shiftLabel(activeShift.shift_type)} · {shiftTimeRange(activeShift.shift_type)}
+            </Text>
+          ) : null}
+
+          {noShiftToday ? (
+            <View className="items-center my-4 px-2">
+              <AlertTriangle size={28} color="#f59e0b" />
+              <Text className="text-amber-600 text-center mt-2">
+                Hôm nay bạn không có ca trực được phân công.
+              </Text>
+            </View>
+          ) : loading ? (
+            <Text className="text-muted-foreground mt-4">Đang lấy vị trí…</Text>
           ) : coords ? (
             <View className="items-center mb-6 mt-4">
               <Text className="text-green-600 font-semibold mb-2">Lấy vị trí thành công</Text>
@@ -75,13 +109,14 @@ export default function CheckInScreen() {
               </Text>
             </View>
           ) : (
-            <Text className="text-red-500 my-4">{geoError ?? "Không thể lấy vị trí"}</Text>
+            <Text className="text-amber-600 my-4 text-center px-2">{geoError}</Text>
           )}
+
           <Button
             className="w-full h-12 mt-4"
             onPress={handleCheckIn}
-            isLoading={checkingIn}
-            disabled={loading}
+            isLoading={checkingIn || shiftLoading}
+            disabled={checkingIn || shiftLoading || !canCheckIn}
           >
             Xác nhận Check-in
           </Button>

@@ -67,16 +67,30 @@ function shiftBounds(d: Date, type: "morning" | "afternoon" | "night") {
 
 export async function getActiveShift(): Promise<GuardShift | null> {
   const { supabase, userId } = await requireUser();
-  const { data, error } = await supabase
+
+  const { data: onDuty, error: dutyErr } = await supabase
     .from("guard_shifts")
     .select("*")
     .eq("guard_id", userId)
-    .in("status", ["scheduled", "checked_in"])
+    .eq("status", "checked_in")
+    .order("check_in_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (dutyErr) throw new Error(dutyErr.message);
+  if (onDuty) return onDuty as GuardShift;
+
+  const today = new Date().toISOString().slice(0, 10);
+  const { data: scheduled, error: schedErr } = await supabase
+    .from("guard_shifts")
+    .select("*")
+    .eq("guard_id", userId)
+    .eq("status", "scheduled")
+    .eq("shift_date", today)
     .order("start_at", { ascending: false })
     .limit(1)
     .maybeSingle();
-  if (error) throw new Error(error.message);
-  return (data as GuardShift | null) ?? null;
+  if (schedErr) throw new Error(schedErr.message);
+  return (scheduled as GuardShift | null) ?? null;
 }
 
 export async function checkInShift(input?: {
@@ -116,40 +130,23 @@ export async function checkInShift(input?: {
     .limit(1)
     .maybeSingle();
 
-  if (scheduled) {
-    const { error } = await supabase
-      .from("guard_shifts")
-      .update({
-        status: "checked_in",
-        check_in_at: nowIso,
-        check_in_location: data.location ?? null,
-        notes: data.notes ?? null,
-      })
-      .eq("id", scheduled.id);
-    if (error) throw new Error(error.message);
-    return { id: scheduled.id as string, reused: false };
+  if (!scheduled) {
+    throw new Error(
+      "Hôm nay bạn không có ca trực được phân công. Vui lòng liên hệ quản lý an ninh.",
+    );
   }
 
-  const type = inferShiftType(now);
-  const { start, end } = shiftBounds(now, type);
-  const { data: created, error } = await supabase
+  const { error } = await supabase
     .from("guard_shifts")
-    .insert({
-      guard_id: userId,
-      project_id: data.project_id ?? null,
-      shift_date: today,
-      shift_type: type,
-      start_at: start,
-      end_at: end,
+    .update({
+      status: "checked_in",
       check_in_at: nowIso,
       check_in_location: data.location ?? null,
-      status: "checked_in",
       notes: data.notes ?? null,
     })
-    .select("id")
-    .single();
+    .eq("id", scheduled.id);
   if (error) throw new Error(error.message);
-  return { id: created.id as string, reused: false };
+  return { id: scheduled.id as string, reused: false };
 }
 
 export async function checkOutShift(input?: {

@@ -1,14 +1,20 @@
 import React from "react";
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from "react-native";
-import { Bell, ShieldAlert, Clock } from "lucide-react-native";
+import { Bell, BellOff, ShieldAlert, Clock } from "lucide-react-native";
+import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useGuardNotifications } from "@mobile/hooks/useGuardNotifications";
+import { useGuardPrefs } from "@mobile/hooks/useGuardPrefs";
 import { formatNotifTime } from "@mobile/utils/guardFormat";
 import { useTabScrollPadding } from "@mobile/hooks/useTabScrollPadding";
+import { useTheme } from "@mobile/theme/themeStore";
 
 export default function NotificationsScreen() {
+  const router = useRouter();
   const insets = useSafeAreaInsets();
   const tabPad = useTabScrollPadding();
+  const { colors } = useTheme();
+  const { notificationsEnabled } = useGuardPrefs();
   const { items, isLoading, markRead, markAllRead, unread } = useGuardNotifications();
 
   return (
@@ -18,18 +24,40 @@ export default function NotificationsScreen() {
         style={{ paddingTop: Math.max(insets.top + 12, 48) }}
       >
         <Text className="text-xl font-bold text-foreground">Thông báo</Text>
-        {unread > 0 && (
+        {notificationsEnabled && unread > 0 ? (
           <TouchableOpacity onPress={() => void markAllRead()}>
             <Text className="text-sm font-medium text-brand">Đánh dấu đã đọc</Text>
           </TouchableOpacity>
-        )}
+        ) : null}
       </View>
 
       <View className="p-4">
-        {isLoading ? (
-          <ActivityIndicator className="mt-8" />
+        {!notificationsEnabled ? (
+          <View className="items-center mt-12 px-6">
+            <View className="h-16 w-16 rounded-full bg-muted items-center justify-center mb-4">
+              <BellOff size={28} color={colors.muted} />
+            </View>
+            <Text className="text-base font-semibold text-foreground text-center">
+              Thông báo đang tắt
+            </Text>
+            <Text className="text-sm text-muted-foreground text-center mt-2 leading-5">
+              Bạn sẽ không nhận cập nhật mới và không thấy badge trên menu. Bật lại trong mục Tài
+              khoản → Thiết lập.
+            </Text>
+            <TouchableOpacity
+              className="mt-5 bg-brand rounded-xl px-5 py-3"
+              onPress={() => router.push("/(tabs)/account")}
+            >
+              <Text className="text-white font-semibold">Mở cài đặt Tài khoản</Text>
+            </TouchableOpacity>
+          </View>
+        ) : isLoading ? (
+          <ActivityIndicator className="mt-8" color={colors.brand} />
         ) : items.length === 0 ? (
-          <Text className="text-center text-muted-foreground mt-10">Chưa có thông báo.</Text>
+          <View className="items-center mt-12">
+            <Bell size={32} color={colors.muted} />
+            <Text className="text-center text-muted-foreground mt-3">Chưa có thông báo.</Text>
+          </View>
         ) : (
           items.map((n) => {
             const read = !!n.read_at;
@@ -66,7 +94,7 @@ export default function NotificationsScreen() {
                       </Text>
                     </View>
                   </View>
-                  {!read && <View className="h-2.5 w-2.5 bg-brand rounded-full mt-2" />}
+                  {!read ? <View className="h-2.5 w-2.5 bg-brand rounded-full mt-2" /> : null}
                 </View>
               </TouchableOpacity>
             );

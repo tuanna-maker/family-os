@@ -21,16 +21,17 @@ export function GuardTabBar({ state, descriptors, navigation }: BottomTabBarProp
   const insets = useSafeAreaInsets();
   const { width: screenWidth } = useWindowDimensions();
   const { colors, theme } = useTheme();
-  const { unread } = useGuardNotifications();
+  const { unread, notificationsEnabled } = useGuardNotifications();
   const isDark = theme === "dark";
   const bottomPad = Math.max(insets.bottom, TAB_BAR_FLOAT_MARGIN) + TAB_BAR_BOTTOM_OFFSET;
 
   const barWidth = screenWidth - OUTER_HORIZONTAL * 2;
-  const tabWidth = barWidth / state.routes.length;
+  const tabCount = state.routes.length;
+  const tabWidth = barWidth / tabCount;
 
-  const overlay = isDark ? "rgba(30, 30, 30, 0.5)" : "rgba(255, 255, 255, 0.5)";
-  const androidSolid = isDark ? "rgba(30, 30, 30, 0.9)" : "rgba(255, 255, 255, 0.94)";
-  const borderColor = isDark ? "rgba(255, 255, 255, 0.12)" : "rgba(15, 23, 42, 0.08)";
+  const overlay = isDark ? "rgba(30, 30, 30, 0.55)" : "rgba(255, 255, 255, 0.72)";
+  const androidSolid = isDark ? "rgba(28, 28, 30, 0.96)" : "rgba(255, 255, 255, 0.98)";
+  const borderColor = isDark ? "rgba(255, 255, 255, 0.12)" : "rgba(15, 23, 42, 0.1)";
 
   return (
     <View style={[styles.outer, { paddingBottom: bottomPad }]} pointerEvents="box-none">
@@ -65,7 +66,7 @@ export function GuardTabBar({ state, descriptors, navigation }: BottomTabBarProp
           />
         </View>
 
-        <View style={[styles.row, { width: barWidth }]}>
+        <View style={[styles.row, { width: barWidth, height: TAB_BAR_CONTENT_HEIGHT }]}>
           {state.routes.map((route, index) => {
             const { options } = descriptors[route.key];
             const label =
@@ -74,6 +75,7 @@ export function GuardTabBar({ state, descriptors, navigation }: BottomTabBarProp
                 : (options.title ?? route.name);
             const isFocused = state.index === index;
             const isNotifications = route.name === "notifications";
+            const showBadge = isNotifications && notificationsEnabled && unread > 0;
 
             const onPress = () => {
               const event = navigation.emit({
@@ -96,17 +98,21 @@ export function GuardTabBar({ state, descriptors, navigation }: BottomTabBarProp
               : null;
 
             return (
-              <View key={route.key} style={[styles.tabCell, { width: tabWidth }]}>
+              <View
+                key={route.key}
+                style={[styles.tabSlot, { width: tabWidth }]}
+              >
                 <Pressable
                   accessibilityRole="button"
                   accessibilityState={isFocused ? { selected: true } : {}}
                   accessibilityLabel={label}
                   onPress={onPress}
-                  style={({ pressed }) => [styles.tab, pressed && { opacity: 0.88 }]}
+                  android_ripple={{ color: "rgba(128,128,128,0.2)", borderless: false }}
+                  style={styles.tabPress}
                 >
                   <View style={styles.iconSlot}>
                     <View style={styles.iconWrap}>{icon}</View>
-                    {isNotifications && unread > 0 ? (
+                    {showBadge ? (
                       <View style={[styles.badge, { backgroundColor: colors.emergency }]}>
                         <Text style={styles.badgeText}>{unread > 9 ? "9+" : unread}</Text>
                       </View>
@@ -115,7 +121,7 @@ export function GuardTabBar({ state, descriptors, navigation }: BottomTabBarProp
                   <Text
                     style={[
                       styles.label,
-                      { color: tint, fontWeight: isFocused ? "700" : "500" },
+                      { color: tint, fontWeight: isFocused ? "700" : "500", width: tabWidth - 4 },
                     ]}
                     numberOfLines={1}
                     ellipsizeMode="tail"
@@ -155,20 +161,23 @@ const styles = StyleSheet.create({
   },
   row: {
     flexDirection: "row",
-    height: TAB_BAR_CONTENT_HEIGHT,
+    alignItems: "center",
+    justifyContent: "space-between",
     zIndex: 1,
   },
-  tabCell: {
+  tabSlot: {
     height: TAB_BAR_CONTENT_HEIGHT,
     alignItems: "center",
     justifyContent: "center",
+    overflow: "hidden",
   },
-  tab: {
-    flex: 1,
-    alignSelf: "stretch",
+  tabPress: {
+    width: "100%",
+    height: "100%",
     alignItems: "center",
     justifyContent: "center",
-    paddingBottom: 4,
+    paddingTop: 4,
+    paddingBottom: 3,
   },
   iconSlot: {
     width: TAB_BAR_ICON_SLOT,
@@ -199,11 +208,12 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   label: {
-    fontSize: 10,
-    lineHeight: 13,
-    marginTop: 2,
-    width: "100%",
-    paddingHorizontal: 2,
+    fontSize: 9,
+    lineHeight: 11,
+    marginTop: 1,
     textAlign: "center",
+    ...Platform.select({
+      android: { includeFontPadding: false },
+    }),
   },
 });

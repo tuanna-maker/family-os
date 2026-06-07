@@ -1,49 +1,56 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, Alert, ActivityIndicator } from "react-native";
+import { View, Text, Alert } from "react-native";
 import { useRouter } from "expo-router";
-import * as Location from "expo-location";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@mobile/components/ui/Button";
 import { SubHeader } from "@mobile/components/SubHeader";
-import { LogOut } from "lucide-react-native";
-import { checkOutShift } from "@guard/api/guard-shifts";
+import { LogOut, AlertTriangle } from "lucide-react-native";
+import { checkOutShift, getActiveShift } from "@guard/api/guard-shifts";
+import { invalidateShiftQueries, resolveGuardLocation, type GuardCoords } from "@mobile/utils/guardGeo";
+import { shiftLabel, shiftTimeRange } from "@mobile/utils/guardFormat";
 
 export default function CheckOutScreen() {
   const router = useRouter();
-  const [coords, setCoords] = useState<{
-    lat: number;
-    lng: number;
-    accuracy?: number;
-  } | null>(null);
+  const qc = useQueryClient();
+  const [coords, setCoords] = useState<GuardCoords | null>(null);
   const [loading, setLoading] = useState(true);
   const [checkingOut, setCheckingOut] = useState(false);
   const [geoError, setGeoError] = useState<string | null>(null);
 
+  const { data: activeShift, isLoading: shiftLoading } = useQuery({
+    queryKey: ["guard-active-shift"],
+    queryFn: () => getActiveShift(),
+  });
+
+  const onDuty = activeShift?.status === "checked_in";
+
   useEffect(() => {
     (async () => {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== "granted") {
-        setGeoError("Cần quyền truy cập vị trí để check-out.");
-        setLoading(false);
-        return;
-      }
-      try {
-        const loc = await Location.getCurrentPositionAsync({});
-        setCoords({
-          lat: loc.coords.latitude,
-          lng: loc.coords.longitude,
-          accuracy: loc.coords.accuracy ?? undefined,
-        });
-      } catch {
-        setGeoError("Không thể lấy vị trí");
-      }
+      const { coords: c, error } = await resolveGuardLocation();
+      setCoords(c);
+      setGeoError(error);
       setLoading(false);
     })();
   }, []);
 
+  useEffect(() => {
+    if (shiftLoading) return;
+    if (!onDuty) {
+      Alert.alert("Chưa vào ca", "Bạn chưa check-in ca trực nên không thể kết thúc ca.", [
+        { text: "OK", onPress: () => router.back() },
+      ]);
+    }
+  }, [shiftLoading, onDuty, router]);
+
   const handleCheckOut = async () => {
+    if (!onDuty) {
+      Alert.alert("Chưa vào ca", "Bạn chưa check-in ca trực.");
+      return;
+    }
     setCheckingOut(true);
     try {
       await checkOutShift({ location: coords ?? undefined });
+      invalidateShiftQueries(qc);
       Alert.alert("Thành công", "Đã kết thúc ca trực!", [
         { text: "OK", onPress: () => router.replace("/(tabs)") },
       ]);
@@ -63,8 +70,20 @@ export default function CheckOutScreen() {
             <LogOut size={32} color="#ef4444" />
           </View>
           <Text className="text-2xl font-bold mb-2 text-foreground">Check-out Ca trực</Text>
-          {loading ? (
-            <ActivityIndicator size="small" className="mt-4" />
+
+          {onDuty && activeShift ? (
+            <Text className="text-sm text-muted-foreground text-center mb-2">
+              {shiftLabel(activeShift.shift_type)} · {shiftTimeRange(activeShift.shift_type)}
+            </Text>
+          ) : null}
+
+          {!onDuty && !shiftLoading ? (
+            <View className="items-center my-4 px-2">
+              <AlertTriangle size={28} color="#f59e0b" />
+              <Text className="text-amber-600 text-center mt-2">Bạn chưa vào ca trực.</Text>
+            </View>
+          ) : loading ? (
+            <Text className="text-muted-foreground mt-4">Đang lấy vị trí…</Text>
           ) : coords ? (
             <View className="items-center mb-6 mt-4">
               <Text className="text-muted-foreground mb-1">Vị trí hiện tại:</Text>
@@ -73,13 +92,14 @@ export default function CheckOutScreen() {
               </Text>
             </View>
           ) : (
-            <Text className="text-red-500 my-4">{geoError ?? "Không thể lấy vị trí"}</Text>
+            <Text className="text-amber-600 my-4 text-center px-2">{geoError}</Text>
           )}
+
           <Button
             className="w-full h-12 mt-4 bg-red-500"
             onPress={handleCheckOut}
-            isLoading={checkingOut}
-            disabled={loading}
+            isLoading={checkingOut || shiftLoading}
+            disabled={checkingOut || shiftLoading || !onDuty}
           >
             Xác nhận Kết thúc
           </Button>

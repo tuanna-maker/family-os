@@ -3,24 +3,31 @@ import {
   listPlatformNotifications,
   unreadPlatformCount,
 } from "@guard/api/notifications";
+import { useGuardPrefs } from "@mobile/hooks/useGuardPrefs";
 
 export function useGuardNotifications() {
+  const { ready, notificationsEnabled } = useGuardPrefs();
+  const enabled = ready && notificationsEnabled;
+
   const unreadQ = useQuery({
     queryKey: ["guard-notifications-unread"],
     queryFn: () => unreadPlatformCount(),
-    refetchInterval: 60_000,
+    refetchInterval: enabled ? 60_000 : false,
+    enabled,
   });
 
   const listQ = useQuery({
     queryKey: ["guard-notifications"],
     queryFn: () => listPlatformNotifications(),
-    refetchInterval: 60_000,
+    refetchInterval: enabled ? 60_000 : false,
+    enabled,
   });
 
   return {
-    unread: unreadQ.data?.count ?? 0,
-    items: listQ.data ?? [],
-    isLoading: listQ.isLoading,
+    notificationsEnabled: enabled,
+    unread: enabled ? (unreadQ.data?.count ?? 0) : 0,
+    items: enabled ? (listQ.data ?? []) : [],
+    isLoading: enabled && listQ.isLoading,
     refetch: listQ.refetch,
     markRead: async (id: string) => {
       const { markPlatformRead } = await import("@guard/api/notifications");

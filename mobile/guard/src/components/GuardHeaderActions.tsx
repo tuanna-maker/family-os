@@ -2,6 +2,7 @@ import { Link } from "expo-router";
 import { Bell, Moon, Sun } from "lucide-react-native";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useTheme } from "@mobile/theme/themeStore";
+import { useGuardPrefs } from "@mobile/hooks/useGuardPrefs";
 
 type Props = {
   unread?: number;
@@ -10,6 +11,7 @@ type Props = {
 
 export function GuardHeaderActions({ unread = 0, showBell = true }: Props) {
   const { colors, theme, toggleTheme } = useTheme();
+  const { notificationsEnabled } = useGuardPrefs();
 
   return (
     <View style={styles.row}>
@@ -34,7 +36,7 @@ export function GuardHeaderActions({ unread = 0, showBell = true }: Props) {
             accessibilityLabel="Thông báo"
           >
             <Bell color={colors.foreground} size={18} />
-            {unread > 0 ? (
+            {notificationsEnabled && unread > 0 ? (
               <View style={[styles.badge, { backgroundColor: colors.emergency }]}>
                 <Text style={styles.badgeText}>{unread > 9 ? "9+" : unread}</Text>
               </View>
