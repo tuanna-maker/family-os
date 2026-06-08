@@ -12,8 +12,10 @@ import { getActiveShift } from "@guard/api/guard-shifts";
 import { initialsFromName, shiftLabel, shiftTimeRange } from "@mobile/utils/guardFormat";
 import { useTabScrollPadding } from "@mobile/hooks/useTabScrollPadding";
 import { GuardHeaderActions } from "@mobile/components/GuardHeaderActions";
+import { usePushNotifications } from "@mobile/hooks/usePushNotifications";
 
 export default function DashboardScreen() {
+  usePushNotifications();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const tabPad = useTabScrollPadding();

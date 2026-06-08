@@ -1,7 +1,7 @@
 import type { ReactElement } from "react";
 import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import { BlurView } from "expo-blur";
-import { Platform, Pressable, StyleSheet, Text, useWindowDimensions, View } from "react-native";
+import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { radius } from "@mobile/theme/colors";
 import { useTheme } from "@mobile/theme/themeStore";
@@ -11,62 +11,50 @@ import {
   TAB_BAR_FLOAT_MARGIN,
   TAB_BAR_ICON_SIZE,
   TAB_BAR_ICON_SLOT,
-  TAB_BAR_SHELL_PADDING_TOP,
 } from "@mobile/theme/tabBar";
+import { tabBarGlassColors } from "@mobile/theme/tabBarGlass";
 import { useGuardNotifications } from "@mobile/hooks/useGuardNotifications";
-
-const OUTER_HORIZONTAL = 12;
 
 export function GuardTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
-  const { width: screenWidth } = useWindowDimensions();
   const { colors, theme } = useTheme();
   const { unread, notificationsEnabled } = useGuardNotifications();
   const isDark = theme === "dark";
   const bottomPad = Math.max(insets.bottom, TAB_BAR_FLOAT_MARGIN) + TAB_BAR_BOTTOM_OFFSET;
-
-  const barWidth = screenWidth - OUTER_HORIZONTAL * 2;
-  const tabCount = state.routes.length;
-  const tabWidth = barWidth / tabCount;
-
-  const overlay = isDark ? "rgba(30, 30, 30, 0.55)" : "rgba(255, 255, 255, 0.72)";
-  const androidSolid = isDark ? "rgba(28, 28, 30, 0.96)" : "rgba(255, 255, 255, 0.98)";
-  const borderColor = isDark ? "rgba(255, 255, 255, 0.12)" : "rgba(15, 23, 42, 0.1)";
+  const { overlay, androidSolid, border: borderColor } = tabBarGlassColors(isDark);
 
   return (
     <View style={[styles.outer, { paddingBottom: bottomPad }]} pointerEvents="box-none">
       <View
         style={[
           styles.shell,
-          { width: barWidth, borderColor },
-          Platform.select({
-            ios: {
-              shadowColor: "#000",
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: isDark ? 0.3 : 0.1,
-              shadowRadius: 10,
-            },
-            android: { elevation: 12 },
-          }),
+          {
+            borderColor,
+            backgroundColor: Platform.OS === "ios" ? "transparent" : androidSolid,
+            ...Platform.select({
+              ios: {
+                shadowColor: "#000",
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: isDark ? 0.2 : 0.05,
+                shadowRadius: 6,
+              },
+              android: { elevation: 0 },
+            }),
+          },
         ]}
       >
-        <View style={styles.blurClip} pointerEvents="none">
-          {Platform.OS === "ios" ? (
+        {Platform.OS === "ios" ? (
+          <View style={styles.blurClip} pointerEvents="none">
             <BlurView
-              intensity={isDark ? 64 : 80}
+              intensity={isDark ? 40 : 60}
               tint={isDark ? "dark" : "light"}
               style={StyleSheet.absoluteFillObject}
             />
-          ) : null}
-          <View
-            style={[
-              StyleSheet.absoluteFillObject,
-              { backgroundColor: Platform.OS === "ios" ? overlay : androidSolid },
-            ]}
-          />
-        </View>
+            <View style={[StyleSheet.absoluteFillObject, { backgroundColor: overlay }]} />
+          </View>
+        ) : null}
 
-        <View style={[styles.row, { width: barWidth, height: TAB_BAR_CONTENT_HEIGHT }]}>
+        <View style={styles.row}>
           {state.routes.map((route, index) => {
             const { options } = descriptors[route.key];
             const label =
@@ -98,38 +86,35 @@ export function GuardTabBar({ state, descriptors, navigation }: BottomTabBarProp
               : null;
 
             return (
-              <View
+              <Pressable
                 key={route.key}
-                style={[styles.tabSlot, { width: tabWidth }]}
+                accessibilityRole="button"
+                accessibilityState={isFocused ? { selected: true } : {}}
+                accessibilityLabel={label}
+                onPress={onPress}
+                style={styles.tab}
               >
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityState={isFocused ? { selected: true } : {}}
-                  accessibilityLabel={label}
-                  onPress={onPress}
-                  android_ripple={{ color: "rgba(128,128,128,0.2)", borderless: false }}
-                  style={styles.tabPress}
+                <View style={styles.iconSlot}>
+                  <View style={styles.iconWrap}>{icon}</View>
+                  {showBadge ? (
+                    <View style={[styles.badge, { backgroundColor: colors.emergency }]}>
+                      <Text style={styles.badgeText}>{unread > 9 ? "9+" : unread}</Text>
+                    </View>
+                  ) : null}
+                </View>
+                <Text
+                  style={[
+                    styles.label,
+                    {
+                      color: tint,
+                      fontWeight: isFocused ? "700" : "500",
+                    },
+                  ]}
+                  numberOfLines={1}
                 >
-                  <View style={styles.iconSlot}>
-                    <View style={styles.iconWrap}>{icon}</View>
-                    {showBadge ? (
-                      <View style={[styles.badge, { backgroundColor: colors.emergency }]}>
-                        <Text style={styles.badgeText}>{unread > 9 ? "9+" : unread}</Text>
-                      </View>
-                    ) : null}
-                  </View>
-                  <Text
-                    style={[
-                      styles.label,
-                      { color: tint, fontWeight: isFocused ? "700" : "500", width: tabWidth - 4 },
-                    ]}
-                    numberOfLines={1}
-                    ellipsizeMode="tail"
-                  >
-                    {label}
-                  </Text>
-                </Pressable>
-              </View>
+                  {label}
+                </Text>
+              </Pressable>
             );
           })}
         </View>
@@ -144,12 +129,10 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    alignItems: "center",
-    paddingHorizontal: OUTER_HORIZONTAL,
+    paddingHorizontal: 12,
   },
   shell: {
-    height: TAB_BAR_CONTENT_HEIGHT + TAB_BAR_SHELL_PADDING_TOP,
-    paddingTop: TAB_BAR_SHELL_PADDING_TOP,
+    height: TAB_BAR_CONTENT_HEIGHT,
     borderRadius: radius.xl,
     borderWidth: StyleSheet.hairlineWidth,
     overflow: "hidden",
@@ -160,24 +143,15 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   row: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    zIndex: 1,
+    paddingHorizontal: 2,
   },
-  tabSlot: {
-    height: TAB_BAR_CONTENT_HEIGHT,
+  tab: {
+    flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    overflow: "hidden",
-  },
-  tabPress: {
-    width: "100%",
-    height: "100%",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingTop: 4,
-    paddingBottom: 3,
   },
   iconSlot: {
     width: TAB_BAR_ICON_SLOT,
@@ -194,7 +168,7 @@ const styles = StyleSheet.create({
   badge: {
     position: "absolute",
     top: -2,
-    right: -6,
+    right: -4,
     minWidth: 16,
     height: 16,
     borderRadius: 8,
@@ -211,6 +185,7 @@ const styles = StyleSheet.create({
     fontSize: 9,
     lineHeight: 11,
     marginTop: 1,
+    maxWidth: 64,
     textAlign: "center",
     ...Platform.select({
       android: { includeFontPadding: false },

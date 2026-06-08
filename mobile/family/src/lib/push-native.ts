@@ -1,17 +1,54 @@
 import { Platform } from "react-native";
 import Constants from "expo-constants";
-import * as Device from "expo-device";
-import * as Notifications from "expo-notifications";
 import { requireUser } from "@shared/supabase/auth";
 import { getSupabase } from "@shared/supabase/get-client";
 
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: true,
-  }),
-});
+let handlerReady = false;
+
+async function notificationsModule() {
+  return import("expo-notifications");
+}
+
+async function deviceModule() {
+  return import("expo-device");
+}
+
+async function isPushEnvironmentSupported() {
+  try {
+    const Device = await deviceModule();
+    if (!Device.isDevice) return false;
+    const hint = `${Device.brand ?? ""} ${Device.manufacturer ?? ""} ${Device.modelName ?? ""} ${Device.productName ?? ""}`.toLowerCase();
+    if (
+      hint.includes("sdk") ||
+      hint.includes("emulator") ||
+      hint.includes("ldplayer") ||
+      hint.includes("vbox") ||
+      hint.includes("generic")
+    ) {
+      return false;
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function ensureNotificationHandler() {
+  if (handlerReady) return;
+  try {
+    const Notifications = await notificationsModule();
+    Notifications.setNotificationHandler({
+      handleNotification: async () => ({
+        shouldShowAlert: true,
+        shouldPlaySound: true,
+        shouldSetBadge: true,
+      }),
+    });
+    handlerReady = true;
+  } catch {
+    // Native module unavailable — skip push on this build.
+  }
+}
 
 function platformDb() {
   const supabase = getSupabase();
@@ -27,9 +64,40 @@ function platformDb() {
   };
 }
 
-export async function registerNativePushToken(app: "family" = "family") {
-  if (!Device.isDevice) {
+async function resolvePushToken(
+  Notifications: Awaited<ReturnType<typeof notificationsModule>>,
+) {
+  const projectId =
+    process.env.EXPO_PUBLIC_EAS_PROJECT_ID ??
+    (Constants.expoConfig?.extra?.eas?.projectId as string | undefined);
+
+  try {
+    const device = await Notifications.getDevicePushTokenAsync();
+    if (device.data) return device.data;
+  } catch {
+    // Fallback to Expo push token.
+  }
+
+  const tokenData = await Notifications.getExpoPushTokenAsync(
+    projectId && projectId !== "REPLACE_WITH_EAS_PROJECT_ID" ? { projectId } : undefined,
+  );
+  return tokenData.data;
+}
+
+export async function registerNativePushToken(app: "family" | "guard" = "family") {
+  if (!(await isPushEnvironmentSupported())) {
     return { enabled: false as const, reason: "simulator" as const };
+  }
+
+  await ensureNotificationHandler();
+
+  const Device = await deviceModule();
+
+  let Notifications: Awaited<ReturnType<typeof notificationsModule>>;
+  try {
+    Notifications = await notificationsModule();
+  } catch {
+    return { enabled: false as const, reason: "unavailable" as const };
   }
 
   const { status: existing } = await Notifications.getPermissionsAsync();
@@ -42,14 +110,7 @@ export async function registerNativePushToken(app: "family" = "family") {
     return { enabled: false as const, reason: "permission_denied" as const };
   }
 
-  const projectId =
-    process.env.EXPO_PUBLIC_EAS_PROJECT_ID ??
-    (Constants.expoConfig?.extra?.eas?.projectId as string | undefined);
-
-  const tokenData = await Notifications.getExpoPushTokenAsync(
-    projectId ? { projectId } : undefined,
-  );
-  const token = tokenData.data;
+  const token = await resolvePushToken(Notifications);
 
   const { userId } = await requireUser();
   const platform = Platform.OS === "ios" ? "ios" : Platform.OS === "android" ? "android" : "web";
@@ -72,8 +133,9 @@ export async function registerNativePushToken(app: "family" = "family") {
 
   if (Platform.OS === "android") {
     await Notifications.setNotificationChannelAsync("default", {
-      name: "STOS Family",
+      name: app === "guard" ? "STOS Guard" : "STOS Family",
       importance: Notifications.AndroidImportance.MAX,
+      vibrationPattern: [0, 250, 250, 250],
     });
   }
 

@@ -9,6 +9,7 @@ import { Screen } from "@mobile/components/Screen";
 import { Card } from "@mobile/components/ui";
 import { SectionHeader } from "@mobile/components/SectionHeader";
 import { SecurityRequestsTracker } from "@mobile/components/security/SecurityRequestsTracker";
+import { SecuritySendingOverlay } from "@mobile/components/security/SecuritySendingOverlay";
 import {
   getBuildingStatus,
   securityMeta,
@@ -48,6 +49,7 @@ export default function BaoAnScreen() {
   const securityServiceCatalog = getSecurityServiceCatalog(locale);
   const buildingStatus = getBuildingStatus(locale);
   const [pending, setPending] = useState<string | null>(null);
+  const [sendingLabel, setSendingLabel] = useState<string | null>(null);
   const styles = useThemedStyles((c, fontScale) => ({
     header: { paddingHorizontal: 16, paddingTop: insets.top + 12, paddingBottom: 4 },
     eyebrow: {
@@ -139,14 +141,19 @@ export default function BaoAnScreen() {
   }));
 
   const trigger = async (type: string, label: string) => {
+    if (pending) return;
     setPending(type);
+    setSendingLabel(c.sendingRequest);
     try {
-      await createSecurityRequest({ request_type: type });
-      await qc.invalidateQueries({ queryKey: ["security-requests"] });
-      toast.success(
-        sec.requestSent(label, securityMeta.responseTimeMinutes),
-      );
+      await Promise.all([
+        createSecurityRequest({ request_type: type }),
+        new Promise((resolve) => setTimeout(resolve, 900)),
+      ]);
+      void qc.invalidateQueries({ queryKey: ["security-requests"] });
+      setSendingLabel(null);
+      toast.success(sec.requestSent(label, securityMeta.responseTimeMinutes));
     } catch (e) {
+      setSendingLabel(null);
       toast.error(e instanceof Error ? e.message : c.sendFailed);
     } finally {
       setPending(null);
@@ -167,6 +174,7 @@ export default function BaoAnScreen() {
 
   return (
     <Screen contentStyle={{ paddingTop: 0 }}>
+      <SecuritySendingOverlay visible={sendingLabel !== null} label={sendingLabel ?? ""} />
       <View style={styles.header}>
         <View style={styles.eyebrow}>
           <ShieldCheck color={colors.success} size={14} />
@@ -209,7 +217,8 @@ export default function BaoAnScreen() {
               return (
                 <Pressable
                   key={item.id}
-                  style={{ width: "48%", marginBottom: 10 }}
+                  style={{ width: "48%", marginBottom: 10, opacity: pending ? 0.55 : 1 }}
+                  disabled={!!pending}
                   onPress={() => onGridPress(item)}
                 >
                   <Card style={styles.gridCard}>
@@ -331,7 +340,7 @@ function CatalogGroup({
             <Pressable
               key={item.id}
               style={styles.groupItem}
-              disabled={pending === item.id}
+              disabled={pending === item.requestType}
               onPress={() => onTrigger(item.requestType, item.label)}
             >
               <ItemIcon color={accent} size={18} />

@@ -24,6 +24,52 @@ type NotificationRow = {
   dedupe_key: string | null;
 };
 
+function isExpoPushToken(token: string) {
+  return token.startsWith("ExponentPushToken[") || token.startsWith("ExpoPushToken");
+}
+
+async function sendExpoPush(
+  tokens: string[],
+  title: string,
+  body: string,
+  data: Record<string, unknown>,
+) {
+  if (tokens.length === 0) return { success: 0, failure: 0, invalidTokens: [] as string[] };
+  const messages = tokens.map((to) => ({
+    to,
+    sound: "default" as const,
+    title,
+    body,
+    data,
+    priority: "high" as const,
+    channelId: "default",
+  }));
+  const res = await fetch("https://exp.host/--/api/v2/push/send", {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      "Accept-encoding": "gzip, deflate",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(messages),
+  });
+  if (!res.ok) {
+    return { success: 0, failure: tokens.length, invalidTokens: [] as string[] };
+  }
+  const tickets = (await res.json()) as { data?: Array<{ status?: string; message?: string }> };
+  let success = 0;
+  let failure = 0;
+  const invalidTokens: string[] = [];
+  (tickets.data ?? []).forEach((ticket, i) => {
+    if (ticket.status === "ok") success += 1;
+    else {
+      failure += 1;
+      if (ticket.message === "DeviceNotRegistered") invalidTokens.push(tokens[i]);
+    }
+  });
+  return { success, failure, invalidTokens };
+}
+
 async function sendFcm(
   serverKey: string,
   tokens: string[],
@@ -68,6 +114,41 @@ async function sendFcm(
     failure: json.failure ?? 0,
     invalidTokens,
   };
+}
+
+async function sendToDevices(
+  serverKey: string,
+  stubMode: boolean,
+  tokens: string[],
+  title: string,
+  body: string,
+  data: Record<string, unknown>,
+) {
+  const expoTokens = tokens.filter(isExpoPushToken);
+  const fcmTokens = tokens.filter((t) => !isExpoPushToken(t));
+  let success = 0;
+  let failure = 0;
+  const invalidTokens: string[] = [];
+
+  if (expoTokens.length) {
+    const expo = await sendExpoPush(expoTokens, title, body, data);
+    success += expo.success;
+    failure += expo.failure;
+    invalidTokens.push(...expo.invalidTokens);
+  }
+
+  if (fcmTokens.length) {
+    if (!serverKey) {
+      failure += fcmTokens.length;
+    } else {
+      const fcm = await sendFcm(serverKey, fcmTokens, title, body, data);
+      success += fcm.success;
+      failure += fcm.failure;
+      invalidTokens.push(...fcm.invalidTokens);
+    }
+  }
+
+  return { success, failure, invalidTokens };
 }
 
 async function dispatchBatch(
@@ -136,11 +217,19 @@ async function dispatchBatch(
 
       for (const n of rows) {
         const tokens = byUser.get(n.user_id) ?? [];
-        if (tokens.length === 0 || stubMode) {
-          sentIds.push(n.id);
+        if (tokens.length === 0) {
+          if (stubMode) sentIds.push(n.id);
+          else failedIds.push(n.id);
           continue;
         }
-        const result = await sendFcm(serverKey, tokens, n.title, n.body ?? "", n.data ?? {});
+        const result = await sendToDevices(
+          serverKey,
+          stubMode,
+          tokens,
+          n.title,
+          n.body ?? "",
+          n.data ?? {},
+        );
         totalSent += result.success;
         totalFailed += result.failure;
         invalid.push(...result.invalidTokens);

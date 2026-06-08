@@ -3,6 +3,7 @@ import { Tabs } from "expo-router";
 import { Home, Users, ShieldCheck, Sparkles, User } from "lucide-react-native";
 import { GlassTabBar } from "@mobile/components/GlassTabBar";
 import { useTheme } from "@mobile/theme/themeStore";
+import { transparentTabBarOptions } from "@mobile/theme/tabBarScreenOptions";
 import { useI18n } from "@mobile/i18n/useI18n";
 
 function BaoAnTabIcon({ color, size, focused }: { color: string; size: number; focused: boolean }) {
@@ -18,11 +19,7 @@ export default function TabsLayout() {
   return (
     <Tabs
       tabBar={(props) => <GlassTabBar {...props} />}
-      screenOptions={{
-        headerShown: false,
-        tabBarShowLabel: true,
-        sceneStyle: { backgroundColor: colors.background },
-      }}
+      screenOptions={transparentTabBarOptions(colors.background)}
     >
       <Tabs.Screen
         name="home"

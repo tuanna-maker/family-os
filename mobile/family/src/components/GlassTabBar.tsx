@@ -12,51 +12,53 @@ import {
   TAB_BAR_FEATURED_SIZE,
   TAB_BAR_FLOAT_MARGIN,
   TAB_BAR_ICON_SLOT,
-  TAB_BAR_SHELL_PADDING_TOP,
 } from "@mobile/theme/tabBar";
+import { tabBarGlassColors } from "@mobile/theme/tabBarGlass";
+import { useUnreadNotifications } from "@mobile/hooks/useUnreadNotifications";
 
 export function GlassTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
   const { colors, theme } = useTheme();
+  const { unread } = useUnreadNotifications();
   const isDark = theme === "dark";
   const bottomPad = Math.max(insets.bottom, TAB_BAR_FLOAT_MARGIN) + TAB_BAR_BOTTOM_OFFSET;
-
-  const overlay = isDark ? "rgba(30, 30, 30, 0.5)" : "rgba(255, 255, 255, 0.5)";
-  const androidSolid = isDark ? "rgba(30, 30, 30, 0.9)" : "rgba(255, 255, 255, 0.94)";
-  const borderColor = isDark ? "rgba(255, 255, 255, 0.12)" : "rgba(15, 23, 42, 0.08)";
+  const glass = tabBarGlassColors(isDark);
+  const { overlay, androidSolid, border: borderColor } = glass;
 
   return (
-    <View style={[styles.outer, { paddingBottom: bottomPad }]} pointerEvents="box-none">
+    <View
+      style={[styles.outer, { paddingBottom: bottomPad }]}
+      pointerEvents="box-none"
+      collapsable={false}
+    >
       <View
         style={[
           styles.shell,
           {
             borderColor,
+            backgroundColor: Platform.OS === "ios" ? "transparent" : androidSolid,
             ...Platform.select({
               ios: {
                 shadowColor: "#000",
-                shadowOffset: { width: 0, height: 4 },
-                shadowOpacity: isDark ? 0.3 : 0.1,
-                shadowRadius: 10,
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: isDark ? 0.2 : 0.05,
+                shadowRadius: 6,
               },
-              android: { elevation: 12 },
+              android: { elevation: 0 },
             }),
           },
         ]}
       >
-        <View style={styles.blurClip}>
-          <BlurView
-            intensity={isDark ? 64 : 80}
-            tint={isDark ? "dark" : "light"}
-            style={StyleSheet.absoluteFillObject}
-          />
-          <View
-            style={[
-              StyleSheet.absoluteFillObject,
-              { backgroundColor: Platform.OS === "ios" ? overlay : androidSolid },
-            ]}
-          />
-        </View>
+        {Platform.OS === "ios" ? (
+          <View style={styles.blurClip} pointerEvents="none">
+            <BlurView
+              intensity={isDark ? 40 : 60}
+              tint={isDark ? "dark" : "light"}
+              style={StyleSheet.absoluteFillObject}
+            />
+            <View style={[StyleSheet.absoluteFillObject, { backgroundColor: overlay }]} />
+          </View>
+        ) : null}
 
         <View style={styles.row}>
           {state.routes.map((route, index) => {
@@ -64,9 +66,11 @@ export function GlassTabBar({ state, descriptors, navigation }: BottomTabBarProp
             const label =
               typeof options.tabBarLabel === "string"
                 ? options.tabBarLabel
-                : options.title ?? route.name;
+                : (options.title ?? route.name);
             const isFocused = state.index === index;
             const isFeatured = route.name === "bao-an";
+            const isAccount = route.name === "tai-khoan";
+            const showBadge = isAccount && unread > 0;
 
             const onPress = () => {
               const event = navigation.emit({
@@ -106,7 +110,11 @@ export function GlassTabBar({ state, descriptors, navigation }: BottomTabBarProp
                       end={{ x: 1, y: 1 }}
                       style={[
                         styles.featuredBtn,
-                        { borderColor: colors.card },
+                        {
+                          borderColor: isDark
+                            ? colors.cardBorder
+                            : "rgba(255, 255, 255, 0.55)",
+                        },
                         isFocused && styles.featuredBtnActive,
                       ]}
                     >
@@ -115,6 +123,11 @@ export function GlassTabBar({ state, descriptors, navigation }: BottomTabBarProp
                   ) : (
                     <View style={styles.iconWrap}>{icon}</View>
                   )}
+                  {showBadge ? (
+                    <View style={[styles.badge, { backgroundColor: colors.emergency }]}>
+                      <Text style={styles.badgeText}>{unread > 9 ? "9+" : unread}</Text>
+                    </View>
+                  ) : null}
                 </View>
                 <Text
                   style={[
@@ -144,13 +157,13 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     paddingHorizontal: 12,
+    backgroundColor: "transparent",
   },
   shell: {
-    height: TAB_BAR_CONTENT_HEIGHT + TAB_BAR_SHELL_PADDING_TOP,
-    paddingTop: TAB_BAR_SHELL_PADDING_TOP,
+    height: TAB_BAR_CONTENT_HEIGHT,
     borderRadius: radius.xl,
     borderWidth: StyleSheet.hairlineWidth,
-    overflow: "visible",
+    overflow: "hidden",
   },
   blurClip: {
     ...StyleSheet.absoluteFillObject,
@@ -162,13 +175,13 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 2,
+    backgroundColor: "transparent",
   },
   tab: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    gap: 2,
-    paddingBottom: 4,
+    backgroundColor: "transparent",
   },
   iconSlot: {
     width: TAB_BAR_ICON_SLOT,
@@ -186,6 +199,22 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  badge: {
+    position: "absolute",
+    top: -2,
+    right: -4,
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
+    paddingHorizontal: 4,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  badgeText: {
+    color: "#fff",
+    fontSize: 9,
+    fontWeight: "700",
+  },
   featuredBtn: {
     width: TAB_BAR_FEATURED_SIZE,
     height: TAB_BAR_FEATURED_SIZE,
@@ -196,19 +225,24 @@ const styles = StyleSheet.create({
     ...Platform.select({
       ios: {
         shadowColor: "#EF4444",
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.4,
-        shadowRadius: 8,
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.35,
+        shadowRadius: 6,
       },
-      android: { elevation: 6 },
+      android: { elevation: 4 },
     }),
   },
   featuredBtnActive: {
-    transform: [{ scale: 1.06 }],
+    transform: [{ scale: 1.05 }],
   },
   label: {
     fontSize: 9,
+    lineHeight: 11,
+    marginTop: 1,
     maxWidth: 64,
     textAlign: "center",
+    ...Platform.select({
+      android: { includeFontPadding: false },
+    }),
   },
 });

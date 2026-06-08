@@ -2,7 +2,7 @@ import { Tabs } from "expo-router";
 import { Home, CalendarDays, Bell, User } from "lucide-react-native";
 import { GuardTabBar } from "@mobile/components/GuardTabBar";
 import { useTheme } from "@mobile/theme/themeStore";
-
+import { transparentTabBarOptions } from "@mobile/theme/tabBarScreenOptions";
 export default function TabLayout() {
   const { colors } = useTheme();
 
@@ -10,9 +10,8 @@ export default function TabLayout() {
     <Tabs
       tabBar={(props) => <GuardTabBar {...props} />}
       screenOptions={{
-        headerShown: false,
+        ...transparentTabBarOptions(colors.background),
         tabBarShowLabel: false,
-        sceneStyle: { backgroundColor: colors.background },
       }}
     >
       <Tabs.Screen
@@ -20,7 +19,7 @@ export default function TabLayout() {
         options={{
           title: "Trang chủ",
           tabBarIcon: ({ color, size, focused }) => (
-            <Home color={color} size={size ?? 22} strokeWidth={focused ? 2.4 : 2} />
+            <Home color={color} size={size ?? 18} strokeWidth={focused ? 2.4 : 2} />
           ),
         }}
       />
@@ -29,7 +28,7 @@ export default function TabLayout() {
         options={{
           title: "Lịch trực",
           tabBarIcon: ({ color, size, focused }) => (
-            <CalendarDays color={color} size={size ?? 22} strokeWidth={focused ? 2.4 : 2} />
+            <CalendarDays color={color} size={size ?? 18} strokeWidth={focused ? 2.4 : 2} />
           ),
         }}
       />
@@ -38,7 +37,7 @@ export default function TabLayout() {
         options={{
           title: "Thông báo",
           tabBarIcon: ({ color, size, focused }) => (
-            <Bell color={color} size={size ?? 22} strokeWidth={focused ? 2.4 : 2} />
+            <Bell color={color} size={size ?? 18} strokeWidth={focused ? 2.4 : 2} />
           ),
         }}
       />
@@ -47,7 +46,7 @@ export default function TabLayout() {
         options={{
           title: "Tài khoản",
           tabBarIcon: ({ color, size, focused }) => (
-            <User color={color} size={size ?? 22} strokeWidth={focused ? 2.4 : 2} />
+            <User color={color} size={size ?? 18} strokeWidth={focused ? 2.4 : 2} />
           ),
         }}
       />

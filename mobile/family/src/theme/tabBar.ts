@@ -1,7 +1,7 @@
 import type { EdgeInsets } from "react-native-safe-area-context";
 
-/** Ô icon tab thường (khớp BottomNav web ~40px). */
-export const TAB_BAR_ICON_SLOT = 40;
+/** Chiều cao vùng icon — vừa đủ icon 18px, tránh khe trắng giữa icon và nhãn. */
+export const TAB_BAR_ICON_SLOT = 22;
 
 /** Chiều cao thanh tab — web `min-h-14` ≈ 56px. */
 export const TAB_BAR_CONTENT_HEIGHT = 58;
@@ -15,8 +15,8 @@ export const TAB_BAR_BOTTOM_OFFSET = 12;
 /** Nút Bảo an giữa — cùng kích thước ô icon để căn hàng. */
 export const TAB_BAR_FEATURED_SIZE = 40;
 
-/** Padding trên shell. */
-export const TAB_BAR_SHELL_PADDING_TOP = 8;
+/** Không dùng padding tách shell — tránh vạch trắng giữa tab bar. */
+export const TAB_BAR_SHELL_PADDING_TOP = 0;
 
 export function getTabBarBottomInset(insets: EdgeInsets): number {
   return (

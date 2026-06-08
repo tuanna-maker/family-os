@@ -1122,10 +1122,13 @@ const vi = {
     },
     notifications: {
       title: "Thông báo",
+      titleUnread: (n: number) => `Thông báo (${n})`,
       empty: "Không có thông báo",
       markRead: "Đánh dấu đã đọc",
       markAllRead: "Đánh dấu tất cả đã đọc",
+      deleteRead: "Xóa đã đọc",
       emptyList: "Chưa có thông báo.",
+      noReadToDelete: "Không có thông báo đã đọc để xóa.",
     },
     contact: {
       title: "Liên hệ hỗ trợ",
@@ -2406,10 +2409,13 @@ const en = {
     },
     notifications: {
       title: "Notifications",
+      titleUnread: (n: number) => `Notifications (${n})`,
       empty: "No notifications",
       markRead: "Mark as read",
       markAllRead: "Mark all as read",
+      deleteRead: "Delete read",
       emptyList: "No notifications yet.",
+      noReadToDelete: "No read notifications to delete.",
     },
     contact: {
       title: "Contact support",

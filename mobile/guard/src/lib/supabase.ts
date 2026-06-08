@@ -70,7 +70,7 @@ export function getPilotLoginDefaults() {
   }
   return {
     identifier: "nhanvienbaove@securitytech.vn",
-    password: "Demo@12345",
+    password: "Stos@2026Demo",
     label: "Nhân viên bảo vệ",
   };
 }

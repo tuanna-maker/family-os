@@ -8,7 +8,10 @@
     "scheme": "guard",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/images/icon.png"
+      "icon": "./assets/images/icon.png",
+      "infoPlist": {
+        "UIBackgroundModes": ["remote-notification"]
+      }
     },
     "android": {
       "package": "com.stos.guard",
@@ -16,6 +19,7 @@
         "backgroundColor": "#FFFFFF",
         "foregroundImage": "./assets/images/icon.png"
       },
+      "permissions": ["RECEIVE_BOOT_COMPLETED", "VIBRATE", "POST_NOTIFICATIONS"],
       "predictiveBackGestureEnabled": false
     },
     "web": {
@@ -43,7 +47,8 @@
         {
           "cameraPermission": "Cần quyền camera để quét mã tuần tra."
         }
-      ]
+      ],
+      "expo-notifications"
     ],
     "experiments": {
       "typedRoutes": true

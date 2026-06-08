@@ -103,6 +103,15 @@ export async function createSosDispatch(data: any) {
 }
 
 
+let cachedDefaultProjectId: string | null | undefined;
+
+async function getDefaultProjectId(supabase: Awaited<ReturnType<typeof requireUser>>["supabase"]) {
+  if (cachedDefaultProjectId !== undefined) return cachedDefaultProjectId;
+  const { data: project } = await supabase.from("projects").select("id").limit(1).maybeSingle();
+  cachedDefaultProjectId = project?.id ?? null;
+  return cachedDefaultProjectId;
+}
+
 export async function createSecurityRequest(data: {
   request_type: string;
   building?: string | null;
@@ -111,7 +120,7 @@ export async function createSecurityRequest(data: {
   payload?: Record<string, unknown>;
 }) {
   const { supabase, userId } = await requireUser();
-  const { data: project } = await supabase.from("projects").select("id").limit(1).maybeSingle();
+  const projectId = await getDefaultProjectId(supabase);
   const payload = {
     ...(data.payload ?? {}),
     ...(data.elderly_id ? { elderly_id: data.elderly_id } : {}),
@@ -126,7 +135,7 @@ export async function createSecurityRequest(data: {
       building: data.building ?? null,
       apartment: data.apartment ?? null,
       payload: payload as never,
-      ...(project ? { project_id: project.id } : {}),
+      ...(projectId ? { project_id: projectId } : {}),
     } as any)
     .select("id")
     .single();

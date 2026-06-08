@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, StyleSheet } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Clock, Siren, RefreshCw, AlertTriangle } from "lucide-react-native";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { getSupabase } from "@shared/supabase/get-client";
@@ -60,7 +61,9 @@ function sortRequests(rows: SecurityRequest[]) {
 
 export default function RequestsScreen() {
   const qc = useQueryClient();
-  const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
+  const { colors, theme } = useTheme();
+  const isDark = theme === "dark";
   const { data, isLoading, refetch, isFetching } = useQuery({
     queryKey: ["guard-open-requests"],
     queryFn: () => listOpenResidentRequests(),
@@ -121,7 +124,10 @@ export default function RequestsScreen() {
         }
       />
 
-      <ScrollView className="flex-1 p-4">
+      <ScrollView
+        className="flex-1 p-4"
+        contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 16) + 8 }}
+      >
         {sosRows.length > 0 ? (
           <TouchableOpacity
             activeOpacity={0.9}
@@ -144,25 +150,38 @@ export default function RequestsScreen() {
           </TouchableOpacity>
         ) : null}
 
-        <View className="mb-3 flex-row flex-wrap gap-2">
-          {filters.map((f) => (
-            <TouchableOpacity
-              key={f.key}
-              onPress={() => setFilter(f.key)}
-              className={`px-3 py-1.5 rounded-full border ${
-                filter === f.key ? "bg-brand/15 border-brand" : "bg-muted border-border"
-              }`}
-            >
-              <Text
-                className={`text-xs font-medium ${
-                  filter === f.key ? "text-brand" : "text-muted-foreground"
-                }`}
+        <View style={filterStyles.row}>
+          {filters.map((f) => {
+            const active = filter === f.key;
+            return (
+              <TouchableOpacity
+                key={f.key}
+                onPress={() => setFilter(f.key)}
+                style={[
+                  filterStyles.chip,
+                  active
+                    ? {
+                        backgroundColor: isDark ? "rgba(37, 99, 235, 0.2)" : "rgba(37, 99, 235, 0.12)",
+                        borderColor: colors.brand,
+                      }
+                    : {
+                        backgroundColor: isDark ? colors.card : "#FFFFFF",
+                        borderColor: isDark ? colors.cardBorder : "rgba(15, 23, 42, 0.12)",
+                      },
+                ]}
               >
-                {f.label}
-                {typeof f.count === "number" ? ` (${f.count})` : ""}
-              </Text>
-            </TouchableOpacity>
-          ))}
+                <Text
+                  style={[
+                    filterStyles.chipText,
+                    { color: active ? colors.brand : isDark ? colors.muted : "#475569" },
+                  ]}
+                >
+                  {f.label}
+                  {typeof f.count === "number" ? ` (${f.count})` : ""}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
         </View>
 
         {isLoading ? (
@@ -276,3 +295,22 @@ export default function RequestsScreen() {
     </View>
   );
 }
+
+const filterStyles = StyleSheet.create({
+  row: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginBottom: 12,
+  },
+  chip: {
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 999,
+    borderWidth: 1,
+  },
+  chipText: {
+    fontSize: 12,
+    fontWeight: "600",
+  },
+});

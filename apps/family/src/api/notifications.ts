@@ -60,3 +60,15 @@ export async function markAllRead() {
     if (error) throw new Error(error.message);
     return { ok: true };
 }
+
+/** Xóa các thông báo đã đọc (giữ lại chưa đọc). */
+export async function deleteReadNotifications() {
+  const { supabase, userId } = await requireUser();
+  const { error } = await supabase
+    .from("notifications")
+    .delete()
+    .eq("user_id", userId)
+    .not("read_at", "is", null);
+  if (error) throw new Error(error.message);
+  return { ok: true };
+}

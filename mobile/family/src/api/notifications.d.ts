@@ -17,3 +17,4 @@ export declare function listNotifications(data: {
 export declare function markRead(data: { id: string }): Promise<{ ok: boolean }>;
 export declare function markAllRead(): Promise<{ ok: boolean }>;
 export declare function unreadCount(): Promise<{ count: number }>;
+export declare function deleteReadNotifications(): Promise<{ ok: boolean }>;

@@ -16,8 +16,10 @@ import { getSupabase } from "@shared/supabase/get-client";
 import { resolveLoginEmail } from "@guard/api/username";
 import { getMyContext } from "@guard/api/auth";
 import { ensureSupabase, getPilotLoginDefaults } from "@mobile/lib/supabase";
+import { Eye, EyeOff } from "lucide-react-native";
 import { Input } from "@mobile/components/ui/Input";
 import { GuardHeaderActions } from "@mobile/components/GuardHeaderActions";
+import { useTheme } from "@mobile/theme/themeStore";
 
 const GENERIC_AUTH_ERROR = "Tên đăng nhập/email hoặc mật khẩu không đúng.";
 
@@ -27,7 +29,9 @@ export default function LoginScreen() {
   const pilot = getPilotLoginDefaults();
   const [identifier, setIdentifier] = useState(pilot.identifier);
   const [password, setPassword] = useState(pilot.password);
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const { colors } = useTheme();
 
   async function signIn() {
     if (!identifier.trim() || !password) {
@@ -130,13 +134,27 @@ export default function LoginScreen() {
             />
             <View className="h-2" />
             <Input
-              label="MẬT KHẨU"
+              label="MẬT KHẨU MỚI"
               placeholder="Ít nhất 6 ký tự"
               value={password}
               onChangeText={setPassword}
-              secureTextEntry
+              secureTextEntry={!showPassword}
               autoCapitalize="none"
               editable={!loading}
+              rightAccessory={
+                <TouchableOpacity
+                  onPress={() => setShowPassword((v) => !v)}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  accessibilityRole="button"
+                  accessibilityLabel={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+                >
+                  {showPassword ? (
+                    <EyeOff color={colors.muted} size={20} />
+                  ) : (
+                    <Eye color={colors.muted} size={20} />
+                  )}
+                </TouchableOpacity>
+              }
             />
             <View className="h-6" />
             <TouchableOpacity
