@@ -32,6 +32,12 @@ function AuthGate() {
     const publicAuth = ["login", "forgot-password", "reset-password"];
     const root = segments[0];
     const inPublic = publicAuth.includes(root ?? "");
+
+    // Scheme root (:///), cold start, or stale path — normalize before Stack renders.
+    if (!root) {
+      router.replace(session ? "/(tabs)/home" : "/login");
+      return;
+    }
     if (!session && !inPublic) {
       router.replace("/login");
     } else if (session && inPublic) {
