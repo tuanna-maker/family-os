@@ -1,4 +1,4 @@
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -22,22 +22,27 @@ import { listNotifications } from "@mobile/api/notifications";
 import { useTheme } from "@mobile/theme/themeStore";
 import { useThemedStyles } from "@mobile/theme/useThemedStyles";
 import { radius } from "@mobile/theme/colors";
-
-const LINKS = [
-  { label: "Gia đình", icon: Users, href: "/(tabs)/gia-dinh" },
-  { label: "Lịch", icon: Calendar, href: "/lich-gia-dinh" },
-  { label: "Chi tiêu", icon: Wallet, href: "/chi-tieu" },
-  { label: "Con cái", icon: Baby, href: "/con-cai" },
-  { label: "Sức khỏe", icon: HeartPulse, href: "/suc-khoe" },
-  { label: "Tủ lạnh", icon: Refrigerator, href: "/thuc-pham" },
-  { label: "Du lịch", icon: Sparkles, href: "/du-lich" },
-] as const;
+import { useI18n } from "@mobile/i18n/useI18n";
+import { formatCurrency, formatDateTime } from "@mobile/i18n/format";
 
 export default function PortalScreen() {
   const router = useRouter();
   const { familyId, family } = useFamilyContext();
   const { colors } = useTheme();
   const styles = usePortalStyles();
+  const { locale, s } = useI18n();
+  const pt = s.screens.portal;
+  const c = s.common;
+
+  const links = [
+    { label: pt.links.family, icon: Users, href: "/(tabs)/gia-dinh" },
+    { label: pt.links.calendar, icon: Calendar, href: "/lich-gia-dinh" },
+    { label: pt.links.expense, icon: Wallet, href: "/chi-tieu" },
+    { label: pt.links.children, icon: Baby, href: "/con-cai" },
+    { label: pt.links.health, icon: HeartPulse, href: "/suc-khoe" },
+    { label: pt.links.fridge, icon: Refrigerator, href: "/thuc-pham" },
+    { label: pt.links.travel, icon: Sparkles, href: "/du-lich" },
+  ] as const;
 
   const dashQ = useQuery({
     queryKey: ["portal-dashboard", familyId],
@@ -67,23 +72,22 @@ export default function PortalScreen() {
   return (
     <Screen contentStyle={{ paddingTop: 0 }}>
       <PageHeader
-        eyebrow="STOS Life"
-        title="Cổng gia đình"
+        eyebrow={pt.eyebrow}
+        title={pt.title}
         back="/(tabs)/home"
         right={<LayoutDashboard color={colors.brand} size={22} />}
       />
 
       <Card style={styles.hero}>
-        <Text style={styles.heroTitle}>{family?.name ?? "Gia đình"}</Text>
+        <Text style={styles.heroTitle}>{family?.name ?? c.defaultFamilyName}</Text>
         <Text style={styles.heroSub}>
-          {dash?.member_count ?? 0} thành viên · Chi tiêu tháng{" "}
-          {(dash?.expenses_month.total ?? 0).toLocaleString("vi-VN")}đ
+          {pt.heroSub(dash?.member_count ?? 0, formatCurrency(dash?.expenses_month.total ?? 0, locale))}
         </Text>
       </Card>
 
-      <SectionTitle>Đi nhanh</SectionTitle>
+      <SectionTitle>{pt.quickLinks}</SectionTitle>
       <View style={styles.linkGrid}>
-        {LINKS.map((l) => (
+        {links.map((l) => (
           <Pressable key={l.href} style={styles.linkTile} onPress={() => router.push(l.href)}>
             <l.icon color={colors.brand} size={20} />
             <Text style={styles.linkLabel}>{l.label}</Text>
@@ -91,29 +95,29 @@ export default function PortalScreen() {
         ))}
       </View>
 
-      <SectionTitle>Gợi ý bữa ăn</SectionTitle>
+      <SectionTitle>{pt.mealSuggestions}</SectionTitle>
       {mealsQ.isLoading && <LoadingState />}
-      {(mealsQ.data?.suggestions ?? []).map((s, i) => (
+      {(mealsQ.data?.suggestions ?? []).map((item, i) => (
         <Card key={i} style={{ marginBottom: 8 }}>
-          <Text style={styles.mealTitle}>{s.title}</Text>
-          <Text style={styles.mealSub}>{s.reason} · {s.time}</Text>
+          <Text style={styles.mealTitle}>{item.title}</Text>
+          <Text style={styles.mealSub}>{item.reason} · {item.time}</Text>
         </Card>
       ))}
 
-      <SectionTitle>Lịch sắp tới</SectionTitle>
+      <SectionTitle>{pt.upcomingEvents}</SectionTitle>
       {(eventsQ.data ?? []).slice(0, 4).map((e) => (
         <Pressable key={e.id} onPress={() => router.push("/lich-gia-dinh")}>
           <Card style={{ marginBottom: 8 }}>
             <Text style={styles.mealTitle}>{e.title}</Text>
             <Text style={styles.mealSub}>
-              {new Date(e.starts_at).toLocaleString("vi-VN")}
+              {formatDateTime(e.starts_at, locale)}
               {e.location ? ` · ${e.location}` : ""}
             </Text>
           </Card>
         </Pressable>
       ))}
 
-      <SectionTitle>Thông báo mới</SectionTitle>
+      <SectionTitle>{pt.newNotifications}</SectionTitle>
       {(notifQ.data?.rows ?? []).map((n) => (
         <Pressable key={n.id} onPress={() => router.push("/thong-bao")}>
           <Card style={{ marginBottom: 8 }}>

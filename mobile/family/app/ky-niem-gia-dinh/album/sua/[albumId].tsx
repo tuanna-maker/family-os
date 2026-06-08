@@ -7,11 +7,16 @@ import { LoadingState } from "@mobile/components/states";
 import { useFamilyContext } from "@mobile/hooks/useFamilyContext";
 import { getAlbum, updateAlbum } from "@mobile/api/albums";
 import { toast } from "@mobile/utils/toast";
+import { useI18n } from "@mobile/i18n/useI18n";
+
 export default function AlbumSuaScreen() {
   const { albumId } = useLocalSearchParams<{ albumId: string }>();
   const router = useRouter();
   const { familyId } = useFamilyContext();
   const qc = useQueryClient();
+  const { s } = useI18n();
+  const mem = s.screens.memories;
+  const c = s.common;
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState("");
   const [emoji, setEmoji] = useState("📁");
@@ -42,7 +47,7 @@ export default function AlbumSuaScreen() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["family-albums", familyId] });
       qc.invalidateQueries({ queryKey: ["family-album", albumId, familyId] });
-      toast.success("Đã lưu album");
+      toast.success(mem.albumSaved);
       router.back();
     },
     onError: (e: Error) => toast.error(e.message),
@@ -52,12 +57,12 @@ export default function AlbumSuaScreen() {
 
   return (
     <Screen contentStyle={{ paddingTop: 0 }}>
-      <PageHeader title="Sửa album" back={`/ky-niem-gia-dinh/album/${albumId}`} />
-      <TextField label="Tên album" value={title} onChangeText={setTitle} />
-      <TextField label="Danh mục" value={category} onChangeText={setCategory} placeholder="Sinh nhật, du lịch…" />
-      <TextField label="Emoji bìa" value={emoji} onChangeText={setEmoji} />
+      <PageHeader title={mem.editAlbum} back={`/ky-niem-gia-dinh/album/${albumId}`} />
+      <TextField label={mem.albumTitle} value={title} onChangeText={setTitle} />
+      <TextField label={mem.categoryLabel} value={category} onChangeText={setCategory} placeholder={mem.categoryPh} />
+      <TextField label={mem.coverEmoji} value={emoji} onChangeText={setEmoji} />
       <PrimaryButton
-        label="Lưu"
+        label={c.save}
         onPress={() => save.mutate()}
         disabled={!title.trim()}
         loading={save.isPending}

@@ -7,6 +7,7 @@ import { PageHeader, PrimaryButton, TextField } from "@mobile/components/ui";
 import { LoadingState } from "@mobile/components/states";
 import { useFamilyContext } from "@mobile/hooks/useFamilyContext";
 import { listFood, upsertShoppingItem } from "@mobile/api/food";
+import { useI18n } from "@mobile/i18n/useI18n";
 import { toast } from "@mobile/utils/toast";
 
 export default function MuaSamHoThemScreen() {
@@ -14,6 +15,10 @@ export default function MuaSamHoThemScreen() {
   const router = useRouter();
   const { familyId } = useFamilyContext();
   const qc = useQueryClient();
+  const { s } = useI18n();
+  const sh = s.screens.shopping;
+  const fd = s.screens.food.form;
+  const c = s.common;
 
   const q = useQuery({
     queryKey: ["food", familyId],
@@ -21,7 +26,7 @@ export default function MuaSamHoThemScreen() {
     enabled: !!familyId,
   });
 
-  const existing = id ? q.data?.shopping.find((s) => s.id === id) : null;
+  const existing = id ? q.data?.shopping.find((item) => item.id === id) : null;
 
   const [name, setName] = useState("");
   const [qty, setQty] = useState("");
@@ -49,7 +54,7 @@ export default function MuaSamHoThemScreen() {
       }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["food", familyId] });
-      toast.success("Đã lưu");
+      toast.success(c.saved);
       router.back();
     },
     onError: (e: Error) => toast.error(e.message),
@@ -59,13 +64,13 @@ export default function MuaSamHoThemScreen() {
 
   return (
     <Screen contentStyle={{ paddingTop: 0 }}>
-      <PageHeader title={id ? "Sửa món" : "Thêm món cần mua"} back="/mua-sam-ho" />
-      <TextField label="Tên món" value={name} onChangeText={setName} placeholder="Sữa tươi" />
-      <TextField label="Số lượng" value={qty} onChangeText={setQty} keyboardType="numeric" />
-      <TextField label="Đơn vị" value={unit} onChangeText={setUnit} placeholder="hộp" />
-      <TextField label="Loại" value={category} onChangeText={setCategory} placeholder="Đồ uống" />
+      <PageHeader title={id ? sh.editShort : sh.addShort} back="/mua-sam-ho" />
+      <TextField label={fd.itemName} value={name} onChangeText={setName} placeholder="Sữa tươi" />
+      <TextField label={fd.qty} value={qty} onChangeText={setQty} keyboardType="numeric" />
+      <TextField label={fd.unit} value={unit} onChangeText={setUnit} placeholder="hộp" />
+      <TextField label={sh.itemType} value={category} onChangeText={setCategory} placeholder="Đồ uống" />
       <View style={{ marginTop: 8 }}>
-        <PrimaryButton label="Lưu" onPress={() => mut.mutate()} disabled={!name.trim()} loading={mut.isPending} />
+        <PrimaryButton label={c.save} onPress={() => mut.mutate()} disabled={!name.trim()} loading={mut.isPending} />
       </View>
     </Screen>
   );

@@ -1,9 +1,11 @@
 import { Text, View } from "react-native";
 import { avatarFor } from "@mobile/components/health/healthVisuals";
+import { useI18n } from "@mobile/i18n/useI18n";
 import { useThemedStyles } from "@mobile/theme/useThemedStyles";
 import { cardShadow, radius } from "@mobile/theme/colors";
 
 export function ProfileMemberBanner({ name }: { name: string }) {
+  const { s } = useI18n();
   const styles = useBannerStyles();
   return (
     <View style={styles.banner}>
@@ -11,7 +13,7 @@ export function ProfileMemberBanner({ name }: { name: string }) {
         <Text style={styles.emoji}>{avatarFor(name)}</Text>
       </View>
       <View style={{ flex: 1, minWidth: 0 }}>
-        <Text style={styles.label}>Thành viên</Text>
+        <Text style={styles.label}>{s.members.title}</Text>
         <Text style={styles.name} numberOfLines={2}>
           {name}
         </Text>

@@ -13,6 +13,7 @@ export type TripItem = {
   trip_id: string;
   kind: "checklist" | "packing" | "budget";
   label: string;
+  assignee: string | null;
   amount: number | null;
   done: boolean;
 };

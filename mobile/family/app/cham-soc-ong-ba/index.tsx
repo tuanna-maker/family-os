@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import {
-  Alert,
+  
   Linking,
   Pressable,
   ScrollView,
@@ -8,6 +8,7 @@ import {
   TextInput,
   View,
 } from "react-native";
+import { appAlert } from "@mobile/utils/alert";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -62,20 +63,8 @@ import { useTheme } from "@mobile/theme/themeStore";
 import { useThemedStyles } from "@mobile/theme/useThemedStyles";
 import { radius } from "@mobile/theme/colors";
 import { TimeField } from "@mobile/components/DateTimeField";
-
-function fmtRelative(iso: string) {
-  const diff = Date.now() - new Date(iso).getTime();
-  const m = Math.floor(diff / 60000);
-  if (m < 1) return "vừa xong";
-  if (m < 60) return `${m} phút trước`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `${h} giờ trước`;
-  return `${Math.floor(h / 24)} ngày trước`;
-}
-
-function fmtTime(iso: string) {
-  return new Date(iso).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
-}
+import { useI18n } from "@mobile/i18n/useI18n";
+import { formatRelativeAgo, formatTime } from "@mobile/i18n/format";
 
 const actKindStyle = (c: ReturnType<typeof useTheme>["colors"], kind: ActivityRow["kind"]) => {
   if (kind === "med") return { bg: c.tintGreen, fg: c.success };
@@ -84,11 +73,19 @@ const actKindStyle = (c: ReturnType<typeof useTheme>["colors"], kind: ActivityRo
   return { bg: c.tintPink, fg: c.pink };
 };
 
+function safeStatusLabel(status: "ok" | "warn" | "alert", ec: ReturnType<typeof useI18n>["s"]["elderlyCare"]) {
+  if (status === "ok") return ec.statusOk;
+  if (status === "warn") return ec.statusWarn;
+  return ec.statusAlert;
+}
+
 export default function ChamSocOngBaScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { familyId } = useFamilyContext();
   const { user } = useAuth();
+  const { locale, s } = useI18n();
+  const ec = s.elderlyCare;
   const { colors: themeColors } = useTheme();
   const qc = useQueryClient();
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -333,14 +330,23 @@ export default function ChamSocOngBaScreen() {
 
   const quickContacts = useMemo(() => {
     const slots = contactsQ.data ?? [];
-    const byId = Object.fromEntries(slots.map((s) => [s.id, s]));
+    const byId = Object.fromEntries(slots.map((slot) => [slot.id, slot]));
+    const contactLabels = ec.contacts;
     return emergencyContacts.map((c) => {
-      if (c.kind === "sos") return c;
+      const label =
+        c.kind === "elder"
+          ? contactLabels.elder
+          : c.kind === "family"
+            ? contactLabels.family
+            : c.kind === "security"
+              ? contactLabels.security
+              : contactLabels.sos;
+      if (c.kind === "sos") return { ...c, label };
       const slot = byId[c.kind];
-      if (!slot) return c;
-      return { ...c, name: slot.name, phone: slot.phone };
+      if (!slot) return { ...c, label };
+      return { ...c, label, name: slot.name, phone: slot.phone };
     });
-  }, [contactsQ.data]);
+  }, [contactsQ.data, ec.contacts]);
 
   useEffect(() => {
     if (!profile?.id || !familyId) return;
@@ -384,7 +390,7 @@ export default function ChamSocOngBaScreen() {
   const createProfile = useMutation({
     mutationFn: createElderlyProfile,
     onSuccess: () => {
-      toast.success("Đã thêm hồ sơ");
+      toast.success(s.common.profileAdded);
       qc.invalidateQueries({ queryKey: ["elderly-profiles", familyId] });
       setShowAddProfile(false);
     },
@@ -394,7 +400,7 @@ export default function ChamSocOngBaScreen() {
   const delProfile = useMutation({
     mutationFn: deleteElderlyProfile,
     onSuccess: () => {
-      toast.success("Đã xóa hồ sơ");
+      toast.success(s.common.profileDeleted);
       setSelectedId(null);
       qc.invalidateQueries({ queryKey: ["elderly-profiles", familyId] });
     },
@@ -410,7 +416,7 @@ export default function ChamSocOngBaScreen() {
         note: input.note,
       }),
     onSuccess: (_d, vars) => {
-      toast.success(`Safe Check: ${vars.status}`);
+      toast.success(ec.safeCheckDone(safeStatusLabel(vars.status, ec)));
       setSafeNoteDraft("");
       qc.invalidateQueries({ queryKey: ["elderly-profiles", familyId] });
       qc.invalidateQueries({ queryKey: ["safe-checks", profile?.id] });
@@ -424,7 +430,7 @@ export default function ChamSocOngBaScreen() {
     onSuccess: (_d, vars) => {
       invalidateMeds();
       setConfirmMed(null);
-      toast.success("Đã ghi nhận uống thuốc");
+      toast.success(s.common.medicineTaken);
       void vars;
     },
     onError: (e: Error) => toast.error(e.message),
@@ -438,7 +444,7 @@ export default function ChamSocOngBaScreen() {
   const createMed = useMutation({
     mutationFn: createMedicineReminder,
     onSuccess: () => {
-      toast.success("Đã thêm nhắc thuốc");
+      toast.success(s.common.medicineAdded);
       invalidateMeds();
       setShowAddMed(false);
     },
@@ -451,7 +457,7 @@ export default function ChamSocOngBaScreen() {
         elderly_id: profile!.id,
         family_id: profile!.family_id,
         content: noteInput.trim(),
-        author_name: user?.email ?? "Bạn",
+        author_name: user?.email ?? s.common.you,
       }),
     onSuccess: () => {
       setNoteInput("");
@@ -464,7 +470,7 @@ export default function ChamSocOngBaScreen() {
   const updateProfileMut = useMutation({
     mutationFn: updateElderlyProfile,
     onSuccess: () => {
-      toast.success("Đã lưu hồ sơ");
+      toast.success(s.common.profileSaved);
       setShowEditProfile(false);
       qc.invalidateQueries({ queryKey: ["elderly-profiles", familyId] });
     },
@@ -474,7 +480,7 @@ export default function ChamSocOngBaScreen() {
   const addVitalMut = useMutation({
     mutationFn: addVital,
     onSuccess: () => {
-      toast.success("Đã ghi chỉ số");
+      toast.success(s.common.vitalSaved);
       setShowVital(false);
       qc.invalidateQueries({ queryKey: ["elderly-vitals", familyId, profile?.name] });
       qc.invalidateQueries({ queryKey: ["elderly-activity", profile?.id] });
@@ -490,9 +496,9 @@ export default function ChamSocOngBaScreen() {
           elderly_id: profile.id,
           apartment: profile.name,
         });
-        toast.success("Đã gửi SOS tới bảo an");
+        toast.success(s.common.sosSent);
       } catch (e) {
-        toast.error(e instanceof Error ? e.message : "Không gửi được SOS");
+        toast.error(e instanceof Error ? e.message : s.common.sosFailed);
       }
     }
     Linking.openURL(`tel:${phone.replace(/\s/g, "")}`);
@@ -536,16 +542,16 @@ export default function ChamSocOngBaScreen() {
 
   return (
     <Screen scroll={false} contentStyle={{ paddingTop: 0 }}>
-      <PageHeader eyebrow="Family Core" title="Chăm sóc ông bà" back="/(tabs)/gia-dinh" />
-      <Text style={styles.pageSub}>Quan tâm mỗi ngày — Safe Check, thuốc và liên hệ khẩn cấp 👵</Text>
+      <PageHeader eyebrow={s.common.familyCore} title={ec.title} back="/(tabs)/gia-dinh" />
+      <Text style={styles.pageSub}>{ec.pageSub}</Text>
 
       {profilesQ.isLoading && <LoadingState />}
 
       {!profilesQ.isLoading && profiles.length === 0 && (
         <>
           <EmptyState
-            title="Chưa có hồ sơ ông/bà"
-            description="Thêm hồ sơ để theo dõi Safe Check và nhắc thuốc."
+            title={ec.noProfile}
+            description={ec.noProfileDesc}
           />
           <AddProfileForm
             pending={createProfile.isPending}
@@ -573,7 +579,7 @@ export default function ChamSocOngBaScreen() {
               ))}
               <Pressable style={styles.chipAdd} onPress={() => setShowAddProfile((s) => !s)}>
                 <Plus color={themeColors.muted} size={16} />
-                <Text style={styles.chipAddText}>Thêm</Text>
+                <Text style={styles.chipAddText}>{s.common.add}</Text>
               </Pressable>
             </View>
           </ScrollView>
@@ -596,7 +602,7 @@ export default function ChamSocOngBaScreen() {
                     <Text style={styles.profileName} numberOfLines={1}>
                       {profile.name}
                       {profile.age != null ? (
-                        <Text style={styles.muted}> · {profile.age} tuổi</Text>
+                        <Text style={styles.muted}> · {s.members.years(profile.age)}</Text>
                       ) : null}
                     </Text>
                     {profile.relation ? <Text style={styles.muted}>{profile.relation}</Text> : null}
@@ -611,13 +617,13 @@ export default function ChamSocOngBaScreen() {
                   </View>
                   <View style={styles.profileActions}>
                     <Pressable onPress={() => setShowEditProfile((s) => !s)}>
-                      <Text style={styles.editLink}>Sửa</Text>
+                      <Text style={styles.editLink}>{s.common.edit}</Text>
                     </Pressable>
                     <Pressable
                       onPress={() =>
-                        Alert.alert("Xóa hồ sơ?", profile.name, [
-                          { text: "Huỷ", style: "cancel" },
-                          { text: "Xóa", style: "destructive", onPress: () => delProfile.mutate({ id: profile.id }) },
+                        appAlert(ec.deleteProfile, profile.name, [
+                          { text: s.common.cancel, style: "cancel" },
+                          { text: s.common.delete, style: "destructive", onPress: () => delProfile.mutate({ id: profile.id }) },
                         ])
                       }
                     >
@@ -659,11 +665,11 @@ export default function ChamSocOngBaScreen() {
 
               <View style={styles.sectionGap}>
               <SectionHeader
-                title="Liên hệ nhanh"
-                subtitle="Nút lớn — dễ bấm cho mọi người"
+                title={ec.quickContact}
+                subtitle={ec.quickContactSub}
                 action={
                   <Pressable onPress={() => router.push("/lien-he")}>
-                    <Text style={styles.linkAction}>Sửa số</Text>
+                    <Text style={styles.linkAction}>{ec.editPhone}</Text>
                   </Pressable>
                 }
               />
@@ -676,14 +682,14 @@ export default function ChamSocOngBaScreen() {
               </View>
 
               <SectionHeader
-                title={medsView === "day" ? "Nhắc thuốc hôm nay" : "Lịch thuốc 7 ngày"}
+                title={medsView === "day" ? ec.medicineToday : ec.medicineWeek}
                 subtitle={
                   medsView === "day"
-                    ? `${takenCount}/${meds.length} đã uống · ${profile.name}`
-                    : `${profile.name} · tự cập nhật`
+                    ? ec.medsTakenToday(takenCount, meds.length, profile.name)
+                    : ec.medsWeekSub(profile.name)
                 }
                 onAction={() => setShowAddMed((s) => !s)}
-                actionLabel="Thêm"
+                actionLabel={s.common.add}
               />
               <View style={styles.medsToggleRow}>
                 {(["day", "week"] as const).map((v) => (
@@ -693,7 +699,7 @@ export default function ChamSocOngBaScreen() {
                     onPress={() => setMedsView(v)}
                   >
                     <Text style={[styles.medsToggleText, medsView === v && styles.medsToggleTextActive]}>
-                      {v === "day" ? "Theo ngày" : "Theo tuần"}
+                      {v === "day" ? s.common.dayView : s.common.weekView}
                     </Text>
                   </Pressable>
                 ))}
@@ -721,7 +727,7 @@ export default function ChamSocOngBaScreen() {
                 />
               ) : meds.length === 0 ? (
                 <Card>
-                  <Text style={styles.emptyMed}>Chưa có nhắc thuốc — bấm Thêm ở trên.</Text>
+                  <Text style={styles.emptyMed}>{ec.noMedicineHint}</Text>
                 </Card>
               ) : (
                 meds.map((m) => (
@@ -739,7 +745,7 @@ export default function ChamSocOngBaScreen() {
                       {m.dosage ? <Text style={styles.muted}>{m.dosage}</Text> : null}
                       <Text style={styles.muted}>
                         {m.time_of_day ?? "—"}
-                        {m.taken_today && m.taken_at ? ` · Đã uống lúc ${fmtTime(m.taken_at)}` : ""}
+                        {m.taken_today && m.taken_at ? ec.takenAt(formatTime(m.taken_at, locale)) : ""}
                       </Text>
                     </View>
                     <Pressable
@@ -750,7 +756,7 @@ export default function ChamSocOngBaScreen() {
                       }
                     >
                       <Text style={[styles.medBtnText, m.taken_today && styles.medBtnTextMuted]}>
-                        {m.taken_today ? "Đã uống" : "Xác nhận"}
+                        {m.taken_today ? s.common.taken : s.common.confirmTaken}
                       </Text>
                     </Pressable>
                   </Card>
@@ -759,13 +765,13 @@ export default function ChamSocOngBaScreen() {
 
               {vitals.length > 0 && (
                 <>
-                  <SectionHeader title="Chỉ số gần đây" subtitle={profile.name} />
+                  <SectionHeader title={ec.recentVitals} subtitle={profile.name} />
                   <View style={styles.vitalGrid}>
                     {vitals.map((v) => (
                       <Card key={v.id} style={styles.vitalCard}>
                         <Text style={styles.muted}>{v.title}</Text>
                         <Text style={styles.vitalVal}>{v.value ?? "—"}</Text>
-                        <Text style={styles.muted}>{fmtRelative(v.recorded_at)}</Text>
+                        <Text style={styles.muted}>{formatRelativeAgo(v.recorded_at, locale)}</Text>
                       </Card>
                     ))}
                   </View>
@@ -773,9 +779,9 @@ export default function ChamSocOngBaScreen() {
               )}
 
               <SectionHeader
-                title="Chỉ số sức khỏe"
-                onAction={() => setShowVital((s) => !s)}
-                actionLabel={showVital ? "Đóng" : "Ghi mới"}
+                title={ec.vitals}
+                onAction={() => setShowVital((v) => !v)}
+                actionLabel={showVital ? s.common.close : s.common.recordNew}
               />
               {showVital && (
                 <AddVitalForm
@@ -790,14 +796,14 @@ export default function ChamSocOngBaScreen() {
                 />
               )}
 
-              <SectionHeader title="Ghi chú chăm sóc" subtitle="Chia sẻ giữa các thành viên" />
+              <SectionHeader title={ec.careNotes} subtitle={ec.careNotesSub} />
               <Card>
                 <View style={styles.noteRow}>
                   <TextInput
                     style={styles.noteInput}
                     value={noteInput}
                     onChangeText={setNoteInput}
-                    placeholder="Ghi nhanh về tình trạng của ông/bà…"
+                    placeholder={ec.careNotesPlaceholder}
                     placeholderTextColor={themeColors.muted}
                   />
                   <Pressable
@@ -809,7 +815,7 @@ export default function ChamSocOngBaScreen() {
                   </Pressable>
                 </View>
                 {(notesQ.data ?? []).length === 0 && !notesQ.isLoading ? (
-                  <Text style={[styles.muted, { textAlign: "center", paddingVertical: 12 }]}>Chưa có ghi chú nào.</Text>
+                  <Text style={[styles.muted, { textAlign: "center", paddingVertical: 12 }]}>{ec.noNotes}</Text>
                 ) : null}
                 {(notesQ.data ?? []).map((n) => (
                   <View key={n.id} style={styles.noteItem}>
@@ -817,7 +823,7 @@ export default function ChamSocOngBaScreen() {
                     <View style={{ flex: 1 }}>
                       <View style={{ flexDirection: "row", alignItems: "center" }}>
                         <Text style={styles.noteAuthor}>{n.author_name}</Text>
-                        <Text style={styles.noteTime}>{fmtRelative(n.created_at)}</Text>
+                        <Text style={styles.noteTime}>{formatRelativeAgo(n.created_at, locale)}</Text>
                       </View>
                       <Text style={styles.noteBody}>{n.content}</Text>
                     </View>
@@ -827,17 +833,17 @@ export default function ChamSocOngBaScreen() {
 
               <View style={{ flexDirection: "row", alignItems: "flex-start", marginTop: 8 }}>
                 <View style={{ flex: 1 }}>
-                  <SectionHeader title="Nhật ký hoạt động" subtitle="7 ngày gần nhất" />
+                  <SectionHeader title={ec.activityLog} subtitle={ec.activityLogSub} />
                 </View>
                 <Pressable style={styles.journalLink} onPress={() => router.push("/cham-soc-ong-ba/nhat-ky")}>
-                  <Text style={styles.journalText}>Xem 7/30 ngày →</Text>
+                  <Text style={styles.journalText}>{ec.journalLink}</Text>
                   <ChevronRight color={themeColors.brand} size={16} />
                 </Pressable>
               </View>
 
               {activity.length === 0 ? (
                 <Card>
-                  <Text style={styles.emptyMed}>Chưa có hoạt động.</Text>
+                  <Text style={styles.emptyMed}>{ec.noActivity}</Text>
                 </Card>
               ) : (
                 <Card style={{ padding: 0, overflow: "hidden" }}>
@@ -856,7 +862,7 @@ export default function ChamSocOngBaScreen() {
                             <Text style={styles.actTitle} numberOfLines={1}>
                               {a.title}
                             </Text>
-                            <Text style={styles.actTime}>{fmtRelative(a.at)}</Text>
+                            <Text style={styles.actTime}>{formatRelativeAgo(a.at, locale)}</Text>
                           </View>
                           {a.detail ? (
                             <Text style={styles.actDetail} numberOfLines={2}>
@@ -885,7 +891,7 @@ export default function ChamSocOngBaScreen() {
                     <Stethoscope color={themeColors.brand} size={20} />
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.doctorLabel}>Bác sĩ phụ trách</Text>
+                    <Text style={styles.doctorLabel}>{ec.attendingDoctor}</Text>
                     <Text style={styles.doctorName}>{profile.doctor}</Text>
                   </View>
                 </Card>
@@ -929,6 +935,8 @@ function AddProfileForm({
   pending: boolean;
 }) {
   const formStyles = useFormTitleStyles();
+  const { s } = useI18n();
+  const ec = s.elderlyCare;
   const [name, setName] = useState("");
   const [age, setAge] = useState("");
   const [relation, setRelation] = useState("");
@@ -937,14 +945,14 @@ function AddProfileForm({
 
   return (
     <Card style={{ marginBottom: 12 }}>
-      <Text style={formStyles.formTitle}>Hồ sơ mới</Text>
-      <TextField label="Tên" value={name} onChangeText={setName} placeholder="Bà Hoa" />
-      <TextField label="Mối quan hệ" value={relation} onChangeText={setRelation} />
-      <TextField label="Tuổi" value={age} onChangeText={setAge} keyboardType="numeric" />
-      <TextField label="Số điện thoại" value={phone} onChangeText={setPhone} />
-      <TextField label="Bệnh nền (phẩy)" value={conditions} onChangeText={setConditions} />
+      <Text style={formStyles.formTitle}>{ec.newProfile}</Text>
+      <TextField label={s.common.name} value={name} onChangeText={setName} placeholder={ec.placeholderName} />
+      <TextField label={s.common.relation} value={relation} onChangeText={setRelation} />
+      <TextField label={s.common.age} value={age} onChangeText={setAge} keyboardType="numeric" />
+      <TextField label={s.common.phone} value={phone} onChangeText={setPhone} />
+      <TextField label={s.common.conditions} value={conditions} onChangeText={setConditions} />
       <PrimaryButton
-        label="Lưu hồ sơ"
+        label={s.common.saveProfile}
         disabled={!name.trim() || pending}
         loading={pending}
         onPress={() =>
@@ -980,6 +988,7 @@ function EditProfileForm({
   }) => void;
   pending: boolean;
 }) {
+  const { s } = useI18n();
   const [name, setName] = useState(profile.name);
   const [age, setAge] = useState(profile.age != null ? String(profile.age) : "");
   const [relation, setRelation] = useState(profile.relation ?? "");
@@ -989,14 +998,14 @@ function EditProfileForm({
 
   return (
     <Card style={{ marginBottom: 12 }}>
-      <TextField label="Tên" value={name} onChangeText={setName} />
-      <TextField label="Mối quan hệ" value={relation} onChangeText={setRelation} />
-      <TextField label="Tuổi" value={age} onChangeText={setAge} keyboardType="numeric" />
-      <TextField label="Số điện thoại" value={phone} onChangeText={setPhone} />
-      <TextField label="Bác sĩ" value={doctor} onChangeText={setDoctor} />
-      <TextField label="Bệnh nền (phẩy)" value={conditions} onChangeText={setConditions} />
+      <TextField label={s.common.name} value={name} onChangeText={setName} />
+      <TextField label={s.common.relation} value={relation} onChangeText={setRelation} />
+      <TextField label={s.common.age} value={age} onChangeText={setAge} keyboardType="numeric" />
+      <TextField label={s.common.phone} value={phone} onChangeText={setPhone} />
+      <TextField label={s.common.doctor} value={doctor} onChangeText={setDoctor} />
+      <TextField label={s.common.conditions} value={conditions} onChangeText={setConditions} />
       <PrimaryButton
-        label="Lưu hồ sơ"
+        label={s.common.saveProfile}
         disabled={!name.trim() || pending}
         loading={pending}
         onPress={() =>
@@ -1024,17 +1033,19 @@ function AddVitalForm({
   onSubmit: (v: { kind: string; title: string; value?: string }) => void;
   pending: boolean;
 }) {
+  const { s } = useI18n();
+  const ec = s.elderlyCare;
   const [kind, setKind] = useState("blood_pressure");
-  const [title, setTitle] = useState("Huyết áp");
+  const [title, setTitle] = useState<string>(ec.defaultVitalTitle);
   const [value, setValue] = useState("");
 
   return (
     <Card style={{ marginBottom: 12 }}>
-      <TextField label="Loại (mã)" value={kind} onChangeText={setKind} />
-      <TextField label="Tiêu đề" value={title} onChangeText={setTitle} />
-      <TextField label="Giá trị" value={value} onChangeText={setValue} placeholder="120/80" />
+      <TextField label={s.common.type} value={kind} onChangeText={setKind} />
+      <TextField label={s.common.title} value={title} onChangeText={setTitle} />
+      <TextField label={s.common.value} value={value} onChangeText={setValue} placeholder={ec.placeholderVital} />
       <PrimaryButton
-        label="Lưu chỉ số"
+        label={s.common.saveVital}
         disabled={!title.trim() || pending}
         loading={pending}
         onPress={() => onSubmit({ kind, title: title.trim(), value: value.trim() || undefined })}
@@ -1050,17 +1061,18 @@ function AddMedForm({
   onSubmit: (m: { medicine: string; dosage?: string; time_of_day?: string }) => void;
   pending: boolean;
 }) {
+  const { s } = useI18n();
   const [medicine, setMedicine] = useState("");
   const [dosage, setDosage] = useState("");
   const [time, setTime] = useState("08:00");
 
   return (
     <Card style={{ marginBottom: 12 }}>
-      <TextField label="Tên thuốc" value={medicine} onChangeText={setMedicine} />
-      <TextField label="Liều" value={dosage} onChangeText={setDosage} />
-      <TimeField label="Giờ uống" value={time} onChange={setTime} />
+      <TextField label={s.common.medicine} value={medicine} onChangeText={setMedicine} />
+      <TextField label={s.common.dosage} value={dosage} onChangeText={setDosage} />
+      <TimeField label={s.common.medicineTime} value={time} onChange={setTime} />
       <PrimaryButton
-        label="Lưu nhắc thuốc"
+        label={s.common.saveMedicine}
         disabled={!medicine.trim() || pending}
         loading={pending}
         onPress={() =>

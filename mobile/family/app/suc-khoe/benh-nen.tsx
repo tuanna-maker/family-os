@@ -2,10 +2,14 @@ import { HealthSubScreen } from "@mobile/components/health/HealthSubScreen";
 import { avatarFor } from "@mobile/components/health/healthVisuals";
 import { useHealthOverview } from "@mobile/hooks/useHealthOverview";
 import { useHealthMutations } from "@mobile/hooks/useHealthMutations";
+import { useI18n } from "@mobile/i18n/useI18n";
 
 const BACK = "/suc-khoe/benh-nen";
 
 export default function BenhNenScreen() {
+  const { s } = useI18n();
+  const h = s.screens.health;
+  const sp = h.subpage;
   const { isLoading, conditions, profiles } = useHealthOverview();
   const { openForm } = useHealthMutations(BACK);
 
@@ -13,14 +17,14 @@ export default function BenhNenScreen() {
 
   return (
     <HealthSubScreen
-      title="Bệnh nền"
-      subtitle="Bệnh mãn tính và tình trạng cần theo dõi lâu dài"
+      title={h.chronic}
+      subtitle={sp.chronicSub}
       back="/suc-khoe"
       loading={isLoading}
-      actionLabel="Cập nhật bệnh nền"
+      actionLabel={sp.updateChronic}
       onAction={() => openForm({ type: "condition" })}
-      emptyTitle="Chưa ghi nhận bệnh nền"
-      emptyDescription="Thêm bệnh nền vào hồ sơ từng thành viên."
+      emptyTitle={sp.noChronic}
+      emptyDescription={sp.noChronicDesc}
       items={conditions.map((c, i) => {
         const pid = profileIdByMember(c.member);
         return {

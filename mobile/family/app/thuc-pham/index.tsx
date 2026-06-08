@@ -1,8 +1,9 @@
-import { useMemo } from "react";
-import { Alert, Pressable, Text, View } from "react-native";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Pressable, Text, View } from "react-native";
+import { appAlert } from "@mobile/utils/alert";
 import { useRouter } from "expo-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ChefHat, Leaf } from "lucide-react-native";
+import { Check, ChefHat, Leaf } from "lucide-react-native";
 import { Screen } from "@mobile/components/Screen";
 import { Card, PageHeader } from "@mobile/components/ui";
 import { SectionHeader } from "@mobile/components/SectionHeader";
@@ -13,11 +14,16 @@ import {
   toggleShopping,
   deleteFoodRow,
 } from "@mobile/api/food";
-import { listCommunityServices, createServiceBooking } from "@mobile/api/community";
+import { listCommunityServices } from "@mobile/api/community";
+import { ServiceBookingModal } from "@mobile/components/community/ServiceBookingModal";
+import { type CommunityServiceItem } from "@mobile/utils/communityService";
 import { toast } from "@mobile/utils/toast";
 import { useTheme } from "@mobile/theme/themeStore";
 import { useThemedStyles } from "@mobile/theme/useThemedStyles";
 import { cardShadow, radius } from "@mobile/theme/colors";
+import { useI18n } from "@mobile/i18n/useI18n";
+import { formatDate } from "@mobile/i18n/format";
+import { displayFoodName, displayFoodUnit } from "@mobile/utils/displayContent";
 
 export default function ThucPhamScreen() {
   const router = useRouter();
@@ -25,6 +31,10 @@ export default function ThucPhamScreen() {
   const qc = useQueryClient();
   const { colors } = useTheme();
   const styles = useFoodStyles();
+  const { locale, s } = useI18n();
+  const fd = s.screens.food;
+  const c = s.common;
+  const [bookingService, setBookingService] = useState<CommunityServiceItem | null>(null);
 
   const q = useQuery({
     queryKey: ["food", familyId],
@@ -42,23 +52,56 @@ export default function ThucPhamScreen() {
     queryKey: ["community-services"],
     queryFn: () => listCommunityServices(),
   });
-  const farmService = (farmQ.data ?? []).find((s) => s.slug === "farm");
+  const farmService = (farmQ.data ?? []).find((svc) => svc.slug === "farm");
 
-  const farmBook = useMutation({
-    mutationFn: () => createServiceBooking({ service_id: farmService!.id, family_id: familyId! }),
-    onSuccess: () => toast.success("Đã đặt Farm Fresh — BQL sẽ liên hệ"),
-    onError: (e: Error) => toast.error(e.message),
-  });
+  type FoodData = Awaited<ReturnType<typeof listFood>>;
+
+  // Giữ nguyên thứ tự danh sách shopping để tick/un-tick không làm UI "nhảy vị trí".
+  const shoppingOrderRef = useRef<string[] | null>(null);
+  useEffect(() => {
+    const list = q.data?.shopping;
+    if (!list) return;
+    if (!shoppingOrderRef.current) shoppingOrderRef.current = list.map((i) => i.id);
+  }, [q.data?.shopping]);
+
+  const shopping = useMemo(() => {
+    const list = q.data?.shopping ?? [];
+    const order = shoppingOrderRef.current;
+    if (!order) return list;
+    const idx = new Map(order.map((id, i) => [id, i]));
+    return list
+      .slice()
+      .sort((a, b) => (idx.get(a.id) ?? 1e9) - (idx.get(b.id) ?? 1e9));
+  }, [q.data?.shopping]);
 
   const tgMut = useMutation({
     mutationFn: toggleShopping,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["food", familyId] }),
+    onMutate: async ({ id, purchased }) => {
+      if (!familyId) return;
+      await qc.cancelQueries({ queryKey: ["food", familyId] });
+      const prev = qc.getQueryData<FoodData>(["food", familyId]);
+      qc.setQueryData<FoodData>(["food", familyId], (old) => {
+        if (!old) return old;
+        return {
+          ...old,
+          shopping: old.shopping.map((item) => (item.id === id ? { ...item, purchased } : item)),
+        };
+      });
+      return { prev };
+    },
+    onError: (e: Error, _vars, ctx) => {
+      if (ctx?.prev && familyId) qc.setQueryData(["food", familyId], ctx.prev);
+      toast.error(e.message);
+    },
+    onSettled: () => {
+      if (familyId) void qc.invalidateQueries({ queryKey: ["food", familyId] });
+    },
   });
 
   const delMut = useMutation({
     mutationFn: deleteFoodRow,
     onSuccess: () => {
-      toast.success("Đã xóa");
+      toast.success(c.deleted);
       qc.invalidateQueries({ queryKey: ["food", familyId] });
       qc.invalidateQueries({ queryKey: ["meal-suggest", familyId] });
     },
@@ -83,31 +126,31 @@ export default function ThucPhamScreen() {
 
   return (
     <Screen contentStyle={{ paddingTop: 0 }}>
-      <PageHeader eyebrow="Family Core" title="Thực phẩm & Tủ lạnh" back="/(tabs)/gia-dinh" />
+      <PageHeader eyebrow={c.familyCore} title={fd.title} back="/(tabs)/gia-dinh" />
 
       {farmService && (
         <Card style={styles.farmCard}>
           <Leaf color={colors.success} size={22} />
           <View style={{ flex: 1, minWidth: 0 }}>
-            <Text style={styles.title}>Farm Fresh</Text>
-            <Text style={styles.sub}>Đặt rau củ tươi giao tận căn hộ</Text>
+            <Text style={styles.title}>{fd.farmFresh}</Text>
+            <Text style={styles.sub}>{fd.farmSub}</Text>
           </View>
           <Pressable
             style={({ pressed }) => [
               styles.farmBookBtn,
-              (!familyId || farmBook.isPending) && styles.farmBookBtnDisabled,
-              pressed && familyId && !farmBook.isPending && { opacity: 0.9 },
+              !familyId && styles.farmBookBtnDisabled,
+              pressed && familyId && { opacity: 0.9 },
             ]}
-            disabled={!familyId || farmBook.isPending}
+            disabled={!familyId}
             onPress={() => {
               if (!familyId) {
-                toast.error("Chưa có hộ gia đình");
+                toast.error(c.noFamily);
                 return;
               }
-              farmBook.mutate();
+              setBookingService(farmService as CommunityServiceItem);
             }}
           >
-            <Text style={styles.farmBookBtnText}>{farmBook.isPending ? "…" : "Đặt"}</Text>
+            <Text style={styles.farmBookBtnText}>{fd.book}</Text>
           </Pressable>
         </Card>
       )}
@@ -115,29 +158,29 @@ export default function ThucPhamScreen() {
       {(expired.length > 0 || expiringSoon.length > 0) && (
         <Card style={styles.alert}>
           <Text style={styles.alertText}>
-            {expired.length > 0 ? `${expired.length} món đã hết hạn. ` : ""}
-            {expiringSoon.length > 0 ? `${expiringSoon.length} món sắp hết hạn (≤3 ngày).` : ""}
+            {expired.length > 0 ? fd.expiredCount(expired.length) : ""}
+            {expiringSoon.length > 0 ? fd.expiringCount(expiringSoon.length) : ""}
           </Text>
         </Card>
       )}
 
       <SectionHeader
-        title="Tồn kho"
-        subtitle={`${q.data?.items.length ?? 0} món`}
+        title={fd.inventory}
+        subtitle={fd.itemCount(q.data?.items.length ?? 0)}
         onAction={() => router.push({ pathname: "/thuc-pham/them", params: { type: "food" } })}
       />
       {(q.data?.items ?? []).length === 0 ? (
-        <Card style={styles.emptyCard}><Text style={styles.sub}>Chưa có thực phẩm.</Text></Card>
+        <Card style={styles.emptyCard}><Text style={styles.sub}>{fd.noItems}</Text></Card>
       ) : (
         (q.data?.items ?? []).map((item) => (
           <Pressable
             key={item.id}
             onPress={() => router.push({ pathname: "/thuc-pham/them", params: { type: "food", id: item.id } })}
             onLongPress={() =>
-              Alert.alert("Xóa?", item.name, [
-                { text: "Huỷ", style: "cancel" },
+              appAlert(`${c.delete}?`, item.name, [
+                { text: c.cancel, style: "cancel" },
                 {
-                  text: "Xóa",
+                  text: c.delete,
                   style: "destructive",
                   onPress: () => delMut.mutate({ table: "food_items", id: item.id }),
                 },
@@ -145,10 +188,12 @@ export default function ThucPhamScreen() {
             }
           >
             <Card style={styles.row}>
-              <Text style={styles.title}>{item.name}</Text>
+              <Text style={styles.title}>{displayFoodName(item.name, locale)}</Text>
               <Text style={styles.sub}>
-                {item.expires_on ? `HSD: ${item.expires_on}` : "Không HSD"}
-                {item.qty != null ? ` · ${item.qty}${item.unit ? ` ${item.unit}` : ""}` : ""}
+                {item.expires_on ? fd.expiryLabel(formatDate(item.expires_on, locale)) : fd.noExpiry}
+                {item.qty != null
+                  ? ` · ${item.qty}${item.unit ? ` ${displayFoodUnit(item.unit, locale)}` : ""}`
+                  : ""}
               </Text>
             </Card>
           </Pressable>
@@ -156,42 +201,54 @@ export default function ThucPhamScreen() {
       )}
 
       <SectionHeader
-        title="Đi chợ"
-        subtitle={`${(q.data?.shopping ?? []).filter((s) => !s.purchased).length} chưa mua`}
+        title={fd.shopping}
+        count={shopping.length}
         onAction={() => router.push({ pathname: "/thuc-pham/them", params: { type: "shop" } })}
       />
-      {(q.data?.shopping ?? []).length === 0 ? (
-        <Card style={styles.emptyCard}><Text style={styles.sub}>Chưa có món cần mua.</Text></Card>
+      {shopping.length === 0 ? (
+        <Card style={styles.emptyCard}>
+          <Text style={styles.sub}>{fd.noShopping}</Text>
+        </Card>
       ) : (
-        (q.data?.shopping ?? []).map((s) => (
-          <Card key={s.id} style={styles.shopRow}>
+        shopping.map((item) => (
+          <Card key={item.id} style={styles.shopRow}>
             <Pressable
-              style={[styles.check, s.purchased && styles.checkOn]}
-              onPress={() => tgMut.mutate({ id: s.id, purchased: !s.purchased })}
-            />
+              style={[styles.check, item.purchased && styles.checkOn]}
+              onPress={() => tgMut.mutate({ id: item.id, purchased: !item.purchased })}
+              hitSlop={6}
+            >
+              {item.purchased ? <Check color={colors.white} size={16} strokeWidth={3} /> : null}
+            </Pressable>
             <Pressable
               style={{ flex: 1 }}
-              onPress={() => router.push({ pathname: "/thuc-pham/them", params: { type: "shop", id: s.id } })}
+              onPress={() => router.push({ pathname: "/thuc-pham/them", params: { type: "shop", id: item.id } })}
             >
-              <Text style={[styles.title, s.purchased && styles.done]}>{s.name}</Text>
+              <Text style={[styles.title, item.purchased && styles.done]}>{displayFoodName(item.name, locale)}</Text>
               <Text style={styles.sub}>
-                {[s.qty && `${s.qty}${s.unit ?? ""}`, s.category].filter(Boolean).join(" · ") || "—"}
+                {[item.qty && `${item.qty}${item.unit ?? ""}`, item.category].filter(Boolean).join(" · ") || "—"}
               </Text>
             </Pressable>
           </Card>
         ))
       )}
 
-      <SectionHeader title="Gợi ý bữa ăn" />
-      {(mealsQ.data?.suggestions ?? []).map((s, i) => (
+      <SectionHeader title={fd.mealSuggestions} />
+      {(mealsQ.data?.suggestions ?? []).map((item, i) => (
         <Card key={i} style={styles.row}>
           <ChefHat color={colors.brand} size={18} />
           <View style={{ flex: 1, marginLeft: 8 }}>
-            <Text style={styles.title}>{s.title}</Text>
-            <Text style={styles.sub}>{s.reason} · {s.time}</Text>
+            <Text style={styles.title}>{item.title}</Text>
+            <Text style={styles.sub}>{item.reason} · {item.time}</Text>
           </View>
         </Card>
       ))}
+
+      <ServiceBookingModal
+        service={bookingService}
+        familyId={familyId}
+        onClose={() => setBookingService(null)}
+        onSuccess={() => qc.invalidateQueries({ queryKey: ["service-bookings"] })}
+      />
 
       <View style={{ height: 32 }} />
     </Screen>
@@ -228,14 +285,19 @@ function useFoodStyles() {
     row: { marginBottom: 10, gap: 4, ...cardShadow(colors) },
     shopRow: { flexDirection: "row" as const, alignItems: "center" as const, gap: 10, marginBottom: 8 },
     check: {
-      width: 24,
-      height: 24,
-      borderRadius: 6,
+      width: 26,
+      height: 26,
+      borderRadius: 8,
       borderWidth: 2,
-      borderColor: colors.muted,
-      backgroundColor: colors.surfaceElevated,
+      borderColor: colors.cardBorder,
+      backgroundColor: colors.card,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
     },
-    checkOn: { backgroundColor: colors.brand, borderColor: colors.brand },
+    checkOn: {
+      backgroundColor: colors.success,
+      borderColor: colors.success,
+    },
     title: { fontWeight: "700" as const, color: colors.foreground, fontSize: 16 * fontScale },
     sub: { fontSize: 12 * fontScale, color: colors.muted, lineHeight: 18 },
     done: { textDecorationLine: "line-through" as const, color: colors.muted },

@@ -7,7 +7,8 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 const admin = supabaseAdmin as any;
 
 export type FamilyMemberRow = {
-  user_id: string;
+  id: string;
+  user_id: string | null;
   role: "family_owner" | "family_member";
   is_owner: boolean;
   is_self: boolean;
@@ -15,6 +16,8 @@ export type FamilyMemberRow = {
   email: string | null;
   username: string | null;
   avatar_url: string | null;
+  member_role: string | null;
+  age: number | null;
   joined_at: string | null;
 };
 
@@ -45,70 +48,122 @@ export const listFamilyMembers = createServerFn({ method: "GET" })
     if (famErr) throw new Error(famErr.message);
     if (!fam) throw new Error("Bạn không thuộc hộ này");
 
-    const { data: roles, error: rolesErr } = await admin
-      .from("user_roles")
-      .select("user_id, role, created_at")
-      .eq("family_id", data.familyId)
-      .in("role", ["family_owner", "family_member"]);
+    const [{ data: roster, error: rosterErr }, { data: roles, error: rolesErr }] = await Promise.all([
+      admin
+        .from("family_members")
+        .select("id, user_id, name, member_role, age, avatar, created_at")
+        .eq("family_id", data.familyId)
+        .order("created_at"),
+      admin
+        .from("user_roles")
+        .select("user_id, role, created_at")
+        .eq("family_id", data.familyId)
+        .in("role", ["family_owner", "family_member"]),
+    ]);
+    if (rosterErr) throw new Error(rosterErr.message);
     if (rolesErr) throw new Error(rolesErr.message);
 
-    // Always include the owner even if no user_roles entry yet
-    const map = new Map<string, { role: string; created_at: string | null }>();
+    const roleMap = new Map<string, { role: "family_owner" | "family_member"; created_at: string | null }>();
     for (const r of roles ?? []) {
-      const prev = map.get(r.user_id);
-      // family_owner wins over family_member
-      if (!prev || r.role === "family_owner") {
-        map.set(r.user_id, { role: r.role, created_at: r.created_at });
+      if (!r.user_id) continue;
+      const role = (r.role as "family_owner" | "family_member") ?? "family_member";
+      const prev = roleMap.get(r.user_id);
+      if (!prev || role === "family_owner") {
+        roleMap.set(r.user_id, { role, created_at: r.created_at });
       }
     }
-    if (!map.has(fam.owner_id)) {
-      map.set(fam.owner_id, { role: "family_owner", created_at: null });
+    if (fam.owner_id && !roleMap.has(fam.owner_id)) {
+      roleMap.set(fam.owner_id, { role: "family_owner", created_at: null });
     }
 
-    const userIds = Array.from(map.keys());
-    const { data: profiles, error: profErr } = await admin
-      .from("profiles")
-      .select("id, full_name, email, username, avatar_url")
-      .in("id", userIds);
-    if (profErr) throw new Error(profErr.message);
+    const rosterList = roster ?? [];
+    const linkedUserIds = new Set(
+      rosterList.map((r: { user_id: string | null }) => r.user_id).filter((id: string | null): id is string => !!id),
+    );
 
+    const allUserIds = Array.from(new Set([...linkedUserIds, ...roleMap.keys()]));
     const profMap = new Map<string, {
       full_name: string | null;
       email: string | null;
       username: string | null;
       avatar_url: string | null;
     }>();
-    for (const p of (profiles ?? []) as Array<{
-      id: string;
-      full_name: string | null;
-      email: string | null;
-      username: string | null;
-      avatar_url: string | null;
-    }>) {
-      profMap.set(p.id, p);
+    if (allUserIds.length > 0) {
+      const { data: profiles, error: profErr } = await admin
+        .from("profiles")
+        .select("id, full_name, email, username, avatar_url")
+        .in("id", allUserIds);
+      if (profErr) throw new Error(profErr.message);
+      for (const p of (profiles ?? []) as Array<{
+        id: string;
+        full_name: string | null;
+        email: string | null;
+        username: string | null;
+        avatar_url: string | null;
+      }>) {
+        profMap.set(p.id, p);
+      }
     }
 
-    const rows: FamilyMemberRow[] = userIds.map((uid) => {
-      const r = map.get(uid)!;
+    const rows: FamilyMemberRow[] = rosterList.map((r: {
+      id: string;
+      user_id: string | null;
+      name: string | null;
+      member_role: string | null;
+      age: number | null;
+      avatar: string | null;
+      created_at: string | null;
+    }) => {
+      const p = r.user_id ? profMap.get(r.user_id) : null;
+      const isOwner = r.user_id === fam.owner_id || r.member_role === "owner";
+      const rosterName = (r.name as string)?.trim() || null;
+      return {
+        id: r.id,
+        user_id: r.user_id,
+        role: isOwner ? "family_owner" : "family_member",
+        is_owner: isOwner,
+        is_self: !!r.user_id && r.user_id === userId,
+        full_name: rosterName ?? p?.full_name ?? null,
+        email: p?.email ?? null,
+        username: p?.username ?? null,
+        avatar_url: p?.avatar_url ?? r.avatar ?? null,
+        member_role: r.member_role,
+        age: r.age,
+        joined_at: r.created_at,
+      };
+    });
+
+    for (const [uid, r] of roleMap.entries()) {
+      if (linkedUserIds.has(uid)) continue;
       const p = profMap.get(uid);
       const isOwner = uid === fam.owner_id;
-      return {
+      rows.push({
+        id: uid,
         user_id: uid,
-        role: isOwner ? "family_owner" : (r.role as "family_owner" | "family_member"),
+        role: isOwner ? "family_owner" : r.role,
         is_owner: isOwner,
         is_self: uid === userId,
         full_name: p?.full_name ?? null,
         email: p?.email ?? null,
         username: p?.username ?? null,
         avatar_url: p?.avatar_url ?? null,
+        member_role: isOwner ? "owner" : "member",
+        age: null,
         joined_at: r.created_at,
-      };
-    });
+      });
+    }
 
-    // Owner first, then by joined_at
     rows.sort((a, b) => {
       if (a.is_owner) return -1;
       if (b.is_owner) return 1;
+      const order = (role: string | null) => {
+        if (role === "member") return 0;
+        if (role === "child") return 1;
+        if (role === "elderly") return 2;
+        return 3;
+      };
+      const diff = order(a.member_role) - order(b.member_role);
+      if (diff !== 0) return diff;
       return (a.joined_at ?? "").localeCompare(b.joined_at ?? "");
     });
 

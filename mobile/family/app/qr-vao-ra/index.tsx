@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { Alert, Pressable, Share, StyleSheet, Text, View } from "react-native";
+import { Pressable, Share, StyleSheet, Text, View } from "react-native";
+import { appAlert } from "@mobile/utils/alert";
 import { useRouter } from "expo-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import QRCode from "react-native-qrcode-svg";
-import { Plus, ScanLine, Ban } from "lucide-react-native";
+import { ScanLine, Ban } from "lucide-react-native";
 import { Screen } from "@mobile/components/Screen";
 import { Card, PageHeader, PrimaryButton, TextField } from "@mobile/components/ui";
 import { SectionHeader } from "@mobile/components/SectionHeader";
@@ -14,6 +15,8 @@ import {
   listVisitorPasses,
   revokeVisitorPass,
 } from "@mobile/api/visitor-passes";
+import { useI18n } from "@mobile/i18n/useI18n";
+import { formatDateTime } from "@mobile/i18n/format";
 import { toast } from "@mobile/utils/toast";
 import { colors, radius } from "@mobile/theme/colors";
 
@@ -21,6 +24,9 @@ export default function QrVaoRaScreen() {
   const router = useRouter();
   const { familyId } = useFamilyContext();
   const qc = useQueryClient();
+  const { locale, s } = useI18n();
+  const qr = s.screens.qr;
+  const c = s.common;
   const [guestName, setGuestName] = useState("");
   const [guestPhone, setGuestPhone] = useState("");
   const [purpose, setPurpose] = useState("");
@@ -48,7 +54,7 @@ export default function QrVaoRaScreen() {
       setGuestPhone("");
       setPurpose("");
       qc.invalidateQueries({ queryKey: ["visitor-passes", familyId] });
-      toast.success("Đã tạo mã khách");
+      toast.success(c.guestQrCreated);
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -57,30 +63,30 @@ export default function QrVaoRaScreen() {
     mutationFn: revokeVisitorPass,
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["visitor-passes", familyId] });
-      toast.success("Đã thu hồi mã");
+      toast.success(c.qrRevoked);
     },
     onError: (e: Error) => toast.error(e.message),
   });
 
   return (
     <Screen contentStyle={{ paddingTop: 0 }}>
-      <PageHeader title="QR ra vào khách" back="/(tabs)/gia-dinh" />
+      <PageHeader title={qr.title} back="/(tabs)/gia-dinh" />
 
       <Pressable
         style={styles.scanLink}
         onPress={() => router.push({ pathname: "/quet-ma", params: { type: "visitor" } })}
       >
         <ScanLine color={colors.brand} size={20} />
-        <Text style={styles.scanText}>Quét mã khách tại cổng</Text>
+        <Text style={styles.scanText}>{qr.scanAtGate}</Text>
       </Pressable>
 
-      <SectionHeader title="Tạo mã mới" />
-      <TextField label="Tên khách" value={guestName} onChangeText={setGuestName} />
-      <TextField label="SĐT (tuỳ chọn)" value={guestPhone} onChangeText={setGuestPhone} />
-      <TextField label="Mục đích" value={purpose} onChangeText={setPurpose} />
-      <TextField label="Hiệu lực (giờ)" value={hours} onChangeText={setHours} keyboardType="numeric" />
+      <SectionHeader title={qr.create} />
+      <TextField label={c.guestName} value={guestName} onChangeText={setGuestName} />
+      <TextField label={c.guestPhone} value={guestPhone} onChangeText={setGuestPhone} />
+      <TextField label={c.purpose} value={purpose} onChangeText={setPurpose} />
+      <TextField label={c.validityHours} value={hours} onChangeText={setHours} keyboardType="numeric" />
       <PrimaryButton
-        label="Tạo QR khách"
+        label={c.createGuestQr}
         onPress={() => createMut.mutate()}
         disabled={!guestName.trim() || createMut.isPending}
         loading={createMut.isPending}
@@ -91,29 +97,29 @@ export default function QrVaoRaScreen() {
           <Text style={styles.passTitle}>{newPass.guest_name}</Text>
           <QRCode value={newPass.pass_code} size={160} />
           <Text selectable style={styles.code}>{newPass.pass_code}</Text>
-          <Pressable onPress={() => Share.share({ message: `Mã vào: ${newPass.pass_code}` })}>
-            <Text style={styles.share}>Chia sẻ mã</Text>
+          <Pressable onPress={() => Share.share({ message: qr.shareMessage(newPass.pass_code) })}>
+            <Text style={styles.share}>{qr.shareCode}</Text>
           </Pressable>
         </Card>
       )}
 
-      <SectionHeader title="Mã đã tạo" />
+      <SectionHeader title={qr.created} />
       {q.isLoading && <LoadingState />}
-      {(q.data ?? []).length === 0 && !q.isLoading && <EmptyState title="Chưa có mã khách" />}
+      {(q.data ?? []).length === 0 && !q.isLoading && <EmptyState title={c.noGuestCodes} />}
       {(q.data ?? []).map((p) => (
         <Card key={p.id} style={styles.passRow}>
           <View style={{ flex: 1 }}>
             <Text style={styles.passName}>{p.guest_name}</Text>
             <Text style={styles.passMeta}>
-              {p.pass_code} · {p.status} · đến {new Date(p.valid_until).toLocaleString("vi-VN")}
+              {p.pass_code} · {p.status} · {qr.validUntil(formatDateTime(p.valid_until, locale))}
             </Text>
           </View>
           {p.status === "active" && (
             <Pressable
               onPress={() =>
-                Alert.alert("Thu hồi mã?", p.guest_name, [
-                  { text: "Huỷ", style: "cancel" },
-                  { text: "Thu hồi", style: "destructive", onPress: () => revokeMut.mutate({ id: p.id }) },
+                appAlert(c.revokeConfirm(p.guest_name), p.guest_name, [
+                  { text: c.cancel, style: "cancel" },
+                  { text: c.revoke, style: "destructive", onPress: () => revokeMut.mutate({ id: p.id }) },
                 ])
               }
             >

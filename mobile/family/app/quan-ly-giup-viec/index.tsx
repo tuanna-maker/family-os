@@ -17,23 +17,28 @@ import {
   toggleHelperTask,
 } from "@mobile/api/helpers";
 import { toast } from "@mobile/utils/toast";
+import { useI18n } from "@mobile/i18n/useI18n";
+import { formatCurrency } from "@mobile/i18n/format";
 import { useTheme } from "@mobile/theme/themeStore";
 import { useThemedStyles } from "@mobile/theme/useThemedStyles";
 import { cardShadow, radius } from "@mobile/theme/colors";
-
-function formatSalary(value: number | null | undefined) {
-  if (value == null || Number.isNaN(value)) return "Chưa cập nhật";
-  return `${value.toLocaleString("vi-VN")}đ`;
-}
+import { displayHelperRole } from "@mobile/utils/displayContent";
 
 export default function GiupViecScreen() {
   const router = useRouter();
   const { colors } = useTheme();
+  const { locale, s } = useI18n();
+  const hk = s.screens.housekeeping;
   const styles = useGiupViecStyles();
   const { familyId } = useFamilyContext();
   const qc = useQueryClient();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [qrToken, setQrToken] = useState<string | null>(null);
+
+  const formatSalary = (value: number | null | undefined) => {
+    if (value == null || Number.isNaN(value)) return hk.salaryNotSet;
+    return formatCurrency(value, locale);
+  };
 
   const helpersQ = useQuery({
     queryKey: ["family-helpers", familyId],
@@ -59,7 +64,7 @@ export default function GiupViecScreen() {
     mutationFn: (kind: "check_in" | "check_out") => issueHelperShiftToken({ helper_id: activeId!, kind }),
     onSuccess: (res) => {
       setQrToken(res.token);
-      toast.success("Đã tạo mã QR ca");
+      toast.success(hk.qrCreated);
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -77,24 +82,27 @@ export default function GiupViecScreen() {
         status: "present",
       }),
     onSuccess: () => {
-      toast.success("Đã điểm danh");
+      toast.success(hk.markedPresent);
       qc.invalidateQueries({ queryKey: ["helper-bundle"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const attendanceStatus =
+    todayAtt?.status === "present" ? hk.present : todayAtt?.status ?? hk.notMarked;
+
   return (
     <Screen contentStyle={{ paddingTop: 0 }}>
-      <PageHeader eyebrow="Gia đình" title="Quản lý giúp việc" back="/(tabs)/gia-dinh" />
+      <PageHeader eyebrow={s.common.familyLabel} title={hk.manageTitle} back="/(tabs)/gia-dinh" />
 
       <Pressable style={styles.addBtn} onPress={() => router.push("/quan-ly-giup-viec/them?type=helper")}>
         <Plus color={colors.white} size={18} />
-        <Text style={styles.addText}>Thêm giúp việc</Text>
+        <Text style={styles.addText}>{hk.addHelper}</Text>
       </Pressable>
 
       {helpersQ.isLoading && <LoadingState />}
       {helpers.length === 0 && !helpersQ.isLoading && (
-        <EmptyState title="Chưa có hồ sơ giúp việc" description="Thêm người giúp việc để quản lý ca và QR" />
+        <EmptyState title={hk.noHelperProfile} description={hk.noHelperProfileDesc} />
       )}
 
       {helpers.length > 0 && (
@@ -122,21 +130,21 @@ export default function GiupViecScreen() {
             <Card style={styles.profileCard}>
               <Text style={styles.name}>{selected.name}</Text>
               <Text style={styles.sub}>
-                {selected.role ?? "Giúp việc"} · {selected.phone ?? "—"}
+                {displayHelperRole(selected.role, locale) || hk.defaultRole} · {selected.phone ?? "—"}
               </Text>
-              <Text style={styles.sub}>Lương: {formatSalary(selected.salary)}</Text>
+              <Text style={styles.sub}>{hk.salaryFormatted(formatSalary(selected.salary))}</Text>
               <Pressable onPress={() => router.push(`/quan-ly-giup-viec/them?type=helper&id=${selected.id}`)}>
-                <Text style={styles.link}>Sửa hồ sơ</Text>
+                <Text style={styles.link}>{hk.editProfile}</Text>
               </Pressable>
             </Card>
           )}
 
           <SectionHeader
-            title="Việc hôm nay"
+            title={hk.todayTasks}
             onAction={() => router.push(`/quan-ly-giup-viec/them?type=task&helperId=${activeId}`)}
           />
           {tasks.length === 0 ? (
-            <Text style={styles.emptyTasks}>Chưa có việc hôm nay. Nhấn + Thêm để tạo công việc.</Text>
+            <Text style={styles.emptyTasks}>{hk.noTasksToday}</Text>
           ) : (
             tasks.map((t) => (
               <Card key={t.id} style={styles.taskRow}>
@@ -151,26 +159,24 @@ export default function GiupViecScreen() {
             ))
           )}
 
-          <SectionHeader title="Điểm danh" />
+          <SectionHeader title={hk.attendance} />
           <Card style={styles.attendanceCard}>
             <Text style={styles.sub}>
-              Hôm nay:{" "}
-              <Text style={styles.attStatus}>
-                {todayAtt?.status === "present" ? "Có mặt" : todayAtt?.status ?? "Chưa chấm"}
-              </Text>
+              {hk.todayLabel}{" "}
+              <Text style={styles.attStatus}>{attendanceStatus}</Text>
             </Text>
-            <PrimaryButton label="Điểm danh có mặt" onPress={() => markPresent.mutate()} loading={markPresent.isPending} />
+            <PrimaryButton label={hk.markPresent} onPress={() => markPresent.mutate()} loading={markPresent.isPending} />
           </Card>
 
-          <SectionHeader title="QR ca làm" />
+          <SectionHeader title={hk.shiftQr} />
           <View style={styles.qrRow}>
             <Pressable style={styles.qrBtn} onPress={() => issueQr.mutate("check_in")}>
               <QrCode color={colors.brand} size={20} />
-              <Text style={styles.qrBtnText}>Vào ca</Text>
+              <Text style={styles.qrBtnText}>{hk.checkIn}</Text>
             </Pressable>
             <Pressable style={styles.qrBtn} onPress={() => issueQr.mutate("check_out")}>
               <QrCode color={colors.warning} size={20} />
-              <Text style={styles.qrBtnText}>Tan ca</Text>
+              <Text style={styles.qrBtnText}>{hk.checkOut}</Text>
             </Pressable>
           </View>
           {qrToken && (

@@ -85,3 +85,36 @@ export async function createServiceBooking(data: {
   if (error) throw new Error(error.message);
   return row;
 }
+
+export type ServiceBookingRow = {
+  id: string;
+  service_id: string;
+  status: string;
+  scheduled_at: string | null;
+  notes: string | null;
+  created_at: string;
+  community_services: { slug: string; name: string; icon: string } | null;
+};
+
+export async function listMyServiceBookings() {
+  const { supabase, userId } = await requireUser();
+  const { data, error } = await supabase
+    .from("service_bookings")
+    .select("id,service_id,status,scheduled_at,notes,created_at,community_services(slug,name,icon)")
+    .eq("requested_by", userId)
+    .order("created_at", { ascending: false })
+    .limit(10);
+  if (error) throw new Error(error.message);
+  return (data ?? []) as ServiceBookingRow[];
+}
+
+export async function cancelServiceBooking(data: { id: string }) {
+  const { supabase, userId } = await requireUser();
+  const { error } = await supabase
+    .from("service_bookings")
+    .update({ status: "cancelled" })
+    .eq("id", data.id)
+    .eq("requested_by", userId);
+  if (error) throw new Error(error.message);
+  return { ok: true as const };
+}

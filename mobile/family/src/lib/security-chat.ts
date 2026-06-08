@@ -1,5 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getSupabase } from "@shared/supabase/get-client";
+import { getLocaleRef } from "@mobile/i18n/localeRef";
+import { getStrings } from "@mobile/i18n/useI18n";
 
 export type SecurityChatMessage = {
   id: string;
@@ -109,13 +111,13 @@ export async function sendSecurityChatMessage(data: { body: string; family_id?: 
     const guard: SecurityChatMessage = {
       id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
       sender_role: "guard",
-      body: "Bảo an đã nhận tin. Đội trực sẽ phản hồi trong vài phút.",
+      body: getStrings(getLocaleRef()).security.chat.guardAutoReply,
       created_at: new Date(Date.now() + 400).toISOString(),
     };
     await saveLocal(user.id, [...local, resident, guard]);
     return resident;
   }
   if (error) throw new Error(error.message);
-  if (!row) throw new Error("Không gửi được tin nhắn");
+  if (!row) throw new Error(getStrings(getLocaleRef()).common.sendMessageFailed);
   return row;
 }

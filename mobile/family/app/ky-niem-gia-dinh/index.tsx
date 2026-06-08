@@ -21,12 +21,14 @@ import { momentQueryKeys } from "@mobile/constants/momentQueryKeys";
 import { useTheme } from "@mobile/theme/themeStore";
 import { useThemedStyles } from "@mobile/theme/useThemedStyles";
 import { cardShadow, radius } from "@mobile/theme/colors";
+import { useI18n } from "@mobile/i18n/useI18n";
+import type { I18nStrings } from "@mobile/i18n/strings";
 
-function groupByMonth(moments: Moment[]) {
+function groupByMonth(moments: Moment[], common: I18nStrings["common"]) {
   const map = new Map<string, Moment[]>();
   for (const m of moments) {
     const d = new Date(m.taken_at);
-    const label = `Tháng ${d.getMonth() + 1}, ${d.getFullYear()}`;
+    const label = common.monthYear(d.getMonth() + 1, d.getFullYear());
     if (!map.has(label)) map.set(label, []);
     map.get(label)!.push(m);
   }
@@ -80,6 +82,9 @@ export default function KyNiemScreen() {
   const router = useRouter();
   const { familyId, isLoading: famLoading } = useFamilyContext();
   const { colors } = useTheme();
+  const { s } = useI18n();
+  const mem = s.screens.memories;
+  const c = s.common;
   const styles = useKyNiemStyles();
 
   const q = useQuery({
@@ -94,7 +99,7 @@ export default function KyNiemScreen() {
     }, [familyId, q.refetch]),
   );
 
-  const grouped = useMemo(() => groupByMonth(q.data?.moments ?? []), [q.data]);
+  const grouped = useMemo(() => groupByMonth(q.data?.moments ?? [], c), [q.data, c]);
 
   const onRefresh = useCallback(() => {
     void q.refetch();
@@ -103,22 +108,22 @@ export default function KyNiemScreen() {
   return (
     <Screen scroll={false} contentStyle={{ paddingTop: 0 }}>
       <PageHeader
-        eyebrow="Family Core"
-        title="Kỷ niệm gia đình"
-        subtitle="Lưu lại từng khoảnh khắc đáng nhớ"
+        eyebrow={c.familyCore}
+        title={mem.title}
+        subtitle={mem.subtitle}
         back="/(tabs)/gia-dinh"
         right={
           <View style={styles.headerActions}>
             <HeaderIconButton
               variant="outline"
-              accessibilityLabel="Album"
+              accessibilityLabel={mem.albumList}
               onPress={() => router.push("/ky-niem-gia-dinh/album")}
             >
               <FolderOpen color={colors.brand} size={20} />
             </HeaderIconButton>
             <HeaderIconButton
               variant="primary"
-              accessibilityLabel="Tải ảnh"
+              accessibilityLabel={mem.upload}
               onPress={() => router.push("/ky-niem-gia-dinh/upload")}
             >
               <Plus color={colors.white} size={20} />
@@ -129,18 +134,18 @@ export default function KyNiemScreen() {
 
       <View style={styles.privacy}>
         <Lock color={colors.success} size={14} />
-        <Text style={styles.privacyText}>Riêng tư · Chỉ thành viên gia đình mới xem được</Text>
+        <Text style={styles.privacyText}>{mem.privacyNote}</Text>
       </View>
 
       {famLoading || q.isLoading ? (
         <LoadingState />
       ) : !familyId ? (
-        <EmptyState title="Chưa có hộ gia đình" />
+        <EmptyState title={c.noFamily} />
       ) : grouped.length === 0 ? (
         <EmptyState
-          title="Chưa có ảnh nào"
-          description="Tải ảnh đầu tiên lên album gia đình."
-          actionLabel="Tải ảnh"
+          title={c.noPhotos}
+          description={c.noPhotosDesc}
+          actionLabel={mem.upload}
           onAction={() => router.push("/ky-niem-gia-dinh/upload")}
         />
       ) : (

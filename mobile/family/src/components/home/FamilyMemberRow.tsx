@@ -1,14 +1,17 @@
 import { Image, Text, View } from "react-native";
 import { ChevronRight } from "lucide-react-native";
 import type { FamilyTodayMember } from "@mobile/api/family-today";
+import { localeTag } from "@mobile/i18n/format";
+import { useI18n } from "@mobile/i18n/useI18n";
 import { useTheme } from "@mobile/theme/themeStore";
 import { useThemedStyles } from "@mobile/theme/useThemedStyles";
 import { radius } from "@mobile/theme/colors";
-import { colorFromKey, kindMeta, statusToneStyle } from "./homeVisuals";
+import { colorFromKey, getKindMeta, statusToneStyle } from "./homeVisuals";
 
 export function FamilyMemberRow({ member }: { member: FamilyTodayMember }) {
   const { colors } = useTheme();
-  const meta = kindMeta[member.kind];
+  const { locale } = useI18n();
+  const meta = getKindMeta(locale)[member.kind];
   const tone = statusToneStyle(colors, member.tone);
   const styles = useThemedStyles((c, fontScale) => ({
     row: {
@@ -62,7 +65,7 @@ export function FamilyMemberRow({ member }: { member: FamilyTodayMember }) {
     .join("")
     .toUpperCase();
   const dueLabel = member.due_at
-    ? new Date(member.due_at).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })
+    ? new Date(member.due_at).toLocaleTimeString(localeTag(locale), { hour: "2-digit", minute: "2-digit" })
     : null;
   const MetaIcon = meta.Icon;
 

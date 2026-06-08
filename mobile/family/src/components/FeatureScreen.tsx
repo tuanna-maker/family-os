@@ -6,6 +6,7 @@ import { Card, PageHeader } from "@mobile/components/ui";
 import { useTheme } from "@mobile/theme/themeStore";
 import { useThemedStyles } from "@mobile/theme/useThemedStyles";
 import { useFamilyContext } from "@mobile/hooks/useFamilyContext";
+import { useI18n } from "@mobile/i18n/useI18n";
 
 export function FeatureScreen({
   title,
@@ -29,6 +30,7 @@ export function FeatureScreen({
     err: { color: c.emergency },
     muted: { color: c.muted, lineHeight: 20 },
   }));
+  const { s } = useI18n();
   const q = useQuery({ queryKey, queryFn });
 
   return (
@@ -38,13 +40,13 @@ export function FeatureScreen({
         <ActivityIndicator color={colors.brand} />
       ) : q.isError ? (
         <Card>
-          <Text style={styles.err}>Không tải được dữ liệu.</Text>
+          <Text style={styles.err}>{s.common.loadDataError}</Text>
         </Card>
       ) : q.data ? (
         render(q.data)
       ) : (
         <Card>
-          <Text style={styles.muted}>{empty ?? "Chưa có dữ liệu."}</Text>
+          <Text style={styles.muted}>{empty ?? `${s.common.noData}.`}</Text>
         </Card>
       )}
     </Screen>
@@ -53,6 +55,7 @@ export function FeatureScreen({
 
 export function StubFeature({ title, note }: { title: string; note?: string }) {
   const { familyId, isLoading } = useFamilyContext();
+  const { s } = useI18n();
   const styles = useThemedStyles((c) => ({
     muted: { color: c.muted, lineHeight: 20 },
     stub: { gap: 10 },
@@ -64,10 +67,7 @@ export function StubFeature({ title, note }: { title: string; note?: string }) {
       <PageHeader title={title} back="/(tabs)/gia-dinh" />
       <Card style={styles.stub}>
         <Text style={styles.stubTitle}>{title}</Text>
-        <Text style={styles.muted}>
-          {note ??
-            "Màn hình chi tiết đang được port từ app web. API Supabase đã sẵn sàng — UI native sẽ bổ sung trong các sprint tiếp theo."}
-        </Text>
+        <Text style={styles.muted}>{note ?? s.common.stubNote}</Text>
         {!isLoading && familyId ? (
           <Text style={styles.meta}>family_id: {familyId.slice(0, 8)}…</Text>
         ) : null}

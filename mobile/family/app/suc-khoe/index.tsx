@@ -29,43 +29,54 @@ import {
   PILOT_INSIGHTS,
   PILOT_MEDS,
   avatarFor,
-  formatApptShort,
   isApptUpcoming,
-  medCountdown,
 } from "@mobile/components/health/healthVisuals";
 import { useFamilyContext } from "@mobile/hooks/useFamilyContext";
 import { listHealth } from "@mobile/api/health";
 import { useTheme } from "@mobile/theme/themeStore";
 import { useThemedStyles } from "@mobile/theme/useThemedStyles";
 import { cardShadow, radius } from "@mobile/theme/colors";
-
-const QUICK_ACTIONS: {
-  icon: LucideIcon;
-  label: string;
-  tintKey: "tintBlue" | "tintGreen" | "tintPurple" | "tintOrange";
-  colorKey: "brand" | "success" | "pink" | "warning";
-  href: string;
-}[] = [
-  { icon: Stethoscope, label: "Đặt lịch khám", tintKey: "tintBlue", colorKey: "brand", href: "/suc-khoe/dat-lich" },
-  { icon: MessageCircle, label: "Tư vấn bác sĩ", tintKey: "tintGreen", colorKey: "success", href: "/suc-khoe/tu-van" },
-  { icon: Pill, label: "Nhắc uống thuốc", tintKey: "tintPurple", colorKey: "pink", href: "/suc-khoe/nhac-thuoc" },
-  { icon: FolderHeart, label: "Hồ sơ sức khỏe", tintKey: "tintOrange", colorKey: "warning", href: "/suc-khoe/ho-so" },
-];
-
-const VITALS = [
-  { key: "heart", icon: Heart, label: "Nhịp tim TB", value: "72", unit: "bpm", status: "Bình thường" },
-  { key: "sleep", icon: Shield, label: "Giấc ngủ TB", value: "7h 32m", unit: "", status: "Tốt" },
-  { key: "steps", icon: ShieldCheck, label: "Số bước TB", value: "8.245", unit: "", status: "Tốt" },
-  { key: "energy", icon: Heart, label: "Năng lượng", value: "85", unit: "/100", status: "Tốt" },
-];
+import { useI18n } from "@mobile/i18n/useI18n";
+import { formatApptTime, formatMedCountdown } from "@mobile/i18n/format";
 
 export default function SucKhoeScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
   const styles = useHealthStyles();
+  const { locale, s } = useI18n();
+  const c = s.common;
+  const h = s.screens.health;
+  const ov = h.overview;
+  const cal = s.screens.calendar;
   const { familyId } = useFamilyContext();
   const [activeMember, setActiveMember] = useState("all");
+
+  const quickActions = useMemo(
+    (): {
+      icon: LucideIcon;
+      label: string;
+      tintKey: "tintBlue" | "tintGreen" | "tintPurple" | "tintOrange";
+      colorKey: "brand" | "success" | "pink" | "warning";
+      href: string;
+    }[] => [
+      { icon: Stethoscope, label: h.bookAppt, tintKey: "tintBlue", colorKey: "brand", href: "/suc-khoe/dat-lich" },
+      { icon: MessageCircle, label: ov.consultDoctor, tintKey: "tintGreen", colorKey: "success", href: "/suc-khoe/tu-van" },
+      { icon: Pill, label: h.medicine, tintKey: "tintPurple", colorKey: "pink", href: "/suc-khoe/nhac-thuoc" },
+      { icon: FolderHeart, label: h.profile, tintKey: "tintOrange", colorKey: "warning", href: "/suc-khoe/ho-so" },
+    ],
+    [h, ov],
+  );
+
+  const vitals = useMemo(
+    () => [
+      { key: "heart", icon: Heart, label: ov.heartRateAvg, value: "72", unit: "bpm", status: ov.normal },
+      { key: "sleep", icon: Shield, label: ov.sleepAvg, value: "7h 32m", unit: "", status: ov.good },
+      { key: "steps", icon: ShieldCheck, label: ov.stepsAvg, value: "8.245", unit: "", status: ov.good },
+      { key: "energy", icon: Heart, label: ov.energy, value: "85", unit: "/100", status: ov.good },
+    ],
+    [ov],
+  );
 
   const q = useQuery({
     queryKey: ["health-overview", familyId],
@@ -88,7 +99,7 @@ export default function SucKhoeScreen() {
 
   const memberTabs = useMemo(
     () => [
-      { id: "all", name: "Cả nhà", img: MEMBER_AVATAR_URL["Cả nhà"] },
+      { id: "all", name: cal.groups.all, img: MEMBER_AVATAR_URL["Cả nhà"] },
       ...members.map((name) => ({
         id: name,
         name,
@@ -96,7 +107,7 @@ export default function SucKhoeScreen() {
         emoji: avatarFor(name),
       })),
     ],
-    [members],
+    [members, cal.groups.all],
   );
 
   const filterMember = <T extends { member_name?: string; name?: string }>(rows: T[]) =>
@@ -135,17 +146,17 @@ export default function SucKhoeScreen() {
     const out: { emoji: string; text: string }[] = [];
     const missing = members.filter((n) => !data.profiles.some((p) => p.name === n));
     if (missing.length > 0) {
-      out.push({ emoji: "📝", text: `${missing.length} thành viên chưa có hồ sơ sức khỏe.` });
+      out.push({ emoji: "📝", text: ov.membersNoProfile(missing.length) });
     }
     if (upcomingAppts.length > 0) {
-      out.push({ emoji: "🩺", text: `${upcomingAppts.length} lịch khám sắp tới trong tuần.` });
+      out.push({ emoji: "🩺", text: ov.apptsThisWeek(upcomingAppts.length) });
     }
-    const allergies = data.profiles.filter((p) => (p as { allergies?: string }).allergies?.trim());
-    if (allergies.length > 0) {
-      out.push({ emoji: "⚠️", text: `${allergies.length} thành viên có ghi nhận dị ứng.` });
+    const allergyProfiles = data.profiles.filter((p) => (p as { allergies?: string }).allergies?.trim());
+    if (allergyProfiles.length > 0) {
+      out.push({ emoji: "⚠️", text: ov.membersWithAllergy(allergyProfiles.length) });
     }
     return out.length > 0 ? out : PILOT_INSIGHTS;
-  }, [data, members, upcomingAppts, usingPilot]);
+  }, [data, members, upcomingAppts, usingPilot, ov]);
 
   const activity = useMemo(() => {
     if (usingPilot) return PILOT_ACTIVITY;
@@ -153,19 +164,19 @@ export default function SucKhoeScreen() {
     for (const a of upcomingAppts.slice(0, 1)) {
       items.push({
         emoji: "📅",
-        text: `Lịch khám ${a.member_name}${a.doctor ? ` — ${a.doctor}` : ""}`,
-        time: formatApptShort(a.scheduled_at).split(" • ")[0] ?? "Sắp tới",
+        text: ov.activityAppt(a.member_name, a.doctor),
+        time: formatApptTime(a.scheduled_at, locale).split(" · ")[0] ?? ov.upcoming,
       });
     }
     for (const m of todayMeds.slice(0, 1)) {
       items.push({
         emoji: "💊",
-        text: `${m.member_name} uống ${m.medicine}`,
+        text: ov.activityMed(m.member_name, m.medicine),
         time: (m.time_of_day ?? "08:00").slice(0, 5),
       });
     }
     return items.length > 0 ? items : PILOT_ACTIVITY;
-  }, [usingPilot, upcomingAppts, todayMeds]);
+  }, [usingPilot, upcomingAppts, todayMeds, ov, locale]);
 
   if (q.isLoading) {
     return (
@@ -182,10 +193,10 @@ export default function SucKhoeScreen() {
           <ChevronLeft color={colors.foreground} size={22} />
         </Pressable>
         <View style={{ flex: 1, minWidth: 0 }}>
-          <Text style={styles.pageTitle}>Sức khỏe gia đình</Text>
+          <Text style={styles.pageTitle}>{h.title}</Text>
           <View style={styles.subRow}>
             <Shield color={colors.brand} size={14} />
-            <Text style={styles.subtitle}>Chăm sóc sức khỏe – An tâm mỗi ngày</Text>
+            <Text style={styles.subtitle}>{ov.tagline}</Text>
           </View>
         </View>
         <Pressable style={styles.bellBtn} onPress={() => router.push("/suc-khoe/nhac-thuoc" as never)}>
@@ -221,29 +232,27 @@ export default function SucKhoeScreen() {
             <View style={[styles.memberAvatar, styles.addAvatar]}>
               <Plus color={colors.muted} size={22} />
             </View>
-            <Text style={styles.memberLabel}>Thêm</Text>
+            <Text style={styles.memberLabel}>{c.add}</Text>
           </Pressable>
         </View>
       </ScrollView>
 
       <Card style={styles.statusCard}>
-        <Text style={styles.statusTitle}>Tình trạng sức khỏe tổng quan</Text>
+        <Text style={styles.statusTitle}>{ov.statusTitle}</Text>
         <View style={styles.statusRow}>
           <ShieldCheck color={notifCount === 0 ? colors.success : colors.warning} size={24} />
           <Text style={[styles.statusValue, { color: notifCount === 0 ? colors.success : colors.warning }]}>
-            {notifCount === 0 ? "Ổn định" : "Cần chú ý"}
+            {notifCount === 0 ? ov.stable : ov.needsAttention}
           </Text>
         </View>
         <Text style={styles.statusHint}>
-          {notifCount === 0
-            ? "Không có cảnh báo nào."
-            : `${notifCount} việc cần theo dõi trong 24h tới`}
+          {notifCount === 0 ? ov.noAlerts : ov.tasksToTrack(notifCount)}
         </Text>
         <Pressable onPress={() => router.push("/suc-khoe/ho-so" as never)}>
-          <Text style={styles.statusLink}>Quản lý hồ sơ chi tiết →</Text>
+          <Text style={styles.statusLink}>{ov.manageProfileLink}</Text>
         </Pressable>
         <View style={styles.vitalsGrid}>
-          {VITALS.map((v) => {
+          {vitals.map((v) => {
             const Icon = v.icon;
             return (
               <View key={v.key} style={styles.vitalTile}>
@@ -264,11 +273,11 @@ export default function SucKhoeScreen() {
         </View>
       </Card>
 
-      <Text style={styles.sectionTitle}>Thao tác nhanh</Text>
+      <Text style={styles.sectionTitle}>{ov.quickActions}</Text>
       <View style={styles.quickGrid}>
-        {QUICK_ACTIONS.map((a) => (
+        {quickActions.map((a) => (
           <Pressable
-            key={a.label}
+            key={a.href}
             style={styles.quickTile}
             onPress={() => router.push(a.href as never)}
           >
@@ -283,13 +292,13 @@ export default function SucKhoeScreen() {
       <View style={styles.twoCol}>
         <Card style={styles.halfCard}>
           <View style={styles.cardHead}>
-            <Text style={styles.cardTitle}>Lịch khám sắp tới</Text>
+            <Text style={styles.cardTitle}>{ov.upcomingAppts}</Text>
             <Pressable onPress={() => router.push("/suc-khoe/lich-kham" as never)}>
-              <Text style={styles.cardLink}>Xem tất cả</Text>
+              <Text style={styles.cardLink}>{c.seeAll}</Text>
             </Pressable>
           </View>
           {upcomingAppts.length === 0 ? (
-            <Text style={styles.emptyText}>Chưa có lịch khám sắp tới.</Text>
+            <Text style={styles.emptyText}>{ov.noUpcomingAppt}</Text>
           ) : (
             upcomingAppts.map((a) => (
               <Pressable
@@ -300,12 +309,12 @@ export default function SucKhoeScreen() {
                 <Text style={styles.listEmoji}>{avatarFor(a.member_name)}</Text>
                 <View style={{ flex: 1, minWidth: 0 }}>
                   <Text style={styles.listTitle} numberOfLines={1}>
-                    {a.doctor ?? "Khám tổng quát"}
+                    {a.doctor ?? ov.generalCheckup}
                   </Text>
                   <Text style={styles.listSub} numberOfLines={1}>
                     👤 {a.member_name}
                   </Text>
-                  <Text style={styles.listSub}>{formatApptShort(a.scheduled_at)}</Text>
+                  <Text style={styles.listSub}>{formatApptTime(a.scheduled_at, locale)}</Text>
                 </View>
                 <ChevronRight color={colors.muted} size={14} />
               </Pressable>
@@ -315,13 +324,13 @@ export default function SucKhoeScreen() {
 
         <Card style={styles.halfCard}>
           <View style={styles.cardHead}>
-            <Text style={styles.cardTitle}>Nhắc uống thuốc</Text>
+            <Text style={styles.cardTitle}>{ov.medReminders}</Text>
             <Pressable onPress={() => router.push("/suc-khoe/nhac-thuoc" as never)}>
-              <Text style={styles.cardLink}>Xem tất cả</Text>
+              <Text style={styles.cardLink}>{c.seeAll}</Text>
             </Pressable>
           </View>
           {todayMeds.length === 0 ? (
-            <Text style={styles.emptyText}>Chưa có nhắc thuốc.</Text>
+            <Text style={styles.emptyText}>{ov.noMedReminder}</Text>
           ) : (
             todayMeds.map((m) => (
               <Pressable
@@ -337,7 +346,9 @@ export default function SucKhoeScreen() {
                   <Text style={styles.listSub} numberOfLines={1}>
                     {m.member_name}
                   </Text>
-                  <Text style={styles.listSub}>Còn {medCountdown(m.time_of_day)}</Text>
+                  <Text style={styles.listSub}>
+                    {ov.medRemaining(formatMedCountdown(m.time_of_day, locale))}
+                  </Text>
                 </View>
                 <Text style={styles.medTime}>{(m.time_of_day ?? "08:00").slice(0, 5)}</Text>
               </Pressable>
@@ -351,7 +362,7 @@ export default function SucKhoeScreen() {
           <Brain color={colors.pink} size={24} />
         </View>
         <View style={{ flex: 1 }}>
-          <Text style={[styles.insightTitle, { color: colors.pink }]}>Tổng hợp sức khỏe</Text>
+          <Text style={[styles.insightTitle, { color: colors.pink }]}>{ov.healthSummary}</Text>
           {insights.map((i, k) => (
             <Text key={k} style={styles.insightLine}>
               {i.emoji} {i.text}
@@ -361,9 +372,9 @@ export default function SucKhoeScreen() {
       </View>
 
       <View style={styles.sectionHead}>
-        <Text style={styles.sectionTitle}>Hồ sơ sức khỏe</Text>
+        <Text style={styles.sectionTitle}>{ov.healthRecords}</Text>
         <Pressable onPress={() => router.push("/suc-khoe/ho-so" as never)}>
-          <Text style={styles.cardLink}>Xem tất cả</Text>
+          <Text style={styles.cardLink}>{c.seeAll}</Text>
         </Pressable>
       </View>
       <View style={{ marginBottom: 20 }}>
@@ -371,9 +382,9 @@ export default function SucKhoeScreen() {
       </View>
 
       <View style={styles.sectionHead}>
-        <Text style={styles.sectionTitle}>Hoạt động gần đây</Text>
+        <Text style={styles.sectionTitle}>{ov.recentActivity}</Text>
         <Pressable onPress={() => router.push("/suc-khoe/hoat-dong" as never)}>
-          <Text style={styles.cardLink}>Xem tất cả</Text>
+          <Text style={styles.cardLink}>{c.seeAll}</Text>
         </Pressable>
       </View>
       {activity.map((a, i) => (
@@ -387,7 +398,7 @@ export default function SucKhoeScreen() {
       ))}
 
       {usingPilot && (
-        <Text style={styles.pilotHint}>Dữ liệu mẫu — thêm hồ sơ thật trong Quản lý sức khỏe</Text>
+        <Text style={styles.pilotHint}>{ov.pilotHint}</Text>
       )}
       <View style={{ height: 32 }} />
     </Screen>

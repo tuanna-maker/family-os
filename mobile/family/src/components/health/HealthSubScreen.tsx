@@ -1,10 +1,12 @@
 import type { ReactNode } from "react";
-import { Alert, Pressable, Text, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
+import { appAlert } from "@mobile/utils/alert";
 import { ChevronRight, Trash2 } from "lucide-react-native";
 import type { LucideIcon } from "lucide-react-native";
 import { Screen } from "@mobile/components/Screen";
 import { Card, PageHeader, PrimaryButton } from "@mobile/components/ui";
 import { LoadingState, EmptyState } from "@mobile/components/states";
+import { useI18n } from "@mobile/i18n/useI18n";
 import { useTheme } from "@mobile/theme/themeStore";
 import { useThemedStyles } from "@mobile/theme/useThemedStyles";
 import { cardShadow, radius } from "@mobile/theme/colors";
@@ -48,6 +50,7 @@ export function HealthSubScreen({
   children?: ReactNode;
 }) {
   const styles = useSubStyles();
+  const { s } = useI18n();
 
   if (loading) {
     return (
@@ -70,7 +73,7 @@ export function HealthSubScreen({
       ) : null}
       {children}
       {showEmpty ? (
-        <EmptyState title={emptyTitle ?? "Chưa có dữ liệu"} description={emptyDescription} />
+        <EmptyState title={emptyTitle ?? s.common.noData} description={emptyDescription} />
       ) : null}
       {items?.map((item) => (
         <HealthListCard key={item.id} item={item} styles={styles} />
@@ -89,12 +92,13 @@ function HealthListCard({
   styles: ReturnType<typeof useSubStyles>;
 }) {
   const { colors } = useTheme();
+  const { s } = useI18n();
 
   const confirmDelete = () => {
     if (!item.onDelete) return;
-    Alert.alert("Xóa?", item.deleteLabel ?? item.title, [
-      { text: "Huỷ", style: "cancel" },
-      { text: "Xóa", style: "destructive", onPress: item.onDelete },
+    appAlert(s.common.deleteQuestion, item.deleteLabel ?? item.title, [
+      { text: s.common.cancel, style: "cancel" },
+      { text: s.common.delete, style: "destructive", onPress: item.onDelete },
     ]);
   };
 

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Linking, Pressable, ScrollView, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { ChevronDown, ChevronUp, ShieldCheck } from "lucide-react-native";
@@ -9,15 +10,17 @@ import { Card } from "@mobile/components/ui";
 import { SectionHeader } from "@mobile/components/SectionHeader";
 import { SecurityRequestsTracker } from "@mobile/components/security/SecurityRequestsTracker";
 import {
-  buildingStatus,
+  getBuildingStatus,
   securityMeta,
-  securityServiceCatalog,
-  securityServiceGrid,
+  getSecurityServiceCatalog,
+  getSecurityServiceGrid,
+  getRequestTypeLabel,
   type SecurityCatalogGroup,
   type SecurityGridItem,
 } from "@mobile/constants/security";
 import { createSecurityRequest } from "@mobile/api/security";
 import { toast } from "@mobile/utils/toast";
+import { useI18n } from "@mobile/i18n/useI18n";
 import { useTheme } from "@mobile/theme/themeStore";
 import { useThemedStyles } from "@mobile/theme/useThemedStyles";
 import { radius } from "@mobile/theme/colors";
@@ -36,10 +39,17 @@ function tintFromKey(colors: ReturnType<typeof useTheme>["colors"], key: Securit
 export default function BaoAnScreen() {
   const router = useRouter();
   const qc = useQueryClient();
+  const insets = useSafeAreaInsets();
   const { colors } = useTheme();
+  const { locale, s } = useI18n();
+  const sec = s.security;
+  const c = s.common;
+  const securityServiceGrid = getSecurityServiceGrid(locale);
+  const securityServiceCatalog = getSecurityServiceCatalog(locale);
+  const buildingStatus = getBuildingStatus(locale);
   const [pending, setPending] = useState<string | null>(null);
   const styles = useThemedStyles((c, fontScale) => ({
-    header: { paddingHorizontal: 16, paddingTop: 8, paddingBottom: 4 },
+    header: { paddingHorizontal: 16, paddingTop: insets.top + 12, paddingBottom: 4 },
     eyebrow: {
       flexDirection: "row" as const,
       alignItems: "center" as const,
@@ -134,10 +144,10 @@ export default function BaoAnScreen() {
       await createSecurityRequest({ request_type: type });
       await qc.invalidateQueries({ queryKey: ["security-requests"] });
       toast.success(
-        `Đã gửi yêu cầu: ${label}. Bảo an phản hồi trong ~${securityMeta.responseTimeMinutes} phút.`,
+        sec.requestSent(label, securityMeta.responseTimeMinutes),
       );
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Không gửi được yêu cầu");
+      toast.error(e instanceof Error ? e.message : c.sendFailed);
     } finally {
       setPending(null);
     }
@@ -160,17 +170,15 @@ export default function BaoAnScreen() {
       <View style={styles.header}>
         <View style={styles.eyebrow}>
           <ShieldCheck color={colors.success} size={14} />
-          <Text style={styles.eyebrowText}>Security Core · Toà nhà an toàn</Text>
+          <Text style={styles.eyebrowText}>{sec.eyebrow}</Text>
         </View>
-        <Text style={styles.title}>Có việc gì, cứ gọi em</Text>
-        <Text style={styles.subtitle}>
-          Đội bảo an phản hồi trung bình trong {securityMeta.responseTimeMinutes} phút
-        </Text>
+        <Text style={styles.title}>{sec.title}</Text>
+        <Text style={styles.subtitle}>{sec.subtitle(securityMeta.responseTimeMinutes)}</Text>
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false}>
         <Pressable
-          onPress={() => trigger("sos", "SOS khẩn cấp")}
+          onPress={() => trigger("sos", getRequestTypeLabel("sos", locale))}
           disabled={pending === "sos"}
           style={{ marginHorizontal: 16, marginBottom: 4 }}
         >
@@ -184,8 +192,8 @@ export default function BaoAnScreen() {
               <Text style={styles.sosEmoji}>🆘</Text>
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={styles.sosTitle}>{pending === "sos" ? "Đang gửi…" : "Gọi SOS khẩn cấp"}</Text>
-              <Text style={styles.sosSub}>Nhấn để kích hoạt ngay</Text>
+              <Text style={styles.sosTitle}>{pending === "sos" ? sec.sosSending : sec.sosCall}</Text>
+              <Text style={styles.sosSub}>{sec.sosTap}</Text>
             </View>
           </LinearGradient>
         </Pressable>
@@ -217,8 +225,8 @@ export default function BaoAnScreen() {
           </View>
 
           <SectionHeader
-            title="Dịch vụ Bảo An"
-            subtitle={`${securityServiceCatalog.length} nhóm`}
+            title={sec.catalogTitle}
+            subtitle={c.groupCount(securityServiceCatalog.length)}
           />
           {securityServiceCatalog.map((group) => (
             <CatalogGroup
@@ -229,7 +237,7 @@ export default function BaoAnScreen() {
             />
           ))}
 
-          <SectionHeader title="Trạng thái tòa nhà" />
+          <SectionHeader title={sec.buildingStatus} />
           <Card>
             {buildingStatus.map((s, i) => (
               <View

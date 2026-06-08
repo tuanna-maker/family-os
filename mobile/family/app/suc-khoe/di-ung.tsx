@@ -2,10 +2,14 @@ import { HealthSubScreen } from "@mobile/components/health/HealthSubScreen";
 import { avatarFor } from "@mobile/components/health/healthVisuals";
 import { useHealthOverview } from "@mobile/hooks/useHealthOverview";
 import { useHealthMutations } from "@mobile/hooks/useHealthMutations";
+import { useI18n } from "@mobile/i18n/useI18n";
 
 const BACK = "/suc-khoe/di-ung";
 
 export default function DiUngScreen() {
+  const { s } = useI18n();
+  const h = s.screens.health;
+  const sp = h.subpage;
   const { isLoading, allergies, profiles } = useHealthOverview();
   const { openForm } = useHealthMutations(BACK);
 
@@ -13,14 +17,14 @@ export default function DiUngScreen() {
 
   return (
     <HealthSubScreen
-      title="Dị ứng"
-      subtitle="Ghi nhận dị ứng thực phẩm, thuốc và môi trường"
+      title={h.allergy}
+      subtitle={sp.allergySub}
       back="/suc-khoe"
       loading={isLoading}
-      actionLabel="Cập nhật dị ứng"
+      actionLabel={sp.updateAllergy}
       onAction={() => openForm({ type: "allergy" })}
-      emptyTitle="Chưa ghi nhận dị ứng"
-      emptyDescription="Thêm thông tin dị ứng vào hồ sơ từng thành viên."
+      emptyTitle={sp.noAllergy}
+      emptyDescription={sp.noAllergyDesc}
       items={allergies.map((a, i) => {
         const pid = profileIdByMember(a.member);
         return {

@@ -12,7 +12,7 @@ export type MyContext = {
   email: string | null;
   profile: { id: string; full_name: string | null; avatar_url: string | null } | null;
   roles: AppRole[];
-  family: { id: string; name: string; apartment: string | null; owner_id: string } | null;
+  family: { id: string; name: string; apartment: string | null; owner_id: string; avatar_url: string | null } | null;
   isAdmin: boolean;
   isSuperAdmin: boolean;
   isSecurity: boolean;
@@ -39,36 +39,47 @@ export async function getMyContext(): Promise<MyContext> {
 
   const roles = (rolesData ?? []).map((r) => r.role as AppRole);
 
-  let { data: family } = await supabase
+  type FamilyRow = {
+    id: string;
+    name: string;
+    apartment: string | null;
+    owner_id: string;
+    avatar_url: string | null;
+  };
+  // families.avatar_url — column exists in DB; generated types may lag
+  const sb = supabase as { from: (table: string) => ReturnType<typeof supabase.from> };
+
+  let { data: familyRaw } = await sb
     .from("families")
-    .select("id, name, apartment, owner_id")
+    .select("id, name, apartment, owner_id, avatar_url")
     .eq("owner_id", userId)
     .maybeSingle();
+  let family = (familyRaw as FamilyRow | null) ?? null;
 
   if (!family) {
     const memberRole = (rolesData ?? []).find((r) => r.family_id);
     if (memberRole?.family_id) {
-      const res = await supabase
+      const res = await sb
         .from("families")
-        .select("id, name, apartment, owner_id")
+        .select("id, name, apartment, owner_id, avatar_url")
         .eq("id", memberRole.family_id)
         .maybeSingle();
-      family = res.data ?? null;
+      family = (res.data as FamilyRow | null) ?? null;
     }
   }
 
   const isSecurity = roles.some((r) => r === "security_admin" || r === "security_staff");
   if (!family && !isSecurity) {
-    const { data: created, error } = await supabase
+    const { data: created, error } = await sb
       .from("families")
       .insert({
         name: profile?.full_name ? `Gia đình ${profile.full_name}` : "Gia đình của tôi",
         owner_id: userId,
       })
-      .select("id, name, apartment, owner_id")
+      .select("id, name, apartment, owner_id, avatar_url")
       .single();
     if (error) throw new Error(error.message);
-    family = created;
+    family = created as FamilyRow;
     await supabase.from("user_roles").insert({
       user_id: userId,
       role: "family_owner",

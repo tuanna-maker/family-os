@@ -3,8 +3,8 @@ import { ChevronLeft, ChevronRight } from "lucide-react-native";
 import { radius } from "@mobile/theme/colors";
 import { useTheme } from "@mobile/theme/themeStore";
 import { useThemedStyles } from "@mobile/theme/useThemedStyles";
-
-const WEEKDAYS = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"] as const;
+import { useI18n } from "@mobile/i18n/useI18n";
+import { formatMonthYear } from "@mobile/i18n/format";
 
 export type CalendarDayCell = {
   date: Date;
@@ -55,6 +55,8 @@ export function MonthCalendar({
   onChangeMonth,
 }: Props) {
   const { colors } = useTheme();
+  const { locale, s } = useI18n();
+  const cal = s.screens.calendar;
   const year = viewDate.getFullYear();
   const month = viewDate.getMonth();
   const cells = buildMonthGrid(year, month);
@@ -120,7 +122,8 @@ export function MonthCalendar({
     },
   }));
 
-  const monthLabel = `Tháng ${month + 1} Năm ${year}`;
+  const monthLabel = formatMonthYear(year, month, locale);
+  const weekdays = cal.weekdays;
 
   const goMonth = (delta: number) => {
     const d = new Date(year, month + delta, 1);
@@ -130,17 +133,17 @@ export function MonthCalendar({
   return (
     <View style={styles.wrap}>
       <View style={styles.nav}>
-        <Pressable style={styles.navBtn} onPress={() => goMonth(-1)} accessibilityLabel="Tháng trước">
+        <Pressable style={styles.navBtn} onPress={() => goMonth(-1)} accessibilityLabel={cal.prevMonth}>
           <ChevronLeft color={colors.brand} size={22} />
         </Pressable>
         <Text style={styles.monthTitle}>{monthLabel}</Text>
-        <Pressable style={styles.navBtn} onPress={() => goMonth(1)} accessibilityLabel="Tháng sau">
+        <Pressable style={styles.navBtn} onPress={() => goMonth(1)} accessibilityLabel={cal.nextMonth}>
           <ChevronRight color={colors.brand} size={22} />
         </Pressable>
       </View>
 
       <View style={styles.weekdayRow}>
-        {WEEKDAYS.map((wd, i) => (
+        {weekdays.map((wd, i) => (
           <Text key={wd} style={[styles.weekday, i === 6 && styles.weekdaySun]}>
             {wd}
           </Text>

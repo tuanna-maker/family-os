@@ -4,6 +4,7 @@ import { useRouter } from "expo-router";
 import * as Linking from "expo-linking";
 import { getSupabase } from "@shared/supabase/get-client";
 import { PageHeader, PrimaryButton, TextField } from "@mobile/components/ui";
+import { useI18n } from "@mobile/i18n/useI18n";
 import { colors } from "@mobile/theme/colors";
 
 function parseTokensFromUrl(url: string) {
@@ -19,6 +20,9 @@ function parseTokensFromUrl(url: string) {
 
 export default function ResetPasswordScreen() {
   const router = useRouter();
+  const { s } = useI18n();
+  const a = s.auth;
+  const c = s.common;
   const [ready, setReady] = useState(false);
   const [sessionOk, setSessionOk] = useState(false);
   const [password, setPassword] = useState("");
@@ -64,11 +68,11 @@ export default function ResetPasswordScreen() {
   const submit = async () => {
     setError("");
     if (password.length < 6) {
-      setError("Mật khẩu phải có ít nhất 6 ký tự.");
+      setError(a.passwordMinLength);
       return;
     }
     if (password !== confirm) {
-      setError("Mật khẩu xác nhận không khớp.");
+      setError(a.passwordMismatch);
       return;
     }
     setBusy(true);
@@ -78,7 +82,7 @@ export default function ResetPasswordScreen() {
       setDone(true);
       setTimeout(() => router.replace("/login"), 1200);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Không đổi được mật khẩu");
+      setError(e instanceof Error ? e.message : a.passwordChangeFailed);
     } finally {
       setBusy(false);
     }
@@ -87,7 +91,7 @@ export default function ResetPasswordScreen() {
   if (!ready) {
     return (
       <View style={styles.root}>
-        <Text style={styles.sub}>Đang xác thực liên kết…</Text>
+        <Text style={styles.sub}>{a.verifyingLink}</Text>
       </View>
     );
   }
@@ -95,12 +99,10 @@ export default function ResetPasswordScreen() {
   if (!sessionOk) {
     return (
       <View style={styles.root}>
-        <PageHeader title="Đặt lại mật khẩu" back="/login" />
-        <Text style={styles.sub}>
-          Mở liên kết từ email trên thiết bị này, hoặc yêu cầu gửi lại email quên mật khẩu.
-        </Text>
+        <PageHeader title={a.resetTitle} back="/login" />
+        <Text style={styles.sub}>{a.resetNoSession}</Text>
         <Pressable onPress={() => router.replace("/forgot-password")}>
-          <Text style={styles.link}>Gửi lại email</Text>
+          <Text style={styles.link}>{a.resendEmail}</Text>
         </Pressable>
       </View>
     );
@@ -111,15 +113,15 @@ export default function ResetPasswordScreen() {
       style={styles.root}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
-      <PageHeader title="Mật khẩu mới" back="/login" />
+      <PageHeader title={a.newPasswordTitle} back="/login" />
       {done ? (
-        <Text style={styles.ok}>Đã đổi mật khẩu. Đang chuyển về đăng nhập…</Text>
+        <Text style={styles.ok}>{a.passwordChanged}</Text>
       ) : (
         <>
-          <TextField label="Mật khẩu mới" value={password} onChangeText={setPassword} secureTextEntry />
-          <TextField label="Xác nhận" value={confirm} onChangeText={setConfirm} secureTextEntry />
+          <TextField label={a.newPassword} value={password} onChangeText={setPassword} secureTextEntry />
+          <TextField label={a.confirmPassword} value={confirm} onChangeText={setConfirm} secureTextEntry />
           {error ? <Text style={styles.err}>{error}</Text> : null}
-          <PrimaryButton label="Lưu mật khẩu" onPress={submit} loading={busy} />
+          <PrimaryButton label={c.savePassword} onPress={submit} loading={busy} />
         </>
       )}
     </KeyboardAvoidingView>

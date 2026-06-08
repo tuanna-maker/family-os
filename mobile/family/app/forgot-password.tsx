@@ -4,10 +4,13 @@ import { useRouter } from "expo-router";
 import { getSupabase } from "@shared/supabase/get-client";
 import * as Linking from "expo-linking";
 import { PageHeader, PrimaryButton, TextField } from "@mobile/components/ui";
+import { useI18n } from "@mobile/i18n/useI18n";
 import { colors, radius } from "@mobile/theme/colors";
 
 export default function ForgotPasswordScreen() {
   const router = useRouter();
+  const { s } = useI18n();
+  const a = s.auth;
   const [email, setEmail] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -17,7 +20,7 @@ export default function ForgotPasswordScreen() {
     setError("");
     setInfo("");
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-      setError("Email không hợp lệ.");
+      setError(a.invalidEmail);
       return;
     }
     setBusy(true);
@@ -27,9 +30,9 @@ export default function ForgotPasswordScreen() {
         redirectTo,
       });
       if (err) throw err;
-      setInfo("Đã gửi liên kết đặt lại mật khẩu. Kiểm tra email (và mục Spam).");
+      setInfo(a.resetSent);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Không gửi được email");
+      setError(e instanceof Error ? e.message : a.emailSendFailed);
     } finally {
       setBusy(false);
     }
@@ -40,14 +43,14 @@ export default function ForgotPasswordScreen() {
       style={styles.root}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
-      <PageHeader title="Quên mật khẩu" back="/login" />
-      <Text style={styles.sub}>Nhập email để nhận liên kết đặt lại mật khẩu.</Text>
-      <TextField label="Email" value={email} onChangeText={setEmail} keyboardType="email-address" />
+      <PageHeader title={a.forgotTitle} back="/login" />
+      <Text style={styles.sub}>{a.forgotSub}</Text>
+      <TextField label={a.email} value={email} onChangeText={setEmail} keyboardType="email-address" />
       {error ? <Text style={styles.err}>{error}</Text> : null}
       {info ? <Text style={styles.ok}>{info}</Text> : null}
-      <PrimaryButton label="Gửi liên kết" onPress={submit} loading={busy} disabled={!email.trim()} />
+      <PrimaryButton label={a.sendLink} onPress={submit} loading={busy} disabled={!email.trim()} />
       <Pressable onPress={() => router.replace("/login")} style={{ marginTop: 16 }}>
-        <Text style={styles.link}>Quay lại đăng nhập</Text>
+        <Text style={styles.link}>{a.backToLogin}</Text>
       </Pressable>
     </KeyboardAvoidingView>
   );

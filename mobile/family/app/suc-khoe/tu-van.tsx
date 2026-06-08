@@ -1,28 +1,38 @@
 import { Text, View } from "react-native";
 import { MessageCircle } from "lucide-react-native";
 import { HealthActionTile, HealthSubScreen } from "@mobile/components/health/HealthSubScreen";
-import { TU_VAN_CHANNELS } from "@mobile/components/health/healthVisuals";
 import { useTheme } from "@mobile/theme/themeStore";
 import { useThemedStyles } from "@mobile/theme/useThemedStyles";
 import { Card } from "@mobile/components/ui";
 import { toast } from "@mobile/utils/toast";
+import { useI18n } from "@mobile/i18n/useI18n";
+import { useMemo } from "react";
 
 export default function TuVanBacSiScreen() {
   const { colors } = useTheme();
   const styles = useTuVanStyles();
+  const { s } = useI18n();
+  const sp = s.screens.health.subpage;
+
+  const channels = useMemo(
+    () => [
+      { id: "chat", emoji: "💬", title: sp.consultChat, desc: sp.consultChatDesc, eta: sp.consultChatEta },
+      { id: "video", emoji: "📹", title: sp.consultVideo, desc: sp.consultVideoDesc, eta: sp.consultVideoEta },
+      { id: "hotline", emoji: "📞", title: sp.consultHotline, desc: sp.consultHotlineDesc, eta: "1900 xxxx" },
+    ],
+    [sp],
+  );
 
   return (
-    <HealthSubScreen title="Tư vấn bác sĩ" subtitle="Kết nối bác sĩ STOS khi cần hỗ trợ sức khỏe">
+    <HealthSubScreen title={sp.consultDoctor} subtitle={sp.consultSub}>
       <Card style={styles.banner}>
         <MessageCircle size={28} color={colors.success} />
         <View style={{ flex: 1 }}>
-          <Text style={styles.bannerTitle}>Tư vấn từ xa</Text>
-          <Text style={styles.bannerSub}>
-            Chọn kênh phù hợp. Dữ liệu sức khỏe gia đình sẽ được chia sẻ với bác sĩ khi bạn đồng ý.
-          </Text>
+          <Text style={styles.bannerTitle}>{sp.remoteConsult}</Text>
+          <Text style={styles.bannerSub}>{sp.remoteConsultDesc}</Text>
         </View>
       </Card>
-      {TU_VAN_CHANNELS.map((ch) => (
+      {channels.map((ch) => (
         <HealthActionTile
           key={ch.id}
           icon={MessageCircle}
@@ -30,7 +40,7 @@ export default function TuVanBacSiScreen() {
           desc={`${ch.desc} · ${ch.eta}`}
           tintKey="tintGreen"
           colorKey="success"
-          onPress={() => toast.success("Tính năng tư vấn đang kết nối hệ thống bác sĩ STOS")}
+          onPress={() => toast.success(sp.consultConnecting)}
         />
       ))}
     </HealthSubScreen>

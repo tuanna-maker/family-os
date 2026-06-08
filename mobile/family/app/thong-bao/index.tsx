@@ -4,9 +4,13 @@ import { Screen } from "@mobile/components/Screen";
 import { Card, PageHeader, PrimaryButton } from "@mobile/components/ui";
 import { colors } from "@mobile/theme/colors";
 import { listNotifications, markAllRead, markRead } from "@mobile/api/notifications";
+import { useI18n } from "@mobile/i18n/useI18n";
+import { formatDateTime } from "@mobile/i18n/format";
 
 export default function ThongBaoScreen() {
   const qc = useQueryClient();
+  const { locale, s } = useI18n();
+  const n = s.screens.notifications;
   const q = useQuery({
     queryKey: ["notifications-all"],
     queryFn: () => listNotifications({ limit: 50, offset: 0 }),
@@ -22,14 +26,14 @@ export default function ThongBaoScreen() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["notifications-all"] }),
   });
 
-  const unread = (q.data?.rows ?? []).filter((n) => !n.read_at).length;
+  const unread = (q.data?.rows ?? []).filter((item) => !item.read_at).length;
 
   return (
     <Screen contentStyle={{ paddingTop: 0 }}>
-      <PageHeader title="Thông báo" back="/(tabs)/tai-khoan" />
+      <PageHeader title={n.title} back="/(tabs)/tai-khoan" />
       {unread > 0 && (
         <PrimaryButton
-          label="Đánh dấu tất cả đã đọc"
+          label={n.markAllRead}
           onPress={() => markAll.mutate()}
           loading={markAll.isPending}
         />
@@ -37,18 +41,18 @@ export default function ThongBaoScreen() {
       <View style={{ height: 8 }} />
       {(q.data?.rows ?? []).length === 0 ? (
         <Card>
-          <Text style={styles.muted}>Chưa có thông báo.</Text>
+          <Text style={styles.muted}>{n.emptyList}</Text>
         </Card>
       ) : (
-        (q.data?.rows ?? []).map((n) => (
-          <Pressable key={n.id} onPress={() => !n.read_at && markOne.mutate({ id: n.id })}>
-            <Card style={{ ...styles.row, ...(!n.read_at ? styles.unread : {}) }}>
+        (q.data?.rows ?? []).map((item) => (
+          <Pressable key={item.id} onPress={() => !item.read_at && markOne.mutate({ id: item.id })}>
+            <Card style={{ ...styles.row, ...(!item.read_at ? styles.unread : {}) }}>
               <View style={{ flex: 1 }}>
-                <Text style={styles.title}>{n.title}</Text>
-                {n.body ? <Text style={styles.body}>{n.body}</Text> : null}
-                <Text style={styles.time}>{new Date(n.created_at).toLocaleString("vi-VN")}</Text>
+                <Text style={styles.title}>{item.title}</Text>
+                {item.body ? <Text style={styles.body}>{item.body}</Text> : null}
+                <Text style={styles.time}>{formatDateTime(item.created_at, locale)}</Text>
               </View>
-              {!n.read_at && <View style={styles.dot} />}
+              {!item.read_at && <View style={styles.dot} />}
             </Card>
           </Pressable>
         ))

@@ -10,12 +10,26 @@ import { listAlbums } from "@mobile/api/albums";
 import { useTheme } from "@mobile/theme/themeStore";
 import { useThemedStyles } from "@mobile/theme/useThemedStyles";
 import { cardShadow, radius } from "@mobile/theme/colors";
+import { useI18n } from "@mobile/i18n/useI18n";
+import { displayAlbumTitle } from "@mobile/utils/displayContent";
+
+function albumCategoryLabel(
+  category: string | null | undefined,
+  categories: Record<string, string>,
+  fallback: string,
+) {
+  if (!category) return fallback;
+  return categories[category] ?? category;
+}
 
 export default function AlbumListScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const styles = useAlbumListStyles();
   const { familyId } = useFamilyContext();
+  const { locale, s } = useI18n();
+  const mem = s.screens.memories;
+  const c = s.common;
 
   const q = useQuery({
     queryKey: ["family-albums", familyId],
@@ -28,13 +42,13 @@ export default function AlbumListScreen() {
   return (
     <Screen contentStyle={{ paddingTop: 0 }}>
       <PageHeader
-        eyebrow="Kỷ niệm"
-        title="Album"
+        eyebrow={mem.eyebrow}
+        title={mem.albumList}
         back="/ky-niem-gia-dinh"
         right={
           <HeaderIconButton
             variant="primary"
-            accessibilityLabel="Tạo album"
+            accessibilityLabel={mem.createAlbum}
             onPress={() => router.push("/ky-niem-gia-dinh/album/tao")}
           >
             <Plus color={colors.white} size={20} />
@@ -46,9 +60,9 @@ export default function AlbumListScreen() {
 
       {!q.isLoading && albums.length === 0 && (
         <EmptyState
-          title="Chưa có album"
-          description="Gom ảnh theo chuyến đi, sinh nhật…"
-          actionLabel="Tạo album đầu tiên"
+          title={mem.noAlbums}
+          description={mem.noAlbumsDesc}
+          actionLabel={mem.createFirstAlbum}
           onAction={() => router.push("/ky-niem-gia-dinh/album/tao")}
         />
       )}
@@ -59,10 +73,13 @@ export default function AlbumListScreen() {
             <Text style={styles.emoji}>{a.cover_emoji}</Text>
             <View style={{ flex: 1 }}>
               <Text style={styles.title} numberOfLines={1}>
-                {a.title}
+                {displayAlbumTitle(a.title, locale)}
               </Text>
               <Text style={styles.sub}>
-                {a.category ?? "Album"} · {a.moment_count ?? 0} ảnh
+                {mem.albumMeta(
+                  albumCategoryLabel(a.category, mem.albumCategories, c.album),
+                  a.moment_count ?? 0,
+                )}
               </Text>
             </View>
             <FolderOpen color={colors.muted} size={18} />

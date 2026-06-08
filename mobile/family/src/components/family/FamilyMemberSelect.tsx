@@ -9,8 +9,16 @@ import { useTheme } from "@mobile/theme/themeStore";
 import { useThemedStyles } from "@mobile/theme/useThemedStyles";
 import { radius } from "@mobile/theme/colors";
 
-export function memberDisplayName(m: FamilyMemberRow) {
-  return m.full_name ?? m.username ?? m.email ?? "Thành viên";
+import type { AppLocale } from "@mobile/hooks/useAppPrefs";
+import { getLocaleRef } from "@mobile/i18n/localeRef";
+import { getStrings } from "@mobile/i18n/useI18n";
+import { useI18n } from "@mobile/i18n/useI18n";
+import { stripOwnerSuffix } from "@mobile/utils/displayName";
+
+export function memberDisplayName(m: FamilyMemberRow, locale: AppLocale = getLocaleRef()) {
+  const fallback = getStrings(locale).common.memberDefault;
+  const raw = m.full_name ?? m.username ?? m.email ?? fallback;
+  return stripOwnerSuffix(raw) || fallback;
 }
 
 function initials(name: string | null, email: string | null) {
@@ -27,9 +35,11 @@ type Props = {
   onChange: (name: string) => void;
 };
 
-export function FamilyMemberSelect({ label = "Thành viên *", value, onChange }: Props) {
+export function FamilyMemberSelect({ label, value, onChange }: Props) {
   const [open, setOpen] = useState(false);
+  const { s } = useI18n();
   const { familyId } = useFamilyContext();
+  const fieldLabel = label ?? s.members.selectLabel;
   const { colors } = useTheme();
   const styles = useSelectStyles();
 
@@ -45,7 +55,7 @@ export function FamilyMemberSelect({ label = "Thành viên *", value, onChange }
 
   return (
     <View style={styles.wrap}>
-      <FieldLabel>{label}</FieldLabel>
+      <FieldLabel>{fieldLabel}</FieldLabel>
       <Pressable style={styles.trigger} onPress={() => setOpen(true)}>
         {selected?.avatar_url ? (
           <Image source={{ uri: selected.avatar_url }} style={styles.triggerAvatar} />
@@ -59,7 +69,7 @@ export function FamilyMemberSelect({ label = "Thành viên *", value, onChange }
           </View>
         )}
         <Text style={[styles.triggerText, !value && styles.placeholder]} numberOfLines={1}>
-          {value || "Chọn thành viên"}
+          {value || s.members.selectPlaceholder}
         </Text>
         <ChevronDown color={colors.muted} size={18} />
       </Pressable>
@@ -67,17 +77,17 @@ export function FamilyMemberSelect({ label = "Thành viên *", value, onChange }
       <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
         <Pressable style={styles.backdrop} onPress={() => setOpen(false)}>
           <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
-            <Text style={styles.sheetTitle}>Chọn thành viên</Text>
+            <Text style={styles.sheetTitle}>{s.members.selectTitle}</Text>
             <ScrollView style={styles.list} keyboardShouldPersistTaps="handled">
               {members.length === 0 ? (
-                <Text style={styles.empty}>Chưa có thành viên</Text>
+                <Text style={styles.empty}>{s.members.emptyList}</Text>
               ) : (
                 members.map((m) => {
                   const name = memberDisplayName(m);
                   const active = value === name;
                   return (
                     <Pressable
-                      key={m.user_id}
+                      key={m.id}
                       style={[styles.option, active && styles.optionActive]}
                       onPress={() => {
                         onChange(name);

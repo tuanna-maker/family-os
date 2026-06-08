@@ -15,10 +15,14 @@ import { PageHeader } from "@mobile/components/ui";
 import { colors, radius } from "@mobile/theme/colors";
 import { useFamilyContext } from "@mobile/hooks/useFamilyContext";
 import { listSecurityChatMessages, sendSecurityChatMessage } from "@mobile/lib/security-chat";
+import { useI18n } from "@mobile/i18n/useI18n";
+import { formatTime } from "@mobile/i18n/format";
 
 export default function BaoAnChatScreen() {
   const { familyId } = useFamilyContext();
   const qc = useQueryClient();
+  const { locale, s } = useI18n();
+  const chat = s.security.chat;
   const [text, setText] = useState("");
   const listRef = useRef<FlatList>(null);
 
@@ -45,7 +49,7 @@ export default function BaoAnChatScreen() {
       behavior={Platform.OS === "ios" ? "padding" : undefined}
       keyboardVerticalOffset={8}
     >
-      <PageHeader title="Chat bảo an" back="/(tabs)/bao-an" />
+      <PageHeader title={chat.title} back="/(tabs)/bao-an" />
 
       <FlatList
         ref={listRef}
@@ -67,7 +71,7 @@ export default function BaoAnChatScreen() {
               >
                 <Text style={[styles.body, mine && styles.bodyMine]}>{item.body}</Text>
                 <Text style={[styles.time, mine && styles.bodyMine]}>
-                  {new Date(item.created_at).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}
+                  {formatTime(item.created_at, locale)}
                 </Text>
               </View>
             </View>
@@ -79,7 +83,7 @@ export default function BaoAnChatScreen() {
         <TextInput
           value={text}
           onChangeText={setText}
-          placeholder="Nhắn cho bảo an…"
+          placeholder={chat.placeholder}
           placeholderTextColor={colors.muted}
           style={styles.input}
           multiline

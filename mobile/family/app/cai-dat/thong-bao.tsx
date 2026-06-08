@@ -5,6 +5,7 @@ import { Bell, Moon, Pill, Type } from "lucide-react-native";
 import { useAppPrefs } from "@mobile/hooks/useAppPrefs";
 import { useTheme } from "@mobile/theme/themeStore";
 import { useThemedStyles } from "@mobile/theme/useThemedStyles";
+import { useI18n } from "@mobile/i18n/useI18n";
 import { Screen } from "@mobile/components/Screen";
 import { Card, PageHeader, PrimaryButton } from "@mobile/components/ui";
 import { TimeField } from "@mobile/components/DateTimeField";
@@ -22,44 +23,47 @@ import { radius } from "@mobile/theme/colors";
 export default function CaiDatThongBaoScreen() {
   const { theme, easyRead, setTheme, setEasyRead } = useAppPrefs();
   const { colors } = useTheme();
+  const { s } = useI18n();
+  const st = s.settings;
+  const pf = st.prefs;
   const styles = useSettingsStyles();
   const me = useQuery({ queryKey: ["np", "me"], queryFn: () => getMyPrefs() });
   const fam = useQuery({ queryKey: ["np", "family"], queryFn: () => listFamilyPrefs() });
 
   return (
     <Screen contentStyle={{ paddingTop: 0 }}>
-      <PageHeader eyebrow="Cài đặt" title="Thông báo & giao diện" back="/(tabs)/tai-khoan" />
+      <PageHeader eyebrow={st.notifications.eyebrow} title={pf.notifDisplayTitle} back="/(tabs)/tai-khoan" />
 
       <Card style={{ marginBottom: 16 }}>
         <PrefRow
           styles={styles}
           icon={<Moon size={18} color={colors.brand} />}
-          title="Giao diện tối"
-          desc="Bật nền tối, tắt để dùng nền sáng."
+          title={s.account.darkMode}
+          desc={pf.darkModeDesc}
           value={theme === "dark"}
           onChange={(v) => setTheme(v ? "dark" : "light")}
         />
         <PrefRow
           styles={styles}
           icon={<Type size={18} color={colors.brand} />}
-          title="Chữ dễ đọc"
-          desc="Phóng to cỡ chữ trên màn hình chính."
+          title={st.security.easyRead}
+          desc={st.security.easyReadSub}
           value={easyRead}
           onChange={setEasyRead}
         />
       </Card>
 
-      <SectionHeader title="Của tôi" />
+      <SectionHeader title={pf.mine} />
       {me.isLoading && <LoadingState />}
       {me.error && <ErrorState message={(me.error as Error).message} />}
       {me.data && <PrefForm initial={me.data} />}
 
-      <SectionHeader title="Thành viên gia đình" />
+      <SectionHeader title={pf.familyMembers} />
       {fam.isLoading && <LoadingState />}
       {fam.error && <ErrorState message={(fam.error as Error).message} />}
       {fam.data?.members.length === 0 && (
         <Card>
-          <Text style={styles.muted}>Chưa có thành viên khác.</Text>
+          <Text style={styles.muted}>{pf.noOtherMembers}</Text>
         </Card>
       )}
       {fam.data?.members.map((m) => (
@@ -68,7 +72,7 @@ export default function CaiDatThongBaoScreen() {
           <ReadOnlyPrefs prefs={m.prefs} styles={styles} />
         </Card>
       ))}
-      <Text style={styles.hint}>Mỗi người chỉ chỉnh cài đặt của chính mình.</Text>
+      <Text style={styles.hint}>{pf.selfOnlyHint}</Text>
       <View style={{ height: 32 }} />
     </Screen>
   );
@@ -96,6 +100,10 @@ function useSettingsStyles() {
 
 function PrefForm({ initial }: { initial: NotificationPrefs }) {
   const qc = useQueryClient();
+  const { s } = useI18n();
+  const st = s.settings;
+  const pf = st.prefs;
+  const h = s.screens.health;
   const styles = useSettingsStyles();
   const { colors } = useTheme();
   const [med, setMed] = useState(initial.medicine_enabled);
@@ -119,7 +127,7 @@ function PrefForm({ initial }: { initial: NotificationPrefs }) {
         quiet_end: qe,
       }),
     onSuccess: () => {
-      toast.success("Đã lưu cài đặt");
+      toast.success(pf.settingsSaved);
       qc.invalidateQueries({ queryKey: ["np"] });
     },
     onError: (e: Error) => toast.error(e.message),
@@ -130,24 +138,24 @@ function PrefForm({ initial }: { initial: NotificationPrefs }) {
       <PrefRow
         styles={styles}
         icon={<Pill color={colors.emergency} size={18} />}
-        title="Nhắc uống thuốc"
-        desc="Thông báo đúng giờ uống thuốc đã đặt."
+        title={h.medicine}
+        desc={pf.medicineNotifDesc}
         value={med}
         onChange={setMed}
       />
       <PrefRow
         styles={styles}
         icon={<Bell color={colors.brand} size={18} />}
-        title="Nhắc việc của con"
-        desc="Thông báo khi đến hạn việc cho con."
+        title={pf.parentReminder}
+        desc={pf.parentReminderDesc}
         value={pr}
         onChange={setPr}
       />
-      <Text style={styles.quietTitle}>Khung giờ được phép gửi</Text>
-      <TimeField label="Từ" value={qs} onChange={setQs} />
-      <TimeField label="Đến" value={qe} onChange={setQe} />
-      <Text style={styles.hint}>Ngoài khung giờ này hệ thống sẽ không tạo thông báo (giờ VN).</Text>
-      <PrimaryButton label="Lưu cài đặt" onPress={() => mut.mutate()} loading={mut.isPending} />
+      <Text style={styles.quietTitle}>{pf.quietHoursTitle}</Text>
+      <TimeField label={pf.from} value={qs} onChange={setQs} />
+      <TimeField label={pf.to} value={qe} onChange={setQe} />
+      <Text style={styles.hint}>{pf.quietHoursHint}</Text>
+      <PrimaryButton label={pf.saveSettings} onPress={() => mut.mutate()} loading={mut.isPending} />
     </Card>
   );
 }
@@ -188,12 +196,15 @@ function ReadOnlyPrefs({
   prefs: NotificationPrefs;
   styles: ReturnType<typeof useSettingsStyles>;
 }) {
+  const { s } = useI18n();
+  const pf = s.settings.prefs;
+  const onOff = (v: boolean) => (v ? pf.on : pf.off);
   return (
     <View style={styles.readGrid}>
-      <Info label="Nhắc thuốc" value={prefs.medicine_enabled ? "Bật" : "Tắt"} styles={styles} />
-      <Info label="Nhắc việc con" value={prefs.parent_reminder_enabled ? "Bật" : "Tắt"} styles={styles} />
-      <Info label="Từ" value={prefs.quiet_start} styles={styles} />
-      <Info label="Đến" value={prefs.quiet_end} styles={styles} />
+      <Info label={pf.medicineShort} value={onOff(prefs.medicine_enabled)} styles={styles} />
+      <Info label={pf.parentShort} value={onOff(prefs.parent_reminder_enabled)} styles={styles} />
+      <Info label={pf.from} value={prefs.quiet_start} styles={styles} />
+      <Info label={pf.to} value={prefs.quiet_end} styles={styles} />
     </View>
   );
 }

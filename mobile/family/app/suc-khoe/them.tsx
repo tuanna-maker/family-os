@@ -21,16 +21,9 @@ import {
 } from "@mobile/api/health";
 import { toast } from "@mobile/utils/toast";
 import { useThemedStyles } from "@mobile/theme/useThemedStyles";
+import { useI18n } from "@mobile/i18n/useI18n";
 
 type FormType = "appt" | "med" | "profile" | "allergy" | "condition";
-
-const FORM_TITLES: Record<FormType, [string, string]> = {
-  appt: ["Thêm lịch khám", "Sửa lịch khám"],
-  med: ["Thêm nhắc thuốc", "Sửa nhắc thuốc"],
-  profile: ["Thêm hồ sơ", "Sửa hồ sơ"],
-  allergy: ["Thêm dị ứng", "Sửa dị ứng"],
-  condition: ["Thêm bệnh nền", "Sửa bệnh nền"],
-};
 
 const BACK_ROUTES: Record<FormType, string> = {
   appt: "/suc-khoe/dat-lich",
@@ -70,6 +63,10 @@ function hasPrefetchParams(
 export default function SucKhoeThemScreen() {
   const router = useRouter();
   const styles = useFormStyles();
+  const { s } = useI18n();
+  const c = s.common;
+  const h = s.screens.health;
+  const f = h.form;
   const params = useLocalSearchParams<{
     type?: FormType;
     id?: string;
@@ -93,6 +90,17 @@ export default function SucKhoeThemScreen() {
   const prefetched = hasPrefetchParams(formType, id, profileId, paramMember);
   const { meds: allMeds, appts: allAppts } = useHealthOverview();
   const { openForm: openHealthForm } = useHealthMutations(back ?? BACK_ROUTES[formType]);
+
+  const formTitles: Record<FormType, [string, string]> = useMemo(
+    () => ({
+      appt: [f.addAppt, f.editAppt],
+      med: [f.addMed, f.editMed],
+      profile: [f.addProfile, f.editProfile],
+      allergy: [f.addAllergy, f.editAllergy],
+      condition: [f.addCondition, f.editCondition],
+    }),
+    [f],
+  );
 
   const q = useQuery({
     queryKey: ["health-overview", familyId],
@@ -208,9 +216,9 @@ export default function SucKhoeThemScreen() {
 
   const save = useMutation({
     mutationFn: async () => {
-      if (!familyId) throw new Error("Chưa có gia đình");
+      if (!familyId) throw new Error(f.errNoFamily);
       if (formType === "appt") {
-        if (!memberName.trim()) throw new Error("Chọn thành viên");
+        if (!memberName.trim()) throw new Error(f.errSelectMember);
         return upsertAppointment({
           id: isPilotId(id) ? undefined : id,
           family_id: familyId,
@@ -221,7 +229,7 @@ export default function SucKhoeThemScreen() {
         });
       }
       if (formType === "med") {
-        if (!memberName.trim() || !medicine.trim()) throw new Error("Nhập đủ thông tin");
+        if (!memberName.trim() || !medicine.trim()) throw new Error(f.errFillRequired);
         return upsertMedicine({
           id: isPilotId(id) ? undefined : id,
           family_id: familyId,
@@ -233,7 +241,7 @@ export default function SucKhoeThemScreen() {
       }
       const pid = profileId ?? (isPilotId(id) ? undefined : id);
       if (formType === "profile") {
-        if (!memberName.trim()) throw new Error("Chọn thành viên");
+        if (!memberName.trim()) throw new Error(f.errSelectMember);
         return upsertHealthProfile({
           id: pid,
           family_id: familyId,
@@ -244,7 +252,7 @@ export default function SucKhoeThemScreen() {
         });
       }
       if (formType === "allergy" || formType === "condition") {
-        if (!existingProfile && !memberName.trim()) throw new Error("Chọn thành viên");
+        if (!existingProfile && !memberName.trim()) throw new Error(f.errSelectMember);
         const name = existingProfile?.name ?? memberName.trim();
         return upsertHealthProfile({
           id: existingProfile?.id,
@@ -255,18 +263,18 @@ export default function SucKhoeThemScreen() {
           conditions: formType === "condition" ? detail.trim() || null : existingProfile?.conditions ?? null,
         });
       }
-      throw new Error("Loại form không hợp lệ");
+      throw new Error(f.errInvalidForm);
     },
     onSuccess: () => {
       invalidate();
-      toast.success("Đã lưu");
+      toast.success(c.saved);
       router.replace((back ?? BACK_ROUTES[formType]) as never);
     },
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const [, editT] = FORM_TITLES[formType];
-  const pageTitle = editing ? editT : FORM_TITLES[formType][0];
+  const [, editT] = formTitles[formType];
+  const pageTitle = editing ? editT : formTitles[formType][0];
   const backHref = back ?? BACK_ROUTES[formType];
   const showMemberSelect =
     (formType === "appt" || formType === "med" || formType === "profile") && !memberName;
@@ -309,7 +317,7 @@ export default function SucKhoeThemScreen() {
 
   return (
     <Screen contentStyle={{ paddingTop: 0 }}>
-      <PageHeader eyebrow="Sức khỏe gia đình" title={pageTitle} back={backHref} />
+      <PageHeader eyebrow={h.title} title={pageTitle} back={backHref} />
 
       {showMemberSelect ? (
         <FamilyMemberSelect value={memberName} onChange={setMemberName} />
@@ -321,43 +329,43 @@ export default function SucKhoeThemScreen() {
 
       {formType === "appt" && (
         <>
-          <TextField label="Bác sĩ / Cơ sở" value={doctor} onChangeText={setDoctor} placeholder="BS. Minh" />
-          <DateTimeField label="Thời gian khám" value={apptAt} onChange={setApptAt} />
+          <TextField label={h.doctorFacility} value={doctor} onChangeText={setDoctor} placeholder={f.doctorPh} />
+          <DateTimeField label={f.apptTimeExam} value={apptAt} onChange={setApptAt} />
         </>
       )}
 
       {formType === "med" && (
         <>
-          <TextField label="Tên thuốc *" value={medicine} onChangeText={setMedicine} placeholder="Vitamin D3" />
-          <TimeField label="Giờ uống" value={medTime} onChange={setMedTime} />
+          <TextField label={f.medicineRequired} value={medicine} onChangeText={setMedicine} placeholder="Vitamin D3" />
+          <TimeField label={f.medicineTimeLabel} value={medTime} onChange={setMedTime} />
         </>
       )}
 
       {formType === "profile" && (
         <>
-          <Text style={styles.sectionLabel}>Thông tin cơ bản</Text>
-          <TextField label="Nhóm máu" value={bloodType} onChangeText={setBloodType} placeholder="O+" />
+          <Text style={styles.sectionLabel}>{f.basicInfo}</Text>
+          <TextField label={h.bloodType} value={bloodType} onChangeText={setBloodType} placeholder="O+" />
           <TextField
-            label="Dị ứng"
+            label={h.allergy}
             value={allergies}
             onChangeText={setAllergies}
             multiline
-            placeholder="Hải sản, đậu phộng…"
+            placeholder={f.allergyPh}
           />
           <TextField
-            label="Bệnh nền"
+            label={h.chronic}
             value={conditions}
             onChangeText={setConditions}
             multiline
-            placeholder="Cao huyết áp, tiểu đường…"
+            placeholder={f.conditionPh}
           />
 
           {memberName ? (
             <>
               <ProfileRelatedSection
-                title="Đơn thuốc"
-                emptyText="Chưa có đơn thuốc cho thành viên này."
-                addLabel="Thêm"
+                title={h.prescription}
+                emptyText={f.noPrescriptionForMember}
+                addLabel={c.add}
                 meds={memberMeds}
                 onAdd={() =>
                   openHealthForm({
@@ -378,9 +386,9 @@ export default function SucKhoeThemScreen() {
                 }
               />
               <ProfileRelatedSection
-                title="Lịch khám"
-                emptyText="Chưa có lịch khám cho thành viên này."
-                addLabel="Thêm"
+                title={h.appointment}
+                emptyText={f.noApptForMember}
+                addLabel={c.add}
                 appts={memberAppts}
                 onAdd={() =>
                   openHealthForm({
@@ -408,22 +416,22 @@ export default function SucKhoeThemScreen() {
       {(formType === "allergy" || formType === "condition") && (
         <>
           {memberName ? (
-            <Text style={styles.memberHint}>Thành viên: {memberName}</Text>
+            <Text style={styles.memberHint}>{f.memberLabel(memberName)}</Text>
           ) : (
             <FamilyMemberSelect value={memberName} onChange={setMemberName} />
           )}
           <TextField
-            label={formType === "allergy" ? "Dị ứng" : "Bệnh nền"}
+            label={formType === "allergy" ? h.allergy : h.chronic}
             value={detail}
             onChangeText={setDetail}
             multiline
-            placeholder={formType === "allergy" ? "Hải sản, đậu phộng…" : "Cao huyết áp, tiểu đường…"}
+            placeholder={formType === "allergy" ? f.allergyPh : f.conditionPh}
           />
         </>
       )}
 
       <View style={{ marginTop: 8 }}>
-        <PrimaryButton label="Lưu" onPress={() => save.mutate()} loading={save.isPending} />
+        <PrimaryButton label={c.save} onPress={() => save.mutate()} loading={save.isPending} />
       </View>
       <View style={{ height: 32 }} />
     </Screen>

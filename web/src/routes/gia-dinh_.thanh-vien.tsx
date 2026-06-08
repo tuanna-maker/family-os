@@ -53,7 +53,7 @@ function MembersPage() {
   }
 
   async function handlePromote(m: FamilyMemberRow) {
-    if (!familyId) return;
+    if (!familyId || !m.user_id) return;
     if (!confirm(`Nâng ${m.full_name ?? m.email ?? "thành viên"} thành chủ hộ phụ?`)) return;
     try {
       await roleFn({ data: { familyId, targetUserId: m.user_id, role: "family_owner" } });
@@ -65,7 +65,7 @@ function MembersPage() {
   }
 
   async function handleDemote(m: FamilyMemberRow) {
-    if (!familyId) return;
+    if (!familyId || !m.user_id) return;
     try {
       await roleFn({ data: { familyId, targetUserId: m.user_id, role: "family_member" } });
       toast.success("Đã cập nhật vai trò");
@@ -76,7 +76,7 @@ function MembersPage() {
   }
 
   async function handleRemove(m: FamilyMemberRow) {
-    if (!familyId) return;
+    if (!familyId || !m.user_id) return;
     if (!confirm(`Gỡ ${m.full_name ?? m.email ?? "thành viên"} khỏi hộ?`)) return;
     try {
       await removeFn({ data: { familyId, targetUserId: m.user_id } });
@@ -141,7 +141,7 @@ function MembersPage() {
           <ul className="space-y-2">
             {q.data?.members.map((m) => (
               <li
-                key={m.user_id}
+                key={m.id}
                 className="rounded-2xl bg-card border border-border p-3 flex items-start gap-3"
               >
                 {m.avatar_url ? (
@@ -183,7 +183,7 @@ function MembersPage() {
                   )}
                 </div>
 
-                {q.data?.isOwner && !m.is_owner && (
+                {q.data?.isOwner && !m.is_owner && m.user_id && (
                   <div className="flex flex-col gap-1 shrink-0">
                     {m.role === "family_member" ? (
                       <Button

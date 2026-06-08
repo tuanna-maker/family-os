@@ -1,6 +1,8 @@
 import { ActivityIndicator, Pressable, Text, View } from "react-native";
 import { CheckCircle2, Pill } from "lucide-react-native";
 import { Card } from "@mobile/components/ui";
+import { formatDate } from "@mobile/i18n/format";
+import { useI18n } from "@mobile/i18n/useI18n";
 import { useTheme } from "@mobile/theme/themeStore";
 import { useThemedStyles } from "@mobile/theme/useThemedStyles";
 import { radius } from "@mobile/theme/colors";
@@ -32,6 +34,8 @@ export function MedicineWeekView({
   pending: boolean;
 }) {
   const { colors } = useTheme();
+  const { locale, s } = useI18n();
+  const ec = s.elderlyCare;
   const styles = useThemedStyles((c, fontScale) => ({
     empty: { color: c.muted, textAlign: "center" as const, padding: 16, fontSize: 14 * fontScale },
     dayCard: { marginBottom: 10, padding: 0, overflow: "hidden" as const },
@@ -82,7 +86,7 @@ export function MedicineWeekView({
     return <ActivityIndicator color={colors.brand} style={{ marginVertical: 16 }} />;
   }
   if (days.length === 0 || days.every((d) => d.entries.length === 0)) {
-    return <Text style={styles.empty}>Chưa có nhắc thuốc nào trong tuần.</Text>;
+    return <Text style={styles.empty}>{ec.weekEmpty}</Text>;
   }
 
   const today = todayKey();
@@ -99,16 +103,14 @@ export function MedicineWeekView({
             <View style={[styles.dayHead, isToday && styles.dayHeadToday]}>
               <View>
                 <Text style={styles.dayTitle}>
-                  {dt.toLocaleDateString("vi-VN", { weekday: "short", day: "2-digit", month: "2-digit" })}
-                  {isToday ? <Text style={styles.todayBadge}> HÔM NAY</Text> : null}
+                  {formatDate(dt, locale, { weekday: "short", day: "2-digit", month: "2-digit" })}
+                  {isToday ? <Text style={styles.todayBadge}>{ec.todayBadge}</Text> : null}
                 </Text>
-                <Text style={styles.daySub}>
-                  {taken}/{d.entries.length} đã uống
-                </Text>
+                <Text style={styles.daySub}>{ec.weekTakenCount(taken, d.entries.length)}</Text>
               </View>
             </View>
             {d.entries.length === 0 ? (
-              <Text style={[styles.empty, { padding: 12 }]}>Không có thuốc.</Text>
+              <Text style={[styles.empty, { padding: 12 }]}>{ec.noMedicineDay}</Text>
             ) : (
               d.entries.map((e, idx) => (
                 <View
@@ -135,7 +137,7 @@ export function MedicineWeekView({
                       disabled={pending}
                       onPress={() => onMark(e.reminder_id)}
                     >
-                      <Text style={styles.markBtnText}>Đã uống</Text>
+                      <Text style={styles.markBtnText}>{s.common.taken}</Text>
                     </Pressable>
                   ) : e.taken ? (
                     <CheckCircle2 color={colors.success} size={18} />
@@ -147,7 +149,7 @@ export function MedicineWeekView({
                         fontWeight: "600",
                       }}
                     >
-                      {isPast ? "Bỏ lỡ" : "Chờ"}
+                      {isPast ? ec.missed : ec.pendingMed}
                     </Text>
                   )}
                 </View>

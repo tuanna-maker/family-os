@@ -10,17 +10,21 @@ import { albumCategories, type AlbumCategory } from "@mobile/constants/album-cat
 import { toast } from "@mobile/utils/toast";
 import { useThemedStyles } from "@mobile/theme/useThemedStyles";
 import { radius } from "@mobile/theme/colors";
+import { useI18n } from "@mobile/i18n/useI18n";
 
 export default function TaoAlbumScreen() {
   const styles = useTaoAlbumStyles();
   const router = useRouter();
   const { familyId } = useFamilyContext();
+  const { s } = useI18n();
+  const mem = s.screens.memories;
+  const c = s.common;
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState<AlbumCategory>("Ngày đặc biệt");
 
   const mut = useMutation({
     mutationFn: () => {
-      const cat = albumCategories.find((c) => c.key === category);
+      const cat = albumCategories.find((item) => item.key === category);
       return createAlbum({
         family_id: familyId!,
         title: title.trim(),
@@ -29,7 +33,7 @@ export default function TaoAlbumScreen() {
       });
     },
     onSuccess: (res) => {
-      toast.success("Đã tạo album");
+      toast.success(mem.albumCreated);
       router.replace(`/ky-niem-gia-dinh/album/${res.album.id}`);
     },
     onError: (e: Error) => toast.error(e.message),
@@ -37,32 +41,34 @@ export default function TaoAlbumScreen() {
 
   return (
     <Screen contentStyle={{ paddingTop: 0 }}>
-      <PageHeader eyebrow="Kỷ niệm" title="Tạo album" back="/ky-niem-gia-dinh/album" />
-      <TextField label="Tên album" value={title} onChangeText={setTitle} placeholder="Chuyến đi Phú Quốc" />
-      <Text style={styles.label}>Danh mục</Text>
+      <PageHeader eyebrow={mem.eyebrow} title={mem.createAlbum} back="/ky-niem-gia-dinh/album" />
+      <TextField label={mem.albumTitle} value={title} onChangeText={setTitle} placeholder={mem.albumTitlePh} />
+      <Text style={styles.label}>{mem.categoryLabel}</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 16 }}>
         <View style={styles.chips}>
-          {albumCategories.map((c) => (
+          {albumCategories.map((item) => (
             <Pressable
-              key={c.key}
-              style={[styles.chip, category === c.key && styles.chipActive]}
-              onPress={() => setCategory(c.key)}
+              key={item.key}
+              style={[styles.chip, category === item.key && styles.chipActive]}
+              onPress={() => setCategory(item.key)}
             >
-              <Text>{c.emoji}</Text>
-              <Text style={[styles.chipText, category === c.key && styles.chipTextActive]}>{c.key}</Text>
+              <Text>{item.emoji}</Text>
+              <Text style={[styles.chipText, category === item.key && styles.chipTextActive]}>
+                {mem.albumCategories[item.key]}
+              </Text>
             </Pressable>
           ))}
         </View>
       </ScrollView>
       <PrimaryButton
-        label="Tạo album"
+        label={mem.createAlbum}
         onPress={() => {
           if (!title.trim()) {
-            toast.error("Vui lòng nhập tên album");
+            toast.error(mem.enterAlbumName);
             return;
           }
           if (!familyId) {
-            toast.error("Chưa có gia đình");
+            toast.error(c.noFamilyYet);
             return;
           }
           mut.mutate();

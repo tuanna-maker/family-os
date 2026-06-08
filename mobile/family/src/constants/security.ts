@@ -19,18 +19,13 @@ import {
   Users,
   Wrench,
 } from "lucide-react-native";
+import type { AppLocale } from "@mobile/hooks/useAppPrefs";
+import { getStrings } from "@mobile/i18n/useI18n";
 
 export const securityMeta = {
   responseTimeMinutes: 2,
   hotline: "1900 6868",
 };
-
-export const buildingStatus = [
-  { label: "Hệ thống PCCC", value: "Hoạt động", ok: true },
-  { label: "Camera an ninh", value: "32/32 online", ok: true },
-  { label: "Thang máy", value: "4/4 hoạt động", ok: true },
-  { label: "Cấp nước", value: "Bình thường", ok: true },
-];
 
 export type SecurityGridItem = {
   id: string;
@@ -43,68 +38,76 @@ export type SecurityGridItem = {
   action: "trigger" | "call" | "chat";
 };
 
-export const securityServiceGrid: SecurityGridItem[] = [
-  {
-    id: "fire",
-    icon: Flame,
-    label: "Báo cháy",
-    desc: "Cảnh báo khẩn cấp",
-    requestType: "fire",
-    iconColorKey: "warning",
-    tintKey: "tintOrange",
-    action: "trigger",
-  },
-  {
-    id: "stranger",
-    icon: AlertTriangle,
-    label: "Báo người lạ",
-    desc: "Đối tượng đáng ngờ",
-    requestType: "intrusion",
-    iconColorKey: "emergency",
-    tintKey: "tintRed",
-    action: "trigger",
-  },
-  {
-    id: "package",
-    icon: Package,
-    label: "Nhận hàng hộ",
-    desc: "Bưu phẩm, đồ ăn",
-    requestType: "package",
-    iconColorKey: "brand",
-    tintKey: "tintBlue",
-    action: "trigger",
-  },
-  {
-    id: "tech",
-    icon: Wrench,
-    label: "Hỗ trợ kỹ thuật",
-    desc: "Điện, nước, internet",
-    requestType: "other",
-    iconColorKey: "brand",
-    tintKey: "tintBlue",
-    action: "trigger",
-  },
-  {
-    id: "call",
-    icon: Phone,
-    label: "Gọi bảo vệ",
-    desc: `Hotline ${securityMeta.hotline}`,
-    requestType: "other",
-    iconColorKey: "success",
-    tintKey: "tintGreen",
-    action: "call",
-  },
-  {
-    id: "chat",
-    icon: MessageCircle,
-    label: "Chat trực tiếp",
-    desc: "Trả lời ngay",
-    requestType: "other",
-    iconColorKey: "pink",
-    tintKey: "tintPink",
-    action: "chat",
-  },
-];
+export function getBuildingStatus(locale: AppLocale) {
+  const rows = getStrings(locale).security.building;
+  return rows.map((r) => ({ ...r, ok: true }));
+}
+
+export function getSecurityServiceGrid(locale: AppLocale): SecurityGridItem[] {
+  const g = getStrings(locale).security.grid;
+  return [
+    {
+      id: "fire",
+      icon: Flame,
+      label: g.fire.label,
+      desc: g.fire.desc,
+      requestType: "fire",
+      iconColorKey: "warning",
+      tintKey: "tintOrange",
+      action: "trigger",
+    },
+    {
+      id: "stranger",
+      icon: AlertTriangle,
+      label: g.stranger.label,
+      desc: g.stranger.desc,
+      requestType: "intrusion",
+      iconColorKey: "emergency",
+      tintKey: "tintRed",
+      action: "trigger",
+    },
+    {
+      id: "package",
+      icon: Package,
+      label: g.package.label,
+      desc: g.package.desc,
+      requestType: "package",
+      iconColorKey: "brand",
+      tintKey: "tintBlue",
+      action: "trigger",
+    },
+    {
+      id: "tech",
+      icon: Wrench,
+      label: g.tech.label,
+      desc: g.tech.desc,
+      requestType: "other",
+      iconColorKey: "brand",
+      tintKey: "tintBlue",
+      action: "trigger",
+    },
+    {
+      id: "call",
+      icon: Phone,
+      label: g.call.label,
+      desc: g.call.desc(securityMeta.hotline),
+      requestType: "other",
+      iconColorKey: "success",
+      tintKey: "tintGreen",
+      action: "call",
+    },
+    {
+      id: "chat",
+      icon: MessageCircle,
+      label: g.chat.label,
+      desc: g.chat.desc,
+      requestType: "other",
+      iconColorKey: "pink",
+      tintKey: "tintPink",
+      action: "chat",
+    },
+  ];
+}
 
 export type SecurityCatalogItem = {
   id: string;
@@ -124,90 +127,84 @@ export type SecurityCatalogGroup = {
   items: SecurityCatalogItem[];
 };
 
-export const securityServiceCatalog: SecurityCatalogGroup[] = [
-  {
-    id: "parcel",
-    title: "Gửi / Nhận đồ",
-    subtitle: "Tiếp nhận, bảo quản & giao tận căn",
-    icon: Package,
-    accentKey: "brand",
-    tintKey: "tintBlue",
-    items: [
-      { id: "parcel-receive", icon: Package, label: "Nhận & giữ hàng hộ", desc: "Bưu phẩm, đồ ăn", requestType: "package" },
-      { id: "parcel-deliver", icon: Truck, label: "Giao tận căn hộ", desc: "Bảo vệ mang hàng lên cửa", requestType: "package" },
-      { id: "parcel-send", icon: Send, label: "Gửi hàng đi", desc: "Hỗ trợ gửi cho shipper", requestType: "other" },
-    ],
-  },
-  {
-    id: "reminder",
-    title: "Nhắc việc",
-    subtitle: "Notification định kỳ",
-    icon: BellRing,
-    accentKey: "brand",
-    tintKey: "tintBlue",
-    items: [
-      { id: "rem-utility", icon: Lightbulb, label: "Nhắc tắt điện / nước", desc: "Theo khung giờ cư dân", requestType: "other" },
-      { id: "rem-process", icon: ShieldCheck, label: "Bảo vệ xử lý khi quên", desc: "Kiểm tra & xác nhận", requestType: "other" },
-    ],
-  },
-  {
-    id: "care",
-    title: "Hỗ trợ người lớn tuổi & trẻ em",
-    subtitle: "Đồng hành an toàn",
-    icon: Users,
-    accentKey: "pink",
-    tintKey: "tintPink",
-    items: [
-      { id: "care-home", icon: UserCheck, label: "Chăm sóc tại nhà", desc: "Hỗ trợ khi gia đình vắng", requestType: "other" },
-      { id: "care-escort", icon: Baby, label: "Đưa đón lên / xuống", desc: "Thang máy an toàn", requestType: "other" },
-    ],
-  },
-  {
-    id: "freight",
-    title: "Vận chuyển hàng hoá",
-    subtitle: "Thang hàng & nhân lực",
-    icon: Boxes,
-    accentKey: "warning",
-    tintKey: "tintOrange",
-    items: [
-      { id: "freight-remote", icon: Truck, label: "Chuyển hàng từ xa", desc: "Đăng ký trước", requestType: "other" },
-      { id: "freight-lift", icon: Boxes, label: "Thang hàng + hỗ trợ", desc: "Bốc xếp giúp cư dân", requestType: "other" },
-    ],
-  },
-  {
-    id: "parking",
-    title: "Hỗ trợ tìm & sắp xếp xe",
-    subtitle: "Bãi xe gọn — lấy xe nhanh",
-    icon: Car,
-    accentKey: "success",
-    tintKey: "tintGreen",
-    items: [
-      { id: "park-arrange", icon: ParkingCircle, label: "Sắp xe đúng vị trí", desc: "Điều phối chỗ đậu", requestType: "other" },
-      { id: "park-find", icon: Car, label: "Tìm xe nhanh", desc: "Định vị trong bãi", requestType: "other" },
-    ],
-  },
-  {
-    id: "private",
-    title: "Bảo an theo giờ",
-    subtitle: "Sự kiện, đón khách VIP",
-    icon: Clock,
-    accentKey: "emergency",
-    tintKey: "tintRed",
-    items: [
-      { id: "priv-hourly", icon: Clock, label: "Bảo vệ theo giờ", desc: "Đặt lịch theo khung giờ", requestType: "other" },
-      { id: "priv-custom", icon: ShieldCheck, label: "Theo nhu cầu riêng", desc: "Yêu cầu đặc biệt", requestType: "other" },
-    ],
-  },
-];
-
-export const REQUEST_TYPE_LABEL: Record<string, string> = {
-  sos: "SOS khẩn cấp",
-  fire: "Báo cháy",
-  intrusion: "Người lạ",
-  noise: "Tiếng ồn",
-  package: "Nhận hàng",
-  other: "Yêu cầu khác",
-};
+export function getSecurityServiceCatalog(locale: AppLocale): SecurityCatalogGroup[] {
+  const c = getStrings(locale).security.catalog;
+  return [
+    {
+      id: "parcel",
+      title: c.parcel.title,
+      subtitle: c.parcel.subtitle,
+      icon: Package,
+      accentKey: "brand",
+      tintKey: "tintBlue",
+      items: [
+        { id: "parcel-receive", icon: Package, label: c.parcel.items.receive.label, desc: c.parcel.items.receive.desc, requestType: "package" },
+        { id: "parcel-deliver", icon: Truck, label: c.parcel.items.deliver.label, desc: c.parcel.items.deliver.desc, requestType: "package" },
+        { id: "parcel-send", icon: Send, label: c.parcel.items.send.label, desc: c.parcel.items.send.desc, requestType: "other" },
+      ],
+    },
+    {
+      id: "reminder",
+      title: c.reminder.title,
+      subtitle: c.reminder.subtitle,
+      icon: BellRing,
+      accentKey: "brand",
+      tintKey: "tintBlue",
+      items: [
+        { id: "rem-utility", icon: Lightbulb, label: c.reminder.items.utility.label, desc: c.reminder.items.utility.desc, requestType: "other" },
+        { id: "rem-process", icon: ShieldCheck, label: c.reminder.items.process.label, desc: c.reminder.items.process.desc, requestType: "other" },
+      ],
+    },
+    {
+      id: "care",
+      title: c.care.title,
+      subtitle: c.care.subtitle,
+      icon: Users,
+      accentKey: "pink",
+      tintKey: "tintPink",
+      items: [
+        { id: "care-home", icon: UserCheck, label: c.care.items.home.label, desc: c.care.items.home.desc, requestType: "other" },
+        { id: "care-escort", icon: Baby, label: c.care.items.escort.label, desc: c.care.items.escort.desc, requestType: "other" },
+      ],
+    },
+    {
+      id: "freight",
+      title: c.freight.title,
+      subtitle: c.freight.subtitle,
+      icon: Boxes,
+      accentKey: "warning",
+      tintKey: "tintOrange",
+      items: [
+        { id: "freight-remote", icon: Truck, label: c.freight.items.remote.label, desc: c.freight.items.remote.desc, requestType: "other" },
+        { id: "freight-lift", icon: Boxes, label: c.freight.items.lift.label, desc: c.freight.items.lift.desc, requestType: "other" },
+      ],
+    },
+    {
+      id: "parking",
+      title: c.parking.title,
+      subtitle: c.parking.subtitle,
+      icon: Car,
+      accentKey: "success",
+      tintKey: "tintGreen",
+      items: [
+        { id: "park-arrange", icon: ParkingCircle, label: c.parking.items.arrange.label, desc: c.parking.items.arrange.desc, requestType: "other" },
+        { id: "park-find", icon: Car, label: c.parking.items.find.label, desc: c.parking.items.find.desc, requestType: "other" },
+      ],
+    },
+    {
+      id: "private",
+      title: c.private.title,
+      subtitle: c.private.subtitle,
+      icon: Clock,
+      accentKey: "emergency",
+      tintKey: "tintRed",
+      items: [
+        { id: "priv-hourly", icon: Clock, label: c.private.items.hourly.label, desc: c.private.items.hourly.desc, requestType: "other" },
+        { id: "priv-custom", icon: ShieldCheck, label: c.private.items.custom.label, desc: c.private.items.custom.desc, requestType: "other" },
+      ],
+    },
+  ];
+}
 
 export const REQUEST_TYPE_EMOJI: Record<string, string> = {
   sos: "🆘",
@@ -218,9 +215,12 @@ export const REQUEST_TYPE_EMOJI: Record<string, string> = {
   other: "📞",
 };
 
-export const REQUEST_STATUS_LABEL: Record<string, string> = {
-  open: "Đã gửi · chờ điều phối",
-  in_progress: "Bảo an đang xử lý",
-  resolved: "Đã giải quyết",
-  cancelled: "Đã huỷ",
-};
+export function getRequestTypeLabel(type: string, locale: AppLocale): string {
+  const labels = getStrings(locale).security.requestType;
+  return labels[type as keyof typeof labels] ?? type;
+}
+
+export function getRequestStatusLabel(status: string, locale: AppLocale): string {
+  const labels = getStrings(locale).security.requestStatus;
+  return labels[status as keyof typeof labels] ?? status;
+}

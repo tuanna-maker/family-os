@@ -23,21 +23,23 @@ import {
   Loader2,
 } from "lucide-react-native";
 import { useAppPrefs } from "@mobile/hooks/useAppPrefs";
+import { useI18n } from "@mobile/i18n/useI18n";
 import { unreadCount } from "@mobile/api/notifications";
 import { listNotifications } from "@mobile/api/notifications";
 import { getFamilyToday } from "@mobile/api/family-today";
-import { getSecurityStatus, type SecurityChip, type SecurityTone } from "@mobile/api/security";
+import { getSecurityStatus, type SecurityTone } from "@mobile/api/security";
 import { Screen } from "@mobile/components/Screen";
 import { Card, SectionTitle } from "@mobile/components/ui";
 import { FamilyMemberRow } from "@mobile/components/home/FamilyMemberRow";
 import {
   SECURITY_HERO,
-  SERVICES,
+  getHomeServices,
   SECURITY_CHIP_ICONS,
   securityToneStyle,
   formatActivityTime,
   getActivityVisual,
   colorFromKey,
+  getDefaultSecurityChips,
 } from "@mobile/components/home/homeVisuals";
 import { cardShadow, radius } from "@mobile/theme/colors";
 import { useTheme } from "@mobile/theme/themeStore";
@@ -45,12 +47,6 @@ import { useThemedStyles } from "@mobile/theme/useThemedStyles";
 import { useFamilyContext } from "@mobile/hooks/useFamilyContext";
 
 const ACTIVITY_PAGE_SIZE = 5;
-
-const DEFAULT_CHIPS: SecurityChip[] = [
-  { key: "camera", label: "Camera & An ninh", value: "—", tone: "muted", count: 0 },
-  { key: "fire", label: "PCCC", value: "—", tone: "muted", count: 0 },
-  { key: "elevator", label: "Thang máy", value: "—", tone: "muted", count: 0 },
-];
 
 function FeatureBadge({
   Icon,
@@ -298,9 +294,14 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const { colors, theme } = useTheme();
   const { theme: prefTheme, setTheme } = useAppPrefs();
+  const { locale, s } = useI18n();
+  const h = s.home;
+  const c = s.common;
   const styles = useHomeStyles();
   const { familyId, family } = useFamilyContext();
-  const displayName = family?.name ?? "Gia đình";
+  const displayName = family?.name ?? c.defaultFamilyName;
+  const services = getHomeServices(locale);
+  const defaultChips = getDefaultSecurityChips(locale);
   const [pageCount, setPageCount] = useState(1);
   const limit = pageCount * ACTIVITY_PAGE_SIZE;
 
@@ -332,16 +333,17 @@ export default function HomeScreen() {
   const activities = activitiesQ.data?.rows ?? [];
   const total = activitiesQ.data?.total ?? 0;
   const hasMore = activities.length < total;
+      const showCollapse = pageCount > 1 && !hasMore;
   const todayMembers = todayQ.data?.members ?? [];
   const security = securityQ.data;
   const securityTone: SecurityTone = security?.overall ?? "success";
   const securityStyle = securityToneStyle(colors, securityTone);
   const securityHeadline =
-    security?.headline ?? (securityQ.isLoading ? "Đang kiểm tra…" : "Tất cả bình thường");
-  const securityChips = security?.chips ?? DEFAULT_CHIPS;
+    security?.headline ?? (securityQ.isLoading ? h.checking : h.allNormal);
+  const securityChips = security?.chips ?? defaultChips;
   const securityUpdated = security?.updated_at
-    ? `Cập nhật ${formatActivityTime(security.updated_at)}`
-    : security?.subline ?? "Theo dõi liên tục";
+    ? c.updatedAt(formatActivityTime(security.updated_at, locale))
+    : security?.subline ?? h.monitoring;
 
   const securityBorder =
     securityTone === "emergency"
@@ -370,7 +372,7 @@ export default function HomeScreen() {
           </View>
         </View>
         <View style={styles.greetBlock}>
-          <Text style={styles.hello}>Xin chào,</Text>
+          <Text style={styles.hello}>{h.hello}</Text>
           <Text style={styles.name} numberOfLines={1}>
             {displayName} 👋
           </Text>
@@ -379,7 +381,7 @@ export default function HomeScreen() {
           <Pressable
             style={styles.iconBtn}
             onPress={() => setTheme(prefTheme === "dark" ? "light" : "dark")}
-            accessibilityLabel={prefTheme === "dark" ? "Chuyển sang chế độ sáng" : "Chuyển sang chế độ tối"}
+            accessibilityLabel={prefTheme === "dark" ? c.darkModeOn : c.darkModeOff}
             accessibilityRole="button"
           >
             {theme === "dark" ? (
@@ -391,7 +393,7 @@ export default function HomeScreen() {
           <Pressable
             style={styles.iconBtn}
             onPress={() => router.push("/thong-bao")}
-            accessibilityLabel="Thông báo"
+            accessibilityLabel={c.notificationsA11y}
             accessibilityRole="button"
           >
             <Bell color={colors.foreground} size={20} />
@@ -415,23 +417,21 @@ export default function HomeScreen() {
             <View style={styles.heroInner}>
               <View style={styles.heroBadge}>
                 <ShieldCheck color="rgba(255,255,255,0.8)" size={14} />
-                <Text style={styles.heroBadgeText}>Dịch vụ bảo an gia đình</Text>
+                <Text style={styles.heroBadgeText}>{h.heroBadge}</Text>
               </View>
-              <Text style={styles.heroTitle}>
-                An toàn gia đình{"\n"}là ưu tiên hàng đầu
-              </Text>
+              <Text style={styles.heroTitle}>{h.heroTitle}</Text>
               <View style={styles.badgeRow}>
-                <FeatureBadge Icon={ShieldCheck} title="Hỗ trợ nhanh" sub="24/7" />
-                <FeatureBadge Icon={Clock} title="Có mặt nhanh" sub="5–10 phút" />
-                <FeatureBadge Icon={UserCheck} title="Đội ngũ chuyên nghiệp" sub="Tận tâm – Tin cậy" />
+                <FeatureBadge Icon={ShieldCheck} title={h.quickSupport} sub="24/7" />
+                <FeatureBadge Icon={Clock} title={h.quickArrival} sub="5–10 phút" />
+                <FeatureBadge Icon={UserCheck} title={h.proTeam} sub={h.proTeamSub} />
               </View>
               <Pressable style={styles.sosBtn} onPress={() => router.push("/(tabs)/bao-an")}>
                 <View style={styles.ctaIcon}>
                   <Phone color={colors.white} size={20} fill={colors.white} />
                 </View>
                 <View>
-                  <Text style={styles.sosTitle}>Gọi hỗ trợ ngay</Text>
-                  <Text style={styles.sosSub}>Nhấn để gọi đội ngũ bảo an</Text>
+                  <Text style={styles.sosTitle}>{h.callNow}</Text>
+                  <Text style={styles.sosSub}>{h.callNowSub}</Text>
                 </View>
               </Pressable>
               <Pressable style={styles.chatBtn} onPress={() => router.push("/bao-an/chat")}>
@@ -439,13 +439,13 @@ export default function HomeScreen() {
                   <MessageSquare color={colors.white} size={20} />
                 </View>
                 <View>
-                  <Text style={styles.chatTitle}>Nhắn tin cho bảo an</Text>
-                  <Text style={styles.chatSub}>Trao đổi – Yêu cầu</Text>
+                  <Text style={styles.chatTitle}>{h.chatSecurity}</Text>
+                  <Text style={styles.chatSub}>{h.chatSecuritySub}</Text>
                 </View>
               </Pressable>
               <View style={styles.pill247}>
                 <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: colors.success }} />
-                <Text style={styles.pill247Text}>Hỗ trợ 24/7</Text>
+                <Text style={styles.pill247Text}>{h.support247}</Text>
               </View>
             </View>
           </LinearGradient>
@@ -476,7 +476,7 @@ export default function HomeScreen() {
             )}
           </View>
           <View>
-            <Text style={styles.securityLabel}>Tình trạng an toàn</Text>
+            <Text style={styles.securityLabel}>{h.securityStatus}</Text>
             <Text style={[styles.securityHeadline, { color: securityStyle.headline }]}>{securityHeadline}</Text>
             <Text style={styles.securitySub}>{securityUpdated}</Text>
           </View>
@@ -518,17 +518,17 @@ export default function HomeScreen() {
 
       <Card style={{ marginTop: 16 }}>
         <Text style={{ fontSize: 18, fontWeight: "700", color: colors.foreground, marginBottom: 12 }}>
-          Dịch vụ bảo an
+          {h.securityServices}
         </Text>
         <View style={styles.servicesGrid}>
-          {SERVICES.map((s) => {
-            const Icon = s.Icon;
-            const iconColor = colorFromKey(colors, s.colorKey);
-            const bg = colorFromKey(colors, s.bgKey);
+          {services.map((svc) => {
+            const Icon = svc.Icon;
+            const iconColor = colorFromKey(colors, svc.colorKey);
+            const bg = colorFromKey(colors, svc.bgKey);
             return (
-              <Pressable key={s.id} style={styles.serviceCell} onPress={() => router.push(s.href)}>
+              <Pressable key={svc.id} style={styles.serviceCell} onPress={() => router.push(svc.href)}>
                 <View style={[styles.serviceIconBox, { backgroundColor: bg }]}>
-                  {s.id === "sos" ? (
+                  {svc.id === "sos" ? (
                     <View style={styles.sosCircle}>
                       <Text style={styles.sosCircleText}>SOS</Text>
                     </View>
@@ -537,8 +537,8 @@ export default function HomeScreen() {
                   )}
                 </View>
                 <Text style={styles.serviceLabel}>
-                  {s.label}
-                  {s.sub ? `\n${s.sub}` : ""}
+                  {svc.label}
+                  {svc.sub ? `\n${svc.sub}` : ""}
                 </Text>
               </Pressable>
             );
@@ -548,9 +548,9 @@ export default function HomeScreen() {
 
       <Card style={{ marginTop: 16 }}>
         <View style={styles.cardHeader}>
-          <SectionTitle>Gia đình hôm nay</SectionTitle>
+          <SectionTitle>{h.familyToday}</SectionTitle>
           <Pressable onPress={() => router.push("/(tabs)/gia-dinh")} style={{ flexDirection: "row", alignItems: "center" }}>
-            <Text style={styles.link}>Xem tất cả</Text>
+            <Text style={styles.link}>{c.seeAll}</Text>
             <ChevronRight color={colors.brand} size={14} />
           </Pressable>
         </View>
@@ -562,9 +562,9 @@ export default function HomeScreen() {
           </>
         ) : todayMembers.length === 0 ? (
           <>
-            <Text style={styles.muted}>Chưa có thành viên nào trong gia đình.</Text>
+            <Text style={styles.muted}>{h.noMembers}</Text>
             <Pressable onPress={() => router.push("/(tabs)/gia-dinh")} style={{ alignItems: "center", marginTop: 8 }}>
-              <Text style={styles.link}>Thêm thành viên →</Text>
+              <Text style={styles.link}>{c.addMember}</Text>
             </Pressable>
           </>
         ) : (
@@ -574,9 +574,9 @@ export default function HomeScreen() {
 
       <Card style={{ marginTop: 16, marginBottom: 24 }}>
         <View style={styles.cardHeader}>
-          <SectionTitle>Hoạt động gần đây</SectionTitle>
+          <SectionTitle>{h.recentActivity}</SectionTitle>
           <Pressable onPress={() => router.push("/thong-bao")} style={{ flexDirection: "row", alignItems: "center" }}>
-            <Text style={styles.link}>Xem tất cả</Text>
+            <Text style={styles.link}>{c.seeAll}</Text>
             <ChevronRight color={colors.brand} size={14} />
           </Pressable>
         </View>
@@ -586,9 +586,9 @@ export default function HomeScreen() {
             <View style={[styles.skeleton, { height: 48 }]} />
           </>
         ) : activitiesQ.isError ? (
-          <Text style={styles.muted}>Không tải được hoạt động. Vui lòng thử lại.</Text>
+          <Text style={styles.muted}>{h.activityLoadError}</Text>
         ) : activities.length === 0 ? (
-          <Text style={styles.muted}>Chưa có hoạt động nào.</Text>
+          <Text style={styles.muted}>{h.noActivity}</Text>
         ) : (
           <>
             {activities.map((a) => {
@@ -609,7 +609,7 @@ export default function HomeScreen() {
                       </Text>
                     ) : null}
                   </View>
-                  <Text style={styles.activityTime}>{formatActivityTime(a.created_at)}</Text>
+                  <Text style={styles.activityTime}>{formatActivityTime(a.created_at, locale)}</Text>
                   {!a.read_at && <View style={styles.unreadDot} />}
                 </View>
               );
@@ -623,13 +623,22 @@ export default function HomeScreen() {
                 {activitiesQ.isFetching ? (
                   <>
                     <Loader2 color={colors.foreground} size={14} />
-                    <Text style={styles.loadMoreText}>Đang tải…</Text>
+                    <Text style={styles.loadMoreText}>{c.loading}</Text>
                   </>
                 ) : (
                   <Text style={styles.loadMoreText}>
-                    Xem thêm ({activities.length}/{total})
+                    {c.loadMore(activities.length, total)}
                   </Text>
                 )}
+              </Pressable>
+            )}
+            {showCollapse && (
+              <Pressable
+                style={styles.loadMore}
+                disabled={activitiesQ.isFetching}
+                onPress={() => setPageCount(1)}
+              >
+                <Text style={styles.loadMoreText}>{c.showLess}</Text>
               </Pressable>
             )}
           </>

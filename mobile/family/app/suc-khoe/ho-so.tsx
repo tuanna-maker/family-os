@@ -6,23 +6,35 @@ import { avatarFor } from "@mobile/components/health/healthVisuals";
 import { useHealthOverview } from "@mobile/hooks/useHealthOverview";
 import { useHealthMutations } from "@mobile/hooks/useHealthMutations";
 import { useThemedStyles } from "@mobile/theme/useThemedStyles";
-import type { HealthProfileRow } from "@mobile/api/health";
+import { useI18n } from "@mobile/i18n/useI18n";
+import { formatDate } from "@mobile/i18n/format";
+import type { AppLocale } from "@mobile/hooks/useAppPrefs";
+import type { I18nStrings } from "@mobile/i18n/strings";
 
 const BACK = "/suc-khoe/ho-so";
 
-function profileDetails(p: HealthProfileRow) {
+type ProfileLike = {
+  id?: string;
+  name: string;
+  dob?: string | null;
+  blood_type?: string | null;
+  allergies?: string | null;
+  conditions?: string | null;
+};
+
+function profileDetails(p: ProfileLike, sp: I18nStrings["screens"]["health"]["subpage"], locale: AppLocale) {
   const lines: string[] = [];
-  if (p.blood_type) lines.push(`Nhóm máu ${p.blood_type}`);
-  if (p.allergies?.trim()) lines.push(`⚠️ Dị ứng: ${p.allergies.trim()}`);
-  if (p.conditions?.trim()) lines.push(`📋 Bệnh nền: ${p.conditions.trim()}`);
-  if (p.dob) lines.push(`Ngày sinh: ${new Date(p.dob).toLocaleDateString("vi-VN")}`);
-  if (lines.length === 0) lines.push("Chưa có thông tin chi tiết");
+  if (p.blood_type) lines.push(sp.bloodTypeLabel(p.blood_type));
+  if (p.allergies?.trim()) lines.push(sp.allergyLabel(p.allergies.trim()));
+  if (p.conditions?.trim()) lines.push(sp.chronicLabel(p.conditions.trim()));
+  if (p.dob) lines.push(sp.dobLabel(formatDate(p.dob, locale)));
+  if (lines.length === 0) lines.push(sp.noProfileDetail);
   return lines;
 }
 
 function openProfileEdit(
   openForm: ReturnType<typeof useHealthMutations>["openForm"],
-  p: HealthProfileRow,
+  p: ProfileLike,
 ) {
   openForm({
     type: "profile",
@@ -37,6 +49,9 @@ function openProfileEdit(
 
 export default function HoSoSucKhoeScreen() {
   const styles = useHintStyles();
+  const { locale, s } = useI18n();
+  const h = s.screens.health;
+  const sp = h.subpage;
   const { isLoading, profiles, usingPilot, meds, appts, records, allergies, conditions } =
     useHealthOverview();
   const { openForm, deleteRow, isPersistedHealthId } = useHealthMutations(BACK);
@@ -54,17 +69,17 @@ export default function HoSoSucKhoeScreen() {
 
   return (
     <HealthSubScreen
-      title="Hồ sơ sức khỏe"
-      subtitle="Hồ sơ từng thành viên trong gia đình"
+      title={h.profile}
+      subtitle={sp.profileSub}
       back="/suc-khoe"
       loading={isLoading && profiles.length === 0}
-      actionLabel="Thêm hồ sơ"
+      actionLabel={h.addProfile}
       onAction={() => openForm({ type: "profile" })}
-      emptyTitle="Chưa có hồ sơ"
-      emptyDescription="Thêm hồ sơ sức khỏe cho từng thành viên."
+      emptyTitle={h.noProfile}
+      emptyDescription={h.noProfileDesc}
       children={
         <View style={styles.categories}>
-          <Text style={styles.sectionTitle}>Danh mục hồ sơ</Text>
+          <Text style={styles.sectionTitle}>{sp.profileCategories}</Text>
           <HealthRecordTiles counts={recordCounts} />
         </View>
       }
@@ -72,7 +87,7 @@ export default function HoSoSucKhoeScreen() {
         id: p.id ?? p.name,
         emoji: avatarFor(p.name),
         title: p.name,
-        details: profileDetails(p),
+        details: profileDetails(p, sp, locale),
         onPress: () => openProfileEdit(openForm, p),
         onDelete: p.id && isPersistedHealthId(p.id)
           ? () => deleteRow({ table: "health_profiles", id: p.id })
@@ -81,7 +96,7 @@ export default function HoSoSucKhoeScreen() {
       }))}
       footer={
         usingPilot ? (
-          <Text style={styles.hint}>Dữ liệu mẫu — thêm hồ sơ thật bằng nút Thêm hồ sơ</Text>
+          <Text style={styles.hint}>{sp.profilePilotHint}</Text>
         ) : null
       }
     />

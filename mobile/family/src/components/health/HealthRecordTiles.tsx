@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import {
@@ -8,6 +9,7 @@ import {
   TestTube,
 } from "lucide-react-native";
 import type { LucideIcon } from "lucide-react-native";
+import { useI18n } from "@mobile/i18n/useI18n";
 import { useTheme } from "@mobile/theme/themeStore";
 import { useThemedStyles } from "@mobile/theme/useThemedStyles";
 import { cardShadow, radius } from "@mobile/theme/colors";
@@ -19,20 +21,6 @@ export type HealthRecordCounts = {
   allergies: number;
   conditions: number;
 };
-
-const TILES: {
-  icon: LucideIcon;
-  label: string;
-  href: string;
-  countKey: keyof HealthRecordCounts;
-  detail: (n: number) => string;
-}[] = [
-  { icon: TestTube, label: "Chỉ số", href: "/suc-khoe/chi-so", countKey: "tests", detail: (n) => `${n} bản ghi` },
-  { icon: ClipboardList, label: "Đơn thuốc", href: "/suc-khoe/don-thuoc", countKey: "meds", detail: (n) => `${n} đang dùng` },
-  { icon: Syringe, label: "Lịch khám", href: "/suc-khoe/lich-kham", countKey: "appts", detail: (n) => `${n} mục` },
-  { icon: AlertTriangle, label: "Dị ứng", href: "/suc-khoe/di-ung", countKey: "allergies", detail: (n) => `${n} ghi nhận` },
-  { icon: FileHeart, label: "Bệnh nền", href: "/suc-khoe/benh-nen", countKey: "conditions", detail: (n) => `${n} ghi nhận` },
-];
 
 function RecordTile({
   icon: Icon,
@@ -61,7 +49,46 @@ function RecordTile({
 
 export function HealthRecordTiles({ counts }: { counts: HealthRecordCounts }) {
   const router = useRouter();
+  const { s } = useI18n();
+  const h = s.screens.health;
+  const ov = h.overview;
   const styles = useTileStyles();
+
+  const tiles = useMemo(
+    () => [
+      {
+        icon: TestTube,
+        label: h.subpage.vitalsTitle,
+        href: "/suc-khoe/chi-so",
+        detail: ov.tileVitalsDetail(counts.tests),
+      },
+      {
+        icon: ClipboardList,
+        label: h.prescription,
+        href: "/suc-khoe/don-thuoc",
+        detail: ov.tileMedsDetail(counts.meds),
+      },
+      {
+        icon: Syringe,
+        label: h.appointment,
+        href: "/suc-khoe/lich-kham",
+        detail: ov.tileApptsDetail(counts.appts),
+      },
+      {
+        icon: AlertTriangle,
+        label: h.allergy,
+        href: "/suc-khoe/di-ung",
+        detail: ov.tileRecorded(counts.allergies),
+      },
+      {
+        icon: FileHeart,
+        label: h.chronic,
+        href: "/suc-khoe/benh-nen",
+        detail: ov.tileRecorded(counts.conditions),
+      },
+    ],
+    [counts, h, ov],
+  );
 
   return (
     <ScrollView
@@ -69,12 +96,12 @@ export function HealthRecordTiles({ counts }: { counts: HealthRecordCounts }) {
       showsHorizontalScrollIndicator={false}
       contentContainerStyle={styles.scrollContent}
     >
-      {TILES.map((t) => (
+      {tiles.map((t) => (
         <RecordTile
-          key={t.label}
+          key={t.href}
           icon={t.icon}
           label={t.label}
-          detail={t.detail(counts[t.countKey])}
+          detail={t.detail}
           onPress={() => router.push(t.href as never)}
         />
       ))}

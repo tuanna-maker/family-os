@@ -1,6 +1,7 @@
 import { Modal, Pressable, Text, TextInput, View } from "react-native";
 import { PrimaryButton } from "@mobile/components/ui";
 import type { MedicineReminderRow } from "@mobile/api/elderly-care";
+import { useI18n } from "@mobile/i18n/useI18n";
 import { useTheme } from "@mobile/theme/themeStore";
 import { useThemedStyles } from "@mobile/theme/useThemedStyles";
 import { radius } from "@mobile/theme/colors";
@@ -25,6 +26,8 @@ export function MedicineConfirmModal({
   pending: boolean;
 }) {
   const { colors } = useTheme();
+  const { s } = useI18n();
+  const ec = s.elderlyCare;
   const styles = useThemedStyles((c, fontScale) => ({
     overlay: {
       flex: 1,
@@ -60,12 +63,12 @@ export function MedicineConfirmModal({
     <Modal visible={!!med} transparent animationType="fade" onRequestClose={onCancel}>
       <View style={styles.overlay}>
         <View style={styles.sheet}>
-          <Text style={styles.title}>Xác nhận đã uống thuốc</Text>
+          <Text style={styles.title}>{ec.medicineConfirmTitle}</Text>
           <Text style={styles.sub}>
             {med?.medicine}
             {med?.dosage ? ` · ${med.dosage}` : ""}
           </Text>
-          <Text style={styles.label}>Giờ uống (HH:MM)</Text>
+          <Text style={styles.label}>{s.screens.health.medicineTime}</Text>
           <TextInput
             style={styles.input}
             value={time}
@@ -73,19 +76,19 @@ export function MedicineConfirmModal({
             placeholder="08:00"
             placeholderTextColor={colors.muted}
           />
-          <Text style={styles.label}>Ghi chú (tuỳ chọn)</Text>
+          <Text style={styles.label}>{ec.safeCheckNote}</Text>
           <TextInput
             style={[styles.input, { minHeight: 56, textAlignVertical: "top" }]}
             value={note}
             onChangeText={onNoteChange}
-            placeholder="vd: uống sau bữa sáng"
+            placeholder={ec.medicineNotePlaceholder}
             placeholderTextColor={colors.muted}
             multiline
             maxLength={200}
           />
-          <PrimaryButton label="Xác nhận" onPress={onConfirm} loading={pending} disabled={pending} />
+          <PrimaryButton label={s.common.confirmTaken} onPress={onConfirm} loading={pending} disabled={pending} />
           <Pressable style={styles.cancel} onPress={onCancel}>
-            <Text style={styles.cancelText}>Huỷ</Text>
+            <Text style={styles.cancelText}>{s.common.cancel}</Text>
           </Pressable>
         </View>
       </View>

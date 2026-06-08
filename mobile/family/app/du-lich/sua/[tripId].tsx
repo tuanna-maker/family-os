@@ -11,12 +11,16 @@ import { getTripBundle, upsertTrip } from "@mobile/api/trips";
 import { toast } from "@mobile/utils/toast";
 import { colors } from "@mobile/theme/colors";
 import { Text } from "react-native";
+import { useI18n } from "@mobile/i18n/useI18n";
 
 export default function DuLichSuaScreen() {
   const { tripId } = useLocalSearchParams<{ tripId: string }>();
   const router = useRouter();
   const { familyId } = useFamilyContext();
   const qc = useQueryClient();
+  const { s } = useI18n();
+  const tr = s.screens.travel;
+  const c = s.common;
 
   const q = useQuery({
     queryKey: ["trip-bundle", tripId],
@@ -59,7 +63,7 @@ export default function DuLichSuaScreen() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["family-trips"] });
       qc.invalidateQueries({ queryKey: ["trip-bundle", tripId] });
-      toast.success("Đã lưu chuyến đi");
+      toast.success(tr.tripSaved);
       router.back();
     },
     onError: (e: Error) => toast.error(e.message),
@@ -69,23 +73,23 @@ export default function DuLichSuaScreen() {
   if (!trip) {
     return (
       <Screen contentStyle={{ paddingTop: 0 }}>
-        <PageHeader title="Sửa chuyến đi" back="/du-lich" />
-        <Text style={{ color: colors.muted }}>Không tìm thấy chuyến đi.</Text>
+        <PageHeader title={tr.edit} back="/du-lich" />
+        <Text style={{ color: colors.muted }}>{tr.tripNotFound}</Text>
       </Screen>
     );
   }
 
   return (
     <Screen contentStyle={{ paddingTop: 0 }}>
-      <PageHeader eyebrow="Du lịch" title="Sửa chuyến đi" back={`/du-lich/${tripId}`} />
-      <TextField label="Tên chuyến đi" value={title} onChangeText={setTitle} />
-      <TextField label="Điểm đến" value={destination} onChangeText={setDestination} />
-      <DateField label="Ngày đi" value={startDate} onChange={setStartDate} />
-      <DateField label="Ngày về" value={endDate} onChange={setEndDate} minimumDate={startDate ? new Date(`${startDate}T12:00:00`) : undefined} />
-      <TextField label="Số người" value={members} onChangeText={setMembers} keyboardType="numeric" />
-      <TextField label="Ngân sách (VND)" value={budget} onChangeText={setBudget} keyboardType="numeric" />
+      <PageHeader eyebrow={tr.eyebrow} title={tr.edit} back={`/du-lich/${tripId}`} />
+      <TextField label={tr.tripName} value={title} onChangeText={setTitle} />
+      <TextField label={tr.destination} value={destination} onChangeText={setDestination} />
+      <DateField label={tr.startDate} value={startDate} onChange={setStartDate} />
+      <DateField label={tr.endDate} value={endDate} onChange={setEndDate} minimumDate={startDate ? new Date(`${startDate}T12:00:00`) : undefined} />
+      <TextField label={tr.membersCount} value={members} onChangeText={setMembers} keyboardType="numeric" />
+      <TextField label={tr.budgetVnd} value={budget} onChangeText={setBudget} keyboardType="numeric" />
       <View style={{ marginTop: 8 }}>
-        <PrimaryButton label="Lưu" onPress={() => mut.mutate()} disabled={!title.trim()} loading={mut.isPending} />
+        <PrimaryButton label={c.save} onPress={() => mut.mutate()} disabled={!title.trim()} loading={mut.isPending} />
       </View>
     </Screen>
   );

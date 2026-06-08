@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { cardShadow, radius } from "@mobile/theme/colors";
 import { useTheme } from "@mobile/theme/themeStore";
 import { useThemedStyles } from "@mobile/theme/useThemedStyles";
+import { useI18n } from "@mobile/i18n/useI18n";
 
 function useUiStyles() {
   return useThemedStyles((colors, fontScale) => ({
@@ -232,6 +233,7 @@ export function PrimaryButton({
   loading?: boolean;
 }) {
   const styles = useUiStyles();
+  const { s } = useI18n();
   return (
     <Pressable
       onPress={onPress}
@@ -242,7 +244,7 @@ export function PrimaryButton({
         pressed && !disabled && { opacity: 0.9, transform: [{ scale: 0.98 }] },
       ]}
     >
-      <Text style={styles.primaryBtnText}>{loading ? "Đang xử lý…" : label}</Text>
+      <Text style={styles.primaryBtnText}>{loading ? s.common.processing : label}</Text>
     </Pressable>
   );
 }

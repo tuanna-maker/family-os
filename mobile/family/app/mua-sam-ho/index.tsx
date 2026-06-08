@@ -10,12 +10,16 @@ import { colors, radius } from "@mobile/theme/colors";
 import { useFamilyContext } from "@mobile/hooks/useFamilyContext";
 import { deleteFoodRow, listFood, toggleShopping } from "@mobile/api/food";
 import { createFamilyServiceRequest } from "@mobile/api/service-requests";
+import { useI18n } from "@mobile/i18n/useI18n";
 import { toast } from "@mobile/utils/toast";
 
 export default function MuaSamHoScreen() {
   const router = useRouter();
   const { familyId, isLoading: famLoading } = useFamilyContext();
   const qc = useQueryClient();
+  const { s } = useI18n();
+  const sh = s.screens.shopping;
+  const c = s.common;
 
   const q = useQuery({
     queryKey: ["food", familyId],
@@ -27,12 +31,12 @@ export default function MuaSamHoScreen() {
     mutationFn: () =>
       createFamilyServiceRequest({
         family_id: familyId!,
-        title: "Yêu cầu mua sắm hộ",
-        description: "Gia đình cần hỗ trợ mua hộ theo danh sách trong app.",
+        title: sh.requestTitle,
+        description: sh.requestDesc,
         category: "shopping",
         priority: "normal",
       }),
-    onSuccess: () => toast.success("Đã gửi yêu cầu mua hộ"),
+    onSuccess: () => toast.success(c.shoppingSent),
     onError: (e: Error) => toast.error(e.message),
   });
 
@@ -44,25 +48,25 @@ export default function MuaSamHoScreen() {
   const delMut = useMutation({
     mutationFn: (id: string) => deleteFoodRow({ table: "shopping_items", id }),
     onSuccess: () => {
-      toast.success("Đã xoá");
+      toast.success(c.deleted);
       qc.invalidateQueries({ queryKey: ["food", familyId] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
 
   const shopping = q.data?.shopping ?? [];
-  const pending = shopping.filter((s) => !s.purchased);
+  const pending = shopping.filter((item) => !item.purchased);
 
   return (
     <Screen contentStyle={{ paddingTop: 0 }}>
       <PageHeader
-        eyebrow="Dịch vụ"
-        title="Mua sắm hộ"
+        eyebrow={c.service}
+        title={sh.title}
         back="/(tabs)/gia-dinh"
         right={
           <HeaderIconButton
             variant="primary"
-            accessibilityLabel="Thêm món"
+            accessibilityLabel={sh.addItemA11y}
             onPress={() => router.push("/mua-sam-ho/them")}
           >
             <Plus color={colors.white} size={20} />
@@ -77,46 +81,45 @@ export default function MuaSamHoScreen() {
           <Card style={styles.banner}>
             <ShoppingBag color={colors.brand} size={24} />
             <View style={{ flex: 1 }}>
-              <Text style={styles.bannerTitle}>Đặt người mua hộ</Text>
-              <Text style={styles.bannerSub}>Gửi yêu cầu tới Ban quản lý theo danh sách bên dưới.</Text>
+              <Text style={styles.bannerTitle}>{sh.bannerTitle}</Text>
+              <Text style={styles.bannerSub}>{sh.bannerSub}</Text>
             </View>
           </Card>
           <PrimaryButton
-            label={requestMut.isPending ? "Đang gửi…" : "Gửi yêu cầu mua hộ"}
+            label={requestMut.isPending ? c.sendingRequest : c.sendShoppingRequest}
             onPress={() => requestMut.mutate()}
             disabled={pending.length === 0 || requestMut.isPending}
           />
 
           <SectionHeader
-            title="Danh sách cần mua"
-            subtitle={`${pending.length} chưa mua · ${shopping.length} tổng`}
+            title={sh.list}
+            subtitle={sh.listSub(pending.length, shopping.length)}
             onAction={() => router.push("/mua-sam-ho/them")}
           />
 
           {shopping.length === 0 ? (
-            <EmptyState title="Chưa có món cần mua" description="Thêm món để lập danh sách đi chợ" />
+            <EmptyState title={c.noShoppingItems} description={c.noShoppingItemsDesc} />
           ) : (
-            shopping.map((s) => (
-              <Card key={s.id} style={styles.row}>
-                <Pressable onPress={() => tgMut.mutate({ id: s.id, purchased: !s.purchased })} style={styles.check}>
-                  <Text>{s.purchased ? "✓" : ""}</Text>
+            shopping.map((item) => (
+              <Card key={item.id} style={styles.row}>
+                <Pressable onPress={() => tgMut.mutate({ id: item.id, purchased: !item.purchased })} style={styles.check}>
+                  <Text>{item.purchased ? "✓" : ""}</Text>
                 </Pressable>
                 <View style={{ flex: 1 }}>
-                  <Text style={[styles.itemName, s.purchased && styles.purchased]}>{s.name}</Text>
+                  <Text style={[styles.itemName, item.purchased && styles.purchased]}>{item.name}</Text>
                   <Text style={styles.sub}>
-                    {[s.qty != null ? `${s.qty}${s.unit ?? ""}` : null, s.category].filter(Boolean).join(" · ") || "—"}
+                    {[item.qty != null ? `${item.qty}${item.unit ?? ""}` : null, item.category].filter(Boolean).join(" · ") || "—"}
                   </Text>
                 </View>
-                <Pressable onPress={() => router.push(`/mua-sam-ho/them?id=${s.id}`)}>
-                  <Text style={styles.link}>Sửa</Text>
+                <Pressable onPress={() => router.push(`/mua-sam-ho/them?id=${item.id}`)}>
+                  <Text style={styles.link}>{c.edit}</Text>
                 </Pressable>
-                <Pressable onPress={() => delMut.mutate(s.id)}>
+                <Pressable onPress={() => delMut.mutate(item.id)}>
                   <Trash2 color={colors.emergency} size={16} />
                 </Pressable>
               </Card>
             ))
           )}
-
         </>
       )}
       <View style={{ height: 32 }} />

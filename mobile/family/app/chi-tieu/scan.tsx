@@ -19,21 +19,24 @@ import { useFamilyContext } from "@mobile/hooks/useFamilyContext";
 import { scanReceipt, type ScanResult } from "@mobile/api/scan-receipt";
 import { createExpense } from "@mobile/api/expenses";
 import { uriToDataUrl } from "@mobile/lib/image-data-url";
+import { getCategoryLabel } from "@mobile/components/family/CategoryMeta";
+import { useI18n } from "@mobile/i18n/useI18n";
+import { formatCurrency } from "@mobile/i18n/format";
 import { toast } from "@mobile/utils/toast";
 import { colors, radius } from "@mobile/theme/colors";
 
 type Phase = "capture" | "scanning" | "review" | "saved" | "error";
 
-const CATEGORIES = ["Ăn uống", "Nhà cửa", "Con cái", "Sức khỏe", "Giải trí", "Khác"] as const;
-
-function formatVnd(n: number) {
-  return `${(n ?? 0).toLocaleString("vi-VN")}đ`;
-}
+const CATEGORY_KEYS = ["Ăn uống", "Nhà cửa", "Con cái", "Sức khỏe", "Giải trí", "Khác"] as const;
 
 export default function ChiTieuScanScreen() {
   const router = useRouter();
   const { familyId } = useFamilyContext();
   const qc = useQueryClient();
+  const { locale, s } = useI18n();
+  const ex = s.expense;
+  const sc = ex.scan;
+  const c = s.common;
 
   const [phase, setPhase] = useState<Phase>("capture");
   const [preview, setPreview] = useState<string | null>(null);
@@ -42,7 +45,7 @@ export default function ChiTieuScanScreen() {
 
   const pickImage = async (useCamera: boolean) => {
     if (!familyId) {
-      setError("Chưa có gia đình");
+      setError(c.noFamilyYet);
       setPhase("error");
       return;
     }
@@ -50,7 +53,7 @@ export default function ChiTieuScanScreen() {
       ? await ImagePicker.requestCameraPermissionsAsync()
       : await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!perm.granted) {
-      toast.error(useCamera ? "Cần quyền camera" : "Cần quyền thư viện ảnh");
+      toast.error(useCamera ? sc.needCamera : sc.needLibrary);
       return;
     }
     const picked = useCamera
@@ -70,7 +73,7 @@ export default function ChiTieuScanScreen() {
     try {
       const dataUrl = await uriToDataUrl(uri);
       if (dataUrl.length > 8_000_000) {
-        setError("Ảnh quá lớn (>6MB).");
+        setError(sc.imageTooLarge);
         setPhase("error");
         return;
       }
@@ -83,7 +86,7 @@ export default function ChiTieuScanScreen() {
       setResult(res.result);
       setPhase("review");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Không quét được");
+      setError(e instanceof Error ? e.message : sc.scanFailed);
       setPhase("error");
     }
   };
@@ -97,7 +100,7 @@ export default function ChiTieuScanScreen() {
 
   const save = useMutation({
     mutationFn: async () => {
-      if (!result || !familyId) throw new Error("Thiếu dữ liệu");
+      if (!result || !familyId) throw new Error(sc.missingData);
       await createExpense({
         family_id: familyId,
         title: result.merchant,
@@ -110,7 +113,7 @@ export default function ChiTieuScanScreen() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["expenses", familyId] });
       setPhase("saved");
-      toast.success("Đã lưu khoản chi");
+      toast.success(ex.savedExpense);
       setTimeout(() => router.replace("/chi-tieu"), 900);
     },
     onError: (e: Error) => {
@@ -121,20 +124,20 @@ export default function ChiTieuScanScreen() {
 
   return (
     <Screen contentStyle={{ paddingTop: 0 }}>
-      <PageHeader eyebrow="Chi tiêu" title="Quét hoá đơn" back="/chi-tieu" />
+      <PageHeader eyebrow={ex.scanEyebrow} title={ex.scanTitle} back="/chi-tieu" />
 
       {phase === "capture" && (
         <View>
           <Card style={styles.hero}>
             <Text style={styles.heroEmoji}>📸</Text>
-            <Text style={styles.heroTitle}>Chụp hoặc tải hoá đơn lên</Text>
-            <Text style={styles.heroSub}>AI đọc cửa hàng, số tiền và phân loại</Text>
+            <Text style={styles.heroTitle}>{sc.heroTitle}</Text>
+            <Text style={styles.heroSub}>{sc.heroSub}</Text>
           </Card>
-          <PrimaryButton label="Chụp hoá đơn" onPress={() => pickImage(true)} />
+          <PrimaryButton label={sc.takePhoto} onPress={() => pickImage(true)} />
           <View style={{ height: 10 }} />
           <Pressable style={styles.secondaryBtn} onPress={() => pickImage(false)}>
             <ImageIcon color={colors.foreground} size={20} />
-            <Text style={styles.secondaryText}>Chọn từ thư viện</Text>
+            <Text style={styles.secondaryText}>{sc.pickLibrary}</Text>
           </Pressable>
         </View>
       )}
@@ -144,8 +147,8 @@ export default function ChiTieuScanScreen() {
           <Image source={{ uri: preview }} style={styles.preview} />
           <View style={styles.scanOverlay}>
             <ActivityIndicator color={colors.brand} size="large" />
-            <Text style={styles.scanText}>AI đang đọc hoá đơn…</Text>
-            <Text style={styles.scanSub}>Khoảng 3–8 giây</Text>
+            <Text style={styles.scanText}>{sc.scanning}</Text>
+            <Text style={styles.scanSub}>{sc.scanningSub}</Text>
           </View>
         </View>
       )}
@@ -155,45 +158,45 @@ export default function ChiTieuScanScreen() {
           {preview && <Image source={{ uri: preview }} style={styles.previewSmall} />}
           <Card style={{ marginTop: 12, gap: 4 }}>
             <TextField
-              label="Cửa hàng"
+              label={sc.merchant}
               value={result.merchant}
               onChangeText={(v) => setResult({ ...result, merchant: v })}
             />
             <TextField
-              label="Số tiền"
+              label={sc.amount}
               value={String(result.total)}
               onChangeText={(v) => setResult({ ...result, total: Number(v) || 0 })}
               keyboardType="numeric"
             />
             <DateField
-              label="Ngày"
+              label={sc.date}
               value={result.date}
               onChange={(v) => setResult({ ...result, date: v })}
             />
-            <FieldLabel>Danh mục</FieldLabel>
+            <FieldLabel>{ex.category}</FieldLabel>
             <View style={styles.chips}>
-              {CATEGORIES.map((c) => (
+              {CATEGORY_KEYS.map((key) => (
                 <SelectChip
-                  key={c}
-                  label={c}
-                  active={result.category === c}
-                  onPress={() => setResult({ ...result, category: c })}
+                  key={key}
+                  label={getCategoryLabel(key, locale)}
+                  active={result.category === key}
+                  onPress={() => setResult({ ...result, category: key })}
                 />
               ))}
             </View>
           </Card>
           <Card style={{ marginTop: 12, backgroundColor: colors.tintGreen }}>
-            <Text style={styles.totalLabel}>Tổng sẽ ghi nhận</Text>
-            <Text style={styles.totalAmount}>{formatVnd(result.total)}</Text>
+            <Text style={styles.totalLabel}>{sc.totalLabel}</Text>
+            <Text style={styles.totalAmount}>{formatCurrency(result.total, locale)}</Text>
           </Card>
           <View style={styles.rowBtns}>
             <Pressable style={styles.secondaryBtn} onPress={reset}>
               <RotateCcw color={colors.foreground} size={18} />
-              <Text style={styles.secondaryText}>Quét lại</Text>
+              <Text style={styles.secondaryText}>{sc.rescan}</Text>
             </Pressable>
             <View style={{ flex: 1 }}>
               <PrimaryButton
-                label="Lưu khoản chi"
+                label={sc.saveExpense}
                 onPress={() => save.mutate()}
                 loading={save.isPending}
               />
@@ -206,7 +209,7 @@ export default function ChiTieuScanScreen() {
       {phase === "saved" && (
         <Card style={{ alignItems: "center", paddingVertical: 32, backgroundColor: colors.tintGreen }}>
           <Check color={colors.success} size={40} />
-          <Text style={styles.savedTitle}>Đã lưu vào chi tiêu</Text>
+          <Text style={styles.savedTitle}>{sc.savedTitle}</Text>
         </Card>
       )}
 
@@ -215,13 +218,13 @@ export default function ChiTieuScanScreen() {
           <Card style={styles.errCard}>
             <AlertTriangle color={colors.emergency} size={22} />
             <View style={{ flex: 1 }}>
-              <Text style={styles.errTitle}>Không quét được</Text>
+              <Text style={styles.errTitle}>{sc.failedTitle}</Text>
               <Text style={styles.errSub}>{error}</Text>
             </View>
           </Card>
           <Pressable style={styles.secondaryBtn} onPress={reset}>
             <RotateCcw color={colors.foreground} size={18} />
-            <Text style={styles.secondaryText}>Thử lại</Text>
+            <Text style={styles.secondaryText}>{sc.retry}</Text>
           </Pressable>
         </View>
       )}
@@ -258,19 +261,7 @@ const styles = StyleSheet.create({
   },
   scanText: { fontWeight: "700", color: colors.white },
   scanSub: { fontSize: 12, color: colors.white },
-  label: { fontSize: 14, fontWeight: "600", color: colors.foreground, marginTop: 8, marginBottom: 8 },
   chips: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 8 },
-  chip: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.cardBorder,
-    backgroundColor: colors.card,
-  },
-  chipActive: { backgroundColor: colors.brandDeep, borderColor: colors.brandDeep },
-  chipText: { fontSize: 12, fontWeight: "600", color: colors.muted },
-  chipTextActive: { color: colors.white },
   totalLabel: { fontSize: 12, color: colors.muted },
   totalAmount: { fontSize: 22, fontWeight: "800", color: colors.foreground, marginTop: 4 },
   rowBtns: { flexDirection: "row", gap: 10, marginTop: 16, alignItems: "center" },

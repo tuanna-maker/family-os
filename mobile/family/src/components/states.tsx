@@ -1,6 +1,7 @@
 import { ActivityIndicator, Pressable, Text, View } from "react-native";
 import { useTheme } from "@mobile/theme/themeStore";
 import { useThemedStyles } from "@mobile/theme/useThemedStyles";
+import { useI18n } from "@mobile/i18n/useI18n";
 
 function useStateStyles() {
   return useThemedStyles((colors, fontScale) => ({
@@ -60,10 +61,11 @@ export function EmptyState({
 
 export function ErrorState({ message }: { message: string }) {
   const { colors } = useTheme();
+  const { s } = useI18n();
   const styles = useStateStyles();
   return (
     <View style={styles.empty}>
-      <Text style={[styles.emptyTitle, { color: colors.emergency }]}>Lỗi</Text>
+      <Text style={[styles.emptyTitle, { color: colors.emergency }]}>{s.common.error}</Text>
       <Text style={styles.emptySub}>{message}</Text>
     </View>
   );

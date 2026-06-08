@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Alert, Pressable, Text, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
+import { appAlert } from "@mobile/utils/alert";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Pill, Stethoscope, Trash2, UserCircle2 } from "lucide-react-native";
 import { Screen } from "@mobile/components/Screen";
@@ -19,6 +20,8 @@ import { toast } from "@mobile/utils/toast";
 import { useTheme } from "@mobile/theme/themeStore";
 import { useThemedStyles } from "@mobile/theme/useThemedStyles";
 import { radius } from "@mobile/theme/colors";
+import { useI18n } from "@mobile/i18n/useI18n";
+import { formatDate, formatDateTime } from "@mobile/i18n/format";
 
 const PILOT_PROFILES = [
   { name: "Anh Hùng", blood_type: "O+", dob: null, allergies: null, conditions: null },
@@ -30,6 +33,10 @@ const PILOT_PROFILES = [
 export default function SucKhoeQuanLyScreen() {
   const { colors } = useTheme();
   const styles = useQuanLyStyles();
+  const { locale, s } = useI18n();
+  const c = s.common;
+  const h = s.screens.health;
+  const sp = h.subpage;
   const { familyId } = useFamilyContext();
   const qc = useQueryClient();
 
@@ -58,7 +65,7 @@ export default function SucKhoeQuanLyScreen() {
         blood_type: profileBlood.trim() || null,
       }),
     onSuccess: () => {
-      toast.success("Đã thêm hồ sơ");
+      toast.success(c.profileAdded);
       setProfileName("");
       setProfileBlood("");
       invalidate();
@@ -76,7 +83,7 @@ export default function SucKhoeQuanLyScreen() {
         active: true,
       }),
     onSuccess: () => {
-      toast.success("Đã thêm nhắc thuốc");
+      toast.success(c.medicineAdded);
       setMedName("");
       invalidate();
     },
@@ -93,7 +100,7 @@ export default function SucKhoeQuanLyScreen() {
         status: "planned",
       }),
     onSuccess: () => {
-      toast.success("Đã thêm lịch khám");
+      toast.success(h.apptAdded);
       invalidate();
     },
     onError: (e: Error) => toast.error(e.message),
@@ -102,7 +109,7 @@ export default function SucKhoeQuanLyScreen() {
   const delMut = useMutation({
     mutationFn: deleteHealthRow,
     onSuccess: () => {
-      toast.success("Đã xóa");
+      toast.success(c.deleted);
       invalidate();
     },
     onError: (e: Error) => toast.error(e.message),
@@ -124,13 +131,13 @@ export default function SucKhoeQuanLyScreen() {
   return (
     <Screen contentStyle={{ paddingTop: 0 }}>
       <PageHeader
-        eyebrow="Family Core"
-        title="Quản lý sức khỏe"
-        subtitle="Hồ sơ, nhắc thuốc, lịch khám"
+        eyebrow={c.familyCore}
+        title={h.manage}
+        subtitle={h.manageSub}
         back="/suc-khoe"
       />
 
-      <SectionHeader title="Hồ sơ sức khỏe" subtitle={`${profiles.length} thành viên`} />
+      <SectionHeader title={h.profile} subtitle={h.memberCount(profiles.length)} />
       {showPilotProfiles ? (
         <>
           {PILOT_PROFILES.map((p) => (
@@ -141,17 +148,17 @@ export default function SucKhoeQuanLyScreen() {
               <View style={{ flex: 1 }}>
                 <Text style={styles.title}>{p.name}</Text>
                 <Text style={styles.sub}>
-                  {[p.blood_type && `Nhóm máu ${p.blood_type}`].filter(Boolean).join(" · ") || "—"}
+                  {[p.blood_type && sp.bloodTypeLabel(p.blood_type)].filter(Boolean).join(" · ") || "—"}
                 </Text>
-                {p.allergies ? <Text style={styles.sub}>⚠️ Dị ứng: {p.allergies}</Text> : null}
+                {p.allergies ? <Text style={styles.sub}>{sp.allergyLabel(p.allergies)}</Text> : null}
                 {p.conditions ? <Text style={styles.sub}>📋 {p.conditions}</Text> : null}
               </View>
             </Card>
           ))}
-          <Text style={styles.pilotHint}>Mẫu — thêm hồ sơ thật bên dưới</Text>
+          <Text style={styles.pilotHint}>{sp.pilotProfilesHint}</Text>
         </>
       ) : profiles.length === 0 ? (
-        <EmptyState title="Chưa có hồ sơ" description="Thêm hồ sơ cho từng thành viên" />
+        <EmptyState title={h.noProfile} description={h.noProfileDesc} />
       ) : (
         profiles.map((p) => (
           <Card key={p.id} style={styles.row}>
@@ -161,14 +168,19 @@ export default function SucKhoeQuanLyScreen() {
             <View style={{ flex: 1 }}>
               <Text style={styles.title}>{p.name}</Text>
               <Text style={styles.sub}>
-                {[p.blood_type && `Nhóm máu ${p.blood_type}`, p.dob && `Sinh ${p.dob}`].filter(Boolean).join(" · ") || "—"}
+                {[
+                  p.blood_type && sp.bloodTypeLabel(p.blood_type),
+                  p.dob && sp.born(formatDate(p.dob, locale)),
+                ]
+                  .filter(Boolean)
+                  .join(" · ") || "—"}
               </Text>
             </View>
             <Pressable
               onPress={() =>
-                Alert.alert("Xóa hồ sơ?", p.name, [
-                  { text: "Huỷ", style: "cancel" },
-                  { text: "Xóa", style: "destructive", onPress: () => delMut.mutate({ table: "health_profiles", id: p.id }) },
+                appAlert(h.deleteProfile, p.name, [
+                  { text: c.cancel, style: "cancel" },
+                  { text: c.delete, style: "destructive", onPress: () => delMut.mutate({ table: "health_profiles", id: p.id }) },
                 ])
               }
             >
@@ -178,19 +190,19 @@ export default function SucKhoeQuanLyScreen() {
         ))
       )}
 
-      <SectionHeader title="Thêm hồ sơ" />
-      <TextField label="Tên thành viên" value={profileName} onChangeText={setProfileName} placeholder="Chị Lan" />
-      <TextField label="Nhóm máu" value={profileBlood} onChangeText={setProfileBlood} placeholder="A+" />
+      <SectionHeader title={h.addProfile} />
+      <TextField label={h.memberName} value={profileName} onChangeText={setProfileName} placeholder={h.form.memberPh} />
+      <TextField label={h.bloodType} value={profileBlood} onChangeText={setProfileBlood} placeholder="A+" />
       <PrimaryButton
-        label="Lưu hồ sơ"
+        label={c.saveProfile}
         onPress={() => addProfile.mutate()}
         disabled={!profileName.trim()}
         loading={addProfile.isPending}
       />
 
-      <SectionHeader title="Nhắc uống thuốc" subtitle={`${meds.filter((m) => m.active).length} đang dùng`} />
+      <SectionHeader title={h.medicine} subtitle={h.medicineActive(meds.filter((m) => m.active).length)} />
       {meds.length === 0 ? (
-        <EmptyState title="Chưa có lời nhắc" description="Thêm nhắc thuốc bên dưới" />
+        <EmptyState title={h.noReminder} description={h.noReminderDesc} />
       ) : (
         meds.map((m) => (
           <Card key={m.id} style={styles.row}>
@@ -201,13 +213,13 @@ export default function SucKhoeQuanLyScreen() {
               <Text style={styles.title}>
                 {m.member_name} · {m.medicine}
               </Text>
-              <Text style={styles.sub}>{m.time_of_day?.slice(0, 5) ?? "Hàng ngày"}</Text>
+              <Text style={styles.sub}>{m.time_of_day?.slice(0, 5) ?? h.daily}</Text>
             </View>
             <Pressable
               onPress={() =>
-                Alert.alert("Xóa?", m.medicine, [
-                  { text: "Huỷ", style: "cancel" },
-                  { text: "Xóa", style: "destructive", onPress: () => delMut.mutate({ table: "medicine_reminders", id: m.id }) },
+                appAlert(h.deleteRecord, m.medicine, [
+                  { text: c.cancel, style: "cancel" },
+                  { text: c.delete, style: "destructive", onPress: () => delMut.mutate({ table: "medicine_reminders", id: m.id }) },
                 ])
               }
             >
@@ -217,20 +229,20 @@ export default function SucKhoeQuanLyScreen() {
         ))
       )}
 
-      <SectionHeader title="Thêm nhắc thuốc" />
-      <TextField label="Thành viên" value={medMember} onChangeText={setMedMember} placeholder="Bé Minh" />
-      <TextField label="Tên thuốc" value={medName} onChangeText={setMedName} />
-      <TextField label="Giờ uống (HH:MM)" value={medTime} onChangeText={setMedTime} />
+      <SectionHeader title={h.addMedicineSection} />
+      <TextField label={h.member} value={medMember} onChangeText={setMedMember} placeholder="Bé Minh" />
+      <TextField label={c.medicine} value={medName} onChangeText={setMedName} />
+      <TextField label={h.medicineTime} value={medTime} onChangeText={setMedTime} />
       <PrimaryButton
-        label="Lưu nhắc thuốc"
+        label={c.saveMedicine}
         onPress={() => addMed.mutate()}
         disabled={!medMember.trim() || !medName.trim()}
         loading={addMed.isPending}
       />
 
-      <SectionHeader title="Lịch khám" subtitle={`${appts.length} mục`} />
+      <SectionHeader title={h.appointment} subtitle={h.apptCount(appts.length)} />
       {appts.length === 0 ? (
-        <EmptyState title="Chưa có lịch khám" description="Thêm lịch khám bên dưới" />
+        <EmptyState title={h.noAppt} description={h.noApptDesc} />
       ) : (
         appts.map((a) => (
           <Card key={a.id} style={styles.row}>
@@ -240,15 +252,15 @@ export default function SucKhoeQuanLyScreen() {
             <View style={{ flex: 1 }}>
               <Text style={styles.title}>{a.member_name}</Text>
               <Text style={styles.sub}>
-                {new Date(a.scheduled_at).toLocaleString("vi-VN")}
+                {formatDateTime(a.scheduled_at, locale)}
                 {a.doctor ? ` · ${a.doctor}` : ""}
               </Text>
             </View>
             <Pressable
               onPress={() =>
-                Alert.alert("Xóa?", a.member_name, [
-                  { text: "Huỷ", style: "cancel" },
-                  { text: "Xóa", style: "destructive", onPress: () => delMut.mutate({ table: "medical_appointments", id: a.id }) },
+                appAlert(h.deleteRecord, a.member_name, [
+                  { text: c.cancel, style: "cancel" },
+                  { text: c.delete, style: "destructive", onPress: () => delMut.mutate({ table: "medical_appointments", id: a.id }) },
                 ])
               }
             >
@@ -258,12 +270,12 @@ export default function SucKhoeQuanLyScreen() {
         ))
       )}
 
-      <SectionHeader title="Thêm lịch khám" />
-      <TextField label="Thành viên" value={apptMember} onChangeText={setApptMember} />
-      <TextField label="Bác sĩ / Cơ sở" value={apptDoctor} onChangeText={setApptDoctor} />
-      <DateTimeField label="Thời gian" value={apptAt} onChange={setApptAt} />
+      <SectionHeader title={h.addAppt} />
+      <TextField label={h.member} value={apptMember} onChangeText={setApptMember} />
+      <TextField label={h.doctorFacility} value={apptDoctor} onChangeText={setApptDoctor} />
+      <DateTimeField label={h.apptTime} value={apptAt} onChange={setApptAt} />
       <PrimaryButton
-        label="Lưu lịch khám"
+        label={h.saveAppt}
         onPress={() => addAppt.mutate()}
         disabled={!apptMember.trim()}
         loading={addAppt.isPending}

@@ -8,9 +8,11 @@ import { DateField } from "@mobile/components/DateTimeField";
 import { useThemedStyles } from "@mobile/theme/useThemedStyles";
 import { useFamilyContext } from "@mobile/hooks/useFamilyContext";
 import { createExpense, listExpenses, updateExpense } from "@mobile/api/expenses";
+import { getCategoryLabel } from "@mobile/components/family/CategoryMeta";
+import { useI18n } from "@mobile/i18n/useI18n";
 import { toast } from "@mobile/utils/toast";
 
-const CATEGORIES = ["Ăn uống", "Nhà cửa", "Con cái", "Sức khỏe", "Giải trí", "Khác"];
+const CATEGORY_KEYS = ["Ăn uống", "Nhà cửa", "Con cái", "Sức khỏe", "Giải trí", "Khác"];
 
 export default function ChiTieuThemScreen() {
   const styles = useThemedStyles(() => ({
@@ -18,6 +20,9 @@ export default function ChiTieuThemScreen() {
   }));
   const { id } = useLocalSearchParams<{ id?: string }>();
   const router = useRouter();
+  const { locale, s } = useI18n();
+  const ex = s.expense;
+  const c = s.common;
   const { familyId } = useFamilyContext();
   const qc = useQueryClient();
   const isEdit = !!id;
@@ -56,7 +61,7 @@ export default function ChiTieuThemScreen() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["expenses", familyId] });
-      toast.success(isEdit ? "Đã lưu" : "Đã thêm khoản chi");
+      toast.success(isEdit ? c.saved : ex.addedExpense);
       router.back();
     },
     onError: (e: Error) => toast.error(e.message),
@@ -65,25 +70,30 @@ export default function ChiTieuThemScreen() {
   return (
     <Screen contentStyle={{ paddingTop: 0 }}>
       <PageHeader
-        eyebrow="Chi tiêu"
-        title={isEdit ? "Sửa khoản chi" : "Thêm khoản chi"}
+        eyebrow={ex.scanEyebrow}
+        title={isEdit ? ex.editExpense : ex.addExpenseItem}
         back="/chi-tieu"
       />
-      <TextField label="Tên khoản chi" value={title} onChangeText={setTitle} placeholder="Đi chợ" />
-      <TextField label="Số tiền (VND)" value={amount} onChangeText={setAmount} keyboardType="numeric" />
-      <DateField label="Ngày chi" value={spentOn} onChange={setSpentOn} />
+      <TextField label={ex.expenseName} value={title} onChangeText={setTitle} placeholder="Đi chợ" />
+      <TextField label={ex.amountVnd} value={amount} onChangeText={setAmount} keyboardType="numeric" />
+      <DateField label={ex.spentDate} value={spentOn} onChange={setSpentOn} />
 
-      <FieldLabel>Danh mục</FieldLabel>
+      <FieldLabel>{ex.category}</FieldLabel>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 16 }}>
         <View style={styles.chips}>
-          {CATEGORIES.map((c) => (
-            <SelectChip key={c} label={c} active={category === c} onPress={() => setCategory(c)} />
+          {CATEGORY_KEYS.map((key) => (
+            <SelectChip
+              key={key}
+              label={getCategoryLabel(key, locale)}
+              active={category === key}
+              onPress={() => setCategory(key)}
+            />
           ))}
         </View>
       </ScrollView>
 
       <PrimaryButton
-        label={isEdit ? "Lưu thay đổi" : "Thêm khoản chi"}
+        label={isEdit ? ex.saveChanges : ex.addExpenseItem}
         onPress={() => mut.mutate()}
         disabled={!title.trim() || !amount.trim() || (isEdit && listQ.isLoading)}
         loading={mut.isPending}

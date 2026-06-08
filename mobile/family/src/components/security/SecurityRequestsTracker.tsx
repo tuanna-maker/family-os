@@ -3,24 +3,12 @@ import { useQuery } from "@tanstack/react-query";
 import { ShieldCheck } from "lucide-react-native";
 import { Card } from "@mobile/components/ui";
 import { listSecurityRequests } from "@mobile/api/security";
-import {
-  REQUEST_STATUS_LABEL,
-  REQUEST_TYPE_EMOJI,
-  REQUEST_TYPE_LABEL,
-} from "@mobile/constants/security";
+import { REQUEST_TYPE_EMOJI, getRequestStatusLabel, getRequestTypeLabel } from "@mobile/constants/security";
+import { formatRelativeAgo } from "@mobile/i18n/format";
+import { useI18n } from "@mobile/i18n/useI18n";
 import { useTheme } from "@mobile/theme/themeStore";
 import { useThemedStyles } from "@mobile/theme/useThemedStyles";
 import { radius } from "@mobile/theme/colors";
-
-function fmtElapsed(iso: string) {
-  const diff = Date.now() - new Date(iso).getTime();
-  const m = Math.max(0, Math.floor(diff / 60000));
-  if (m < 1) return "vừa xong";
-  if (m < 60) return `${m} phút trước`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `${h} giờ trước`;
-  return `${Math.floor(h / 24)} ngày trước`;
-}
 
 function statusTone(colors: ReturnType<typeof useTheme>["colors"], status: string) {
   if (status === "in_progress") return { bg: colors.tintBlue, fg: colors.brand };
@@ -31,6 +19,8 @@ function statusTone(colors: ReturnType<typeof useTheme>["colors"], status: strin
 
 export function SecurityRequestsTracker() {
   const { colors } = useTheme();
+  const { locale, s } = useI18n();
+  const sec = s.security;
   const q = useQuery({
     queryKey: ["security-requests"],
     queryFn: () => listSecurityRequests(),
@@ -76,8 +66,8 @@ export function SecurityRequestsTracker() {
   return (
     <View>
       <View style={styles.head}>
-        <Text style={styles.headTitle}>Trạng thái điều phối</Text>
-        <Text style={styles.headSub}>Yêu cầu của bạn — cập nhật realtime</Text>
+        <Text style={styles.headTitle}>{sec.trackerTitle}</Text>
+        <Text style={styles.headSub}>{sec.trackerSub}</Text>
       </View>
 
       {q.isLoading ? (
@@ -90,8 +80,8 @@ export function SecurityRequestsTracker() {
             <ShieldCheck color={colors.success} size={20} />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={styles.rowTitle}>Chưa có yêu cầu nào đang mở</Text>
-            <Text style={styles.rowMeta}>Khi bạn gửi SOS, trạng thái sẽ hiển thị ở đây.</Text>
+            <Text style={styles.rowTitle}>{sec.noOpenRequests}</Text>
+            <Text style={styles.rowMeta}>{sec.noOpenRequestsSub}</Text>
           </View>
         </Card>
       ) : (
@@ -104,12 +94,12 @@ export function SecurityRequestsTracker() {
               </View>
               <View style={{ flex: 1, minWidth: 0 }}>
                 <Text style={styles.rowTitle} numberOfLines={1}>
-                  {REQUEST_TYPE_LABEL[r.request_type] ?? r.request_type}
+                  {getRequestTypeLabel(r.request_type, locale)}
                 </Text>
                 <Text style={[styles.badge, { backgroundColor: tone.bg, color: tone.fg }]}>
-                  {REQUEST_STATUS_LABEL[r.status] ?? r.status}
+                  {getRequestStatusLabel(r.status, locale)}
                 </Text>
-                <Text style={styles.rowMeta}>Gửi {fmtElapsed(r.created_at)}</Text>
+                <Text style={styles.rowMeta}>{sec.sentAgo(formatRelativeAgo(r.created_at, locale))}</Text>
               </View>
             </Card>
           );

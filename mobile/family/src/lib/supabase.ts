@@ -56,6 +56,6 @@ export function getPilotLoginDefaults() {
   }
   return {
     identifier: "giadinh@securitytech.vn",
-    password: "Demo@12345",
+    password: "Stos@2026Demo",
   };
 }

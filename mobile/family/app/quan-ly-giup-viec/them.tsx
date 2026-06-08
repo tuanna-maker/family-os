@@ -9,6 +9,7 @@ import { LoadingState } from "@mobile/components/states";
 import { useFamilyContext } from "@mobile/hooks/useFamilyContext";
 import { listHelpers, upsertHelper, upsertHelperTask } from "@mobile/api/helpers";
 import { toast } from "@mobile/utils/toast";
+import { useI18n } from "@mobile/i18n/useI18n";
 
 type FormType = "helper" | "task";
 
@@ -18,10 +19,12 @@ export default function GiupViecThemScreen() {
   const router = useRouter();
   const { familyId } = useFamilyContext();
   const qc = useQueryClient();
+  const { s } = useI18n();
+  const hk = s.screens.housekeeping;
 
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
-  const [role, setRole] = useState("Giúp việc");
+  const [role, setRole] = useState<string>(hk.defaultRole);
   const [salary, setSalary] = useState("");
   const [taskTitle, setTaskTitle] = useState("");
   const [taskTime, setTaskTime] = useState("09:00");
@@ -39,14 +42,14 @@ export default function GiupViecThemScreen() {
     if (!helper) return;
     setName(helper.name);
     setPhone(helper.phone ?? "");
-    setRole(helper.role ?? "Giúp việc");
+    setRole(helper.role ?? hk.defaultRole);
     setSalary(helper.salary != null ? String(helper.salary) : "");
     setLoaded(true);
-  }, [id, formType, helpersQ.data]);
+  }, [id, formType, helpersQ.data, hk.defaultRole]);
 
   const mut = useMutation({
     mutationFn: async () => {
-      if (!familyId) throw new Error("Chưa có gia đình");
+      if (!familyId) throw new Error(hk.noFamilyError);
       if (formType === "helper") {
         return upsertHelper({
           id,
@@ -57,7 +60,7 @@ export default function GiupViecThemScreen() {
           salary: salary ? Number(salary) : undefined,
         });
       }
-      if (!helperId) throw new Error("Chọn giúp việc trước");
+      if (!helperId) throw new Error(hk.selectHelperFirst);
       return upsertHelperTask({
         helper_id: helperId,
         title: taskTitle.trim(),
@@ -68,13 +71,14 @@ export default function GiupViecThemScreen() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["family-helpers"] });
       qc.invalidateQueries({ queryKey: ["helper-bundle"] });
-      toast.success("Đã lưu");
+      toast.success(s.common.saved);
       router.back();
     },
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const title = formType === "helper" ? (id ? "Sửa hồ sơ" : "Thêm giúp việc") : "Thêm việc";
+  const title =
+    formType === "helper" ? (id ? hk.editHelperTitle : hk.addHelper) : hk.addTaskTitle;
 
   if (id && formType === "helper" && (!loaded || helpersQ.isLoading)) {
     return (
@@ -91,20 +95,20 @@ export default function GiupViecThemScreen() {
 
       {formType === "helper" ? (
         <>
-          <TextField label="Họ tên" value={name} onChangeText={setName} />
-          <TextField label="SĐT" value={phone} onChangeText={setPhone} keyboardType="numeric" />
-          <TextField label="Vai trò" value={role} onChangeText={setRole} />
-          <TextField label="Lương tháng" value={salary} onChangeText={setSalary} keyboardType="numeric" />
+          <TextField label={hk.fullName} value={name} onChangeText={setName} />
+          <TextField label={hk.phoneShort} value={phone} onChangeText={setPhone} keyboardType="numeric" />
+          <TextField label={hk.role} value={role} onChangeText={setRole} />
+          <TextField label={hk.monthlySalary} value={salary} onChangeText={setSalary} keyboardType="numeric" />
         </>
       ) : (
         <>
-          <TextField label="Công việc" value={taskTitle} onChangeText={setTaskTitle} placeholder="Dọn phòng khách" />
-          <TimeField label="Giờ làm" value={taskTime} onChange={setTaskTime} />
+          <TextField label={hk.taskTitle} value={taskTitle} onChangeText={setTaskTitle} placeholder={hk.taskPlaceholder} />
+          <TimeField label={hk.taskTime} value={taskTime} onChange={setTaskTime} />
         </>
       )}
 
       <View style={{ marginTop: 8 }}>
-        <PrimaryButton label="Lưu" onPress={() => mut.mutate()} loading={mut.isPending} />
+        <PrimaryButton label={hk.save} onPress={() => mut.mutate()} loading={mut.isPending} />
       </View>
     </Screen>
   );

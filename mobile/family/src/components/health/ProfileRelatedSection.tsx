@@ -2,7 +2,8 @@ import { Pressable, Text, View } from "react-native";
 import { Plus } from "lucide-react-native";
 import type { AppointmentRow, MedicineRow } from "@mobile/api/health";
 import { Card } from "@mobile/components/ui";
-import { formatApptShort } from "@mobile/components/health/healthVisuals";
+import { formatApptTime } from "@mobile/i18n/format";
+import { useI18n } from "@mobile/i18n/useI18n";
 import { useTheme } from "@mobile/theme/themeStore";
 import { useThemedStyles } from "@mobile/theme/useThemedStyles";
 import { radius } from "@mobile/theme/colors";
@@ -26,6 +27,9 @@ export function ProfileRelatedSection({
   onMedPress?: (m: MedicineRow) => void;
   onApptPress?: (a: AppointmentRow) => void;
 }) {
+  const { locale, s } = useI18n();
+  const hp = s.screens.health.subpage;
+  const ov = s.screens.health.overview;
   const { colors } = useTheme();
   const styles = useSectionStyles();
   const items = meds ?? appts ?? [];
@@ -52,7 +56,9 @@ export function ProfileRelatedSection({
                   {m.medicine}
                 </Text>
                 <Text style={styles.rowSub}>
-                  {m.time_of_day ? `Uống lúc ${m.time_of_day.slice(0, 5)}` : "Đang dùng"}
+                  {m.time_of_day
+                    ? hp.takeAt(m.time_of_day.slice(0, 5))
+                    : hp.inUse}
                 </Text>
               </View>
             </Card>
@@ -64,9 +70,9 @@ export function ProfileRelatedSection({
             <Card style={styles.row}>
               <View style={{ flex: 1, minWidth: 0 }}>
                 <Text style={styles.rowTitle} numberOfLines={1}>
-                  {a.doctor ?? "Khám tổng quát"}
+                  {a.doctor ?? ov.generalCheckup}
                 </Text>
-                <Text style={styles.rowSub}>{formatApptShort(a.scheduled_at)}</Text>
+                <Text style={styles.rowSub}>{formatApptTime(a.scheduled_at, locale)}</Text>
               </View>
             </Card>
           </Pressable>

@@ -21,20 +21,26 @@ import {
   AlertTriangle,
   Users,
 } from "lucide-react-native";
+import type { AppLocale } from "@mobile/hooks/useAppPrefs";
 import type { AppColors } from "@mobile/theme/palettes";
 import type { FamilyTodayMember, StatusTone } from "@mobile/api/family-today";
 import type { SecurityChip, SecurityTone } from "@mobile/api/security";
+import { formatActivityTime as fmtActivityTime } from "@mobile/i18n/format";
+import { getStrings } from "@mobile/i18n/useI18n";
 
 export const SECURITY_HERO = require("../../../assets/security-hero.jpg");
 
-export const SERVICES = [
-  { id: "sos", label: "SOS", sub: "khẩn cấp", Icon: ShieldCheck, colorKey: "emergency" as const, bgKey: "tintRed" as const, href: "/(tabs)/bao-an" as const },
-  { id: "fire", label: "Báo cháy", sub: "", Icon: Flame, colorKey: "warning" as const, bgKey: "tintOrange" as const, href: "/(tabs)/bao-an" as const },
-  { id: "package", label: "Nhận hàng", sub: "giúp", Icon: Package, colorKey: "brand" as const, bgKey: "tintBlue" as const, href: "/(tabs)/bao-an" as const },
-  { id: "stranger", label: "Báo người", sub: "lạ", Icon: UserX, colorKey: "pink" as const, bgKey: "tintPurple" as const, href: "/(tabs)/bao-an" as const },
-  { id: "tech", label: "Hỗ trợ", sub: "kỹ thuật", Icon: Wrench, colorKey: "brand" as const, bgKey: "tintBlue" as const, href: "/(tabs)/bao-an" as const },
-  { id: "more", label: "Xem thêm", sub: "", Icon: MoreHorizontal, colorKey: "muted" as const, bgKey: "mutedBg" as const, href: "/(tabs)/bao-an" as const },
-] as const;
+export function getHomeServices(locale: AppLocale) {
+  const s = getStrings(locale).home.services;
+  return [
+    { id: "sos", label: s.sos.label, sub: s.sos.sub, Icon: ShieldCheck, colorKey: "emergency" as const, bgKey: "tintRed" as const, href: "/(tabs)/bao-an" as const },
+    { id: "fire", label: s.fire.label, sub: s.fire.sub, Icon: Flame, colorKey: "warning" as const, bgKey: "tintOrange" as const, href: "/(tabs)/bao-an" as const },
+    { id: "package", label: s.package.label, sub: s.package.sub, Icon: Package, colorKey: "brand" as const, bgKey: "tintBlue" as const, href: "/(tabs)/bao-an" as const },
+    { id: "stranger", label: s.stranger.label, sub: s.stranger.sub, Icon: UserX, colorKey: "pink" as const, bgKey: "tintPurple" as const, href: "/(tabs)/bao-an" as const },
+    { id: "tech", label: s.tech.label, sub: s.tech.sub, Icon: Wrench, colorKey: "brand" as const, bgKey: "tintBlue" as const, href: "/(tabs)/bao-an" as const },
+    { id: "more", label: s.more.label, sub: s.more.sub, Icon: MoreHorizontal, colorKey: "muted" as const, bgKey: "mutedBg" as const, href: "/(tabs)/bao-an" as const },
+  ] as const;
+}
 
 export const SECURITY_CHIP_ICONS: Record<SecurityChip["key"], LucideIcon> = {
   camera: Camera,
@@ -73,14 +79,17 @@ export function statusToneStyle(colors: AppColors, tone: StatusTone) {
   }
 }
 
-export const kindMeta: Record<
-  FamilyTodayMember["kind"],
-  { Icon: LucideIcon; bgKey: keyof AppColors; colorKey: keyof AppColors; label: string }
-> = {
-  elderly: { Icon: Heart, bgKey: "tintPink", colorKey: "pink", label: "Ông/Bà" },
-  child: { Icon: GraduationCap, bgKey: "tintBlue", colorKey: "brand", label: "Con" },
-  adult: { Icon: UserCheck, bgKey: "tintPurple", colorKey: "pink", label: "Bố/Mẹ" },
-};
+export function getKindMeta(locale: AppLocale) {
+  const k = getStrings(locale).home.kind;
+  return {
+    elderly: { Icon: Heart, bgKey: "tintPink" as const, colorKey: "pink" as const, label: k.elderly },
+    child: { Icon: GraduationCap, bgKey: "tintBlue" as const, colorKey: "brand" as const, label: k.child },
+    adult: { Icon: UserCheck, bgKey: "tintPurple" as const, colorKey: "pink" as const, label: k.adult },
+  } satisfies Record<
+    FamilyTodayMember["kind"],
+    { Icon: LucideIcon; bgKey: keyof AppColors; colorKey: keyof AppColors; label: string }
+  >;
+}
 
 const activityVisuals: Record<string, { Icon: LucideIcon; colorKey: keyof AppColors; bgKey: keyof AppColors }> = {
   medicine: { Icon: Pill, colorKey: "emergency", bgKey: "tintRed" },
@@ -107,20 +116,19 @@ export function getActivityVisual(type: string) {
   );
 }
 
-export function formatActivityTime(iso: string): string {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "";
-  const now = new Date();
-  const sameDay = d.toDateString() === now.toDateString();
-  const yest = new Date(now);
-  yest.setDate(now.getDate() - 1);
-  const isYesterday = d.toDateString() === yest.toDateString();
-  const hhmm = d.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
-  if (sameDay) return hhmm;
-  if (isYesterday) return `Hôm qua ${hhmm}`;
-  return d.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" });
+export function formatActivityTime(iso: string, locale: AppLocale): string {
+  return fmtActivityTime(iso, locale);
 }
 
 export function colorFromKey(colors: AppColors, key: keyof AppColors): string {
   return colors[key] as string;
+}
+
+export function getDefaultSecurityChips(locale: AppLocale): SecurityChip[] {
+  const d = getStrings(locale).home.defaultChips;
+  return [
+    { key: "camera", label: d.camera, value: "—", tone: "muted", count: 0 },
+    { key: "fire", label: d.fire, value: "—", tone: "muted", count: 0 },
+    { key: "elevator", label: d.elevator, value: "—", tone: "muted", count: 0 },
+  ];
 }

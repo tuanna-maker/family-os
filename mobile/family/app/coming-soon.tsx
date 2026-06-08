@@ -2,36 +2,25 @@ import { useLocalSearchParams } from "expo-router";
 import { Text } from "react-native";
 import { Screen } from "@mobile/components/Screen";
 import { Card, PageHeader } from "@mobile/components/ui";
+import { useI18n } from "@mobile/i18n/useI18n";
 import { useThemedStyles } from "@mobile/theme/useThemedStyles";
-
-const FEATURE_COPY: Record<string, { title: string; description: string }> = {
-  "dat-xe-gia-dinh": {
-    title: "Đặt xe gia đình",
-    description:
-      "Đặt xe đưa đón gia đình trong tòa nhà đang được triển khai. Hiện bạn có thể gửi yêu cầu qua mục Dịch vụ & Tiện ích.",
-  },
-  "mua-sam-ho": {
-    title: "Mua sắm hộ",
-    description:
-      "Đặt hàng mua sắm hộ cho gia đình sẽ ra mắt sớm trên app native. Tạm thời dùng phiên bản web hoặc liên hệ lễ tân.",
-  },
-  "goi-uu-dai": {
-    title: "Gói dịch vụ ưu đãi",
-    description:
-      "Gói combo dịch vụ ưu đãi cho cư dân sẽ ra mắt sớm. Theo dõi thông báo từ Ban quản lý để biết khi kích hoạt.",
-  },
-  "moi-thanh-vien": {
-    title: "Mời thành viên",
-    description:
-      "Gửi lời mời tham gia hộ gia đình qua email hoặc link. Tạm thời dùng Cổng gia đình trên web (mục Thành viên → Mời thành viên).",
-  },
-};
 
 export default function ComingSoonScreen() {
   const { feature, back } = useLocalSearchParams<{ feature?: string; back?: string }>();
+  const { s } = useI18n();
+  const c = s.common;
+  const cs = s.screens.comingSoon;
   const styles = useComingSoonStyles();
-  const copy = feature ? FEATURE_COPY[feature] : undefined;
-  const title = copy?.title ?? "Đang phát triển";
+
+  const copyMap: Record<string, { title: string; description: string }> = {
+    "dat-xe-gia-dinh": cs.datXe,
+    "mua-sam-ho": cs.muaSam,
+    "goi-uu-dai": cs.goiUuDai,
+    "moi-thanh-vien": cs.moiThanhVien,
+  };
+
+  const copy = feature ? copyMap[feature] : undefined;
+  const title = copy?.title ?? c.developing;
   const backHref = back ?? "/(tabs)/gia-dinh";
 
   return (
@@ -39,11 +28,8 @@ export default function ComingSoonScreen() {
       <PageHeader title={title} back={backHref} />
       <Card style={styles.card}>
         <Text style={styles.emoji}>🚧</Text>
-        <Text style={styles.heading}>Đang phát triển</Text>
-        <Text style={styles.sub}>
-          {copy?.description ??
-            "Tính năng này đang được port sang app React Native. Vui lòng quay lại sau."}
-        </Text>
+        <Text style={styles.heading}>{c.developing}</Text>
+        <Text style={styles.sub}>{copy?.description ?? c.developingDesc}</Text>
       </Card>
     </Screen>
   );

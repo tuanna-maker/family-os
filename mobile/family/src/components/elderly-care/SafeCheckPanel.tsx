@@ -1,29 +1,13 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { ActivityIndicator, Pressable, Text, TextInput, View } from "react-native";
 import { CheckCircle2 } from "lucide-react-native";
 import { PrimaryButton } from "@mobile/components/ui";
 import type { ElderlyProfileRow, SafeCheckRow } from "@mobile/api/elderly-care";
+import { formatRelativeAgo } from "@mobile/i18n/format";
+import { useI18n } from "@mobile/i18n/useI18n";
 import { useTheme } from "@mobile/theme/themeStore";
 import { useThemedStyles } from "@mobile/theme/useThemedStyles";
 import { radius } from "@mobile/theme/colors";
-
-const STATUS_OPTIONS = [
-  { key: "ok" as const, label: "Ổn định", emoji: "✅" },
-  { key: "warn" as const, label: "Lưu ý", emoji: "⚠️" },
-  { key: "alert" as const, label: "Cảnh báo", emoji: "🚨" },
-];
-
-const statusLabel: Record<string, string> = { ok: "Ổn định", warn: "Lưu ý", alert: "Cảnh báo" };
-
-function fmtRelative(iso: string) {
-  const diff = Date.now() - new Date(iso).getTime();
-  const m = Math.floor(diff / 60000);
-  if (m < 1) return "vừa xong";
-  if (m < 60) return `${m} phút trước`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `${h} giờ trước`;
-  return `${Math.floor(h / 24)} ngày trước`;
-}
 
 function statusColors(colors: ReturnType<typeof useTheme>["colors"], s: string) {
   if (s === "ok") return { bg: colors.tintGreen, dot: colors.success };
@@ -49,8 +33,31 @@ export function SafeCheckPanel({
   isPending: boolean;
 }) {
   const { colors } = useTheme();
+  const { locale, s } = useI18n();
+  const ec = s.elderlyCare;
   const [picked, setPicked] = useState<"ok" | "warn" | "alert">("ok");
   const banner = statusColors(colors, profile.safe_status);
+
+  const statusLabel = useMemo(
+    () =>
+      ({
+        ok: ec.statusOk,
+        warn: ec.statusWarn,
+        alert: ec.statusAlert,
+      }) as Record<string, string>,
+    [ec.statusOk, ec.statusWarn, ec.statusAlert],
+  );
+
+  const statusOptions = useMemo(
+    () =>
+      [
+        { key: "ok" as const, label: ec.statusOk, emoji: "✅" },
+        { key: "warn" as const, label: ec.statusWarn, emoji: "⚠️" },
+        { key: "alert" as const, label: ec.statusAlert, emoji: "🚨" },
+      ] as const,
+    [ec.statusOk, ec.statusWarn, ec.statusAlert],
+  );
+
   const styles = useThemedStyles((c, fontScale) => ({
     banner: {
       flexDirection: "row" as const,
@@ -112,20 +119,22 @@ export function SafeCheckPanel({
       <View style={styles.banner}>
         <CheckCircle2 color={banner.dot} size={26} />
         <View style={{ flex: 1 }}>
-          <Text style={styles.bannerTitle}>Safe Check · {statusLabel[profile.safe_status]}</Text>
+          <Text style={styles.bannerTitle}>
+            {ec.safeCheck} · {statusLabel[profile.safe_status]}
+          </Text>
           <Text style={styles.bannerSub} numberOfLines={2}>
-            {profile.safe_note ?? "Chưa có ghi chú"}
+            {profile.safe_note ?? ec.noSafeCheckNote}
           </Text>
           <Text style={styles.bannerMeta}>
             {profile.safe_last_at
-              ? `Lần xác nhận: ${fmtRelative(profile.safe_last_at)}`
-              : "Chưa xác nhận lần nào"}
+              ? ec.lastConfirmed(formatRelativeAgo(profile.safe_last_at, locale))
+              : ec.neverConfirmed}
           </Text>
         </View>
       </View>
 
       <View style={styles.statusRow}>
-        {STATUS_OPTIONS.map((opt) => {
+        {statusOptions.map((opt) => {
           const active = picked === opt.key;
           return (
             <Pressable
@@ -144,24 +153,24 @@ export function SafeCheckPanel({
         style={styles.noteInput}
         value={note}
         onChangeText={onNoteChange}
-        placeholder="Ghi chú (vd: huyết áp ổn, đã ăn sáng)…"
+        placeholder={ec.safeCheckNotePlaceholder}
         placeholderTextColor={colors.muted}
         multiline
         maxLength={300}
       />
 
       <PrimaryButton
-        label={isPending ? "Đang xác nhận…" : `Xác nhận: ${statusLabel[picked]}`}
+        label={isPending ? ec.confirming : ec.confirmWithStatus(statusLabel[picked])}
         onPress={() => onConfirm(picked, note.trim() || undefined)}
         loading={isPending}
         disabled={isPending}
       />
 
-      <Text style={[styles.histTitle, { marginTop: 14 }]}>Lịch sử kiểm tra</Text>
+      <Text style={[styles.histTitle, { marginTop: 14 }]}>{ec.safeCheckHistory}</Text>
       {historyLoading ? (
         <ActivityIndicator color={colors.brand} />
       ) : history.length === 0 ? (
-        <Text style={styles.histNote}>Chưa có lượt kiểm tra nào.</Text>
+        <Text style={styles.histNote}>{ec.noSafeCheckHistory}</Text>
       ) : (
         history.slice(0, 3).map((h) => {
           const sc = statusColors(colors, h.status);
@@ -178,7 +187,7 @@ export function SafeCheckPanel({
                     {h.note}
                   </Text>
                 ) : null}
-                <Text style={styles.histTime}>{fmtRelative(h.checked_at)}</Text>
+                <Text style={styles.histTime}>{formatRelativeAgo(h.checked_at, locale)}</Text>
               </View>
             </View>
           );

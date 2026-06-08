@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
-import { ActivityIndicator, Alert, Pressable, Text, View } from "react-native";
+import { ActivityIndicator, Pressable, Text, View } from "react-native";
+import { appAlert } from "@mobile/utils/alert";
 import { useRouter } from "expo-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Calendar, MapPin, Pencil, Trash2 } from "lucide-react-native";
@@ -10,6 +11,8 @@ import { radius } from "@mobile/theme/colors";
 import { useTheme } from "@mobile/theme/themeStore";
 import { useThemedStyles } from "@mobile/theme/useThemedStyles";
 import { useFamilyContext } from "@mobile/hooks/useFamilyContext";
+import { useI18n } from "@mobile/i18n/useI18n";
+import { formatDate, formatTime } from "@mobile/i18n/format";
 import {
   deleteFamilyEvent,
   listFamilyEvents,
@@ -17,29 +20,24 @@ import {
   type FamilyEventRow,
 } from "@mobile/api/family-events";
 
-const CATS: Record<
+const EVENT_CAT_META: Record<
   EventCategory,
-  { label: string; icon: string; accent: keyof import("@mobile/theme/palettes").AppColors; bar: keyof import("@mobile/theme/palettes").AppColors }
+  { icon: string; accent: keyof import("@mobile/theme/palettes").AppColors; bar: keyof import("@mobile/theme/palettes").AppColors }
 > = {
-  school: { label: "Học tập", icon: "🎒", accent: "pink", bar: "warning" },
-  medical: { label: "Y tế", icon: "🏥", accent: "emergency", bar: "emergency" },
-  medication: { label: "Thuốc", icon: "💊", accent: "success", bar: "success" },
-  travel: { label: "Du lịch", icon: "✈️", accent: "warning", bar: "warning" },
-  family: { label: "Gia đình", icon: "👨‍👩‍👧", accent: "pink", bar: "brand" },
-  payment: { label: "Thanh toán", icon: "💳", accent: "brand", bar: "brand" },
+  school: { icon: "🎒", accent: "pink", bar: "warning" },
+  medical: { icon: "🏥", accent: "emergency", bar: "emergency" },
+  medication: { icon: "💊", accent: "success", bar: "success" },
+  travel: { icon: "✈️", accent: "warning", bar: "warning" },
+  family: { icon: "👨‍👩‍👧", accent: "pink", bar: "brand" },
+  payment: { icon: "💳", accent: "brand", bar: "brand" },
 };
-
-function fmtDayHeader(d: Date) {
-  return d.toLocaleDateString("vi-VN", { weekday: "long", day: "2-digit", month: "2-digit", year: "numeric" });
-}
-
-function fmtTime(iso: string) {
-  return new Date(iso).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
-}
 
 export default function LichGiaDinhScreen() {
   const router = useRouter();
   const { colors } = useTheme();
+  const { locale, s } = useI18n();
+  const cal = s.screens.calendar;
+  const c = s.common;
   const { familyId } = useFamilyContext();
   const qc = useQueryClient();
   const [selectedDate, setSelectedDate] = useState(() => {
@@ -120,9 +118,16 @@ export default function LichGiaDinhScreen() {
     }
   };
 
+  const dayHeaderLabel = formatDate(selectedDate, locale, {
+    weekday: "long",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+
   return (
     <Screen contentStyle={{ paddingTop: 0 }}>
-      <PageHeader eyebrow="Gia đình" title="Lịch gia đình" back="/(tabs)/gia-dinh" />
+      <PageHeader eyebrow={c.familyLabel} title={cal.title} back="/(tabs)/gia-dinh" />
 
       <MonthCalendar
         viewDate={viewDate}
@@ -136,21 +141,19 @@ export default function LichGiaDinhScreen() {
         <View style={styles.dayHeaderLeft}>
           <Calendar color={colors.brand} size={20} />
           <Text style={styles.dayTitle} numberOfLines={2}>
-            {fmtDayHeader(selectedDate)}
+            {dayHeaderLabel}
           </Text>
         </View>
-        <Text style={styles.dayCount}>
-          {dayEvents.length} sự kiện
-        </Text>
+        <Text style={styles.dayCount}>{cal.eventsCount(dayEvents.length)}</Text>
       </View>
 
       {q.isLoading ? (
         <ActivityIndicator color={colors.brand} style={{ marginTop: 24 }} />
       ) : dayEvents.length === 0 ? (
         <View style={styles.empty}>
-          <Text style={styles.emptyText}>Không có sự kiện trong ngày này.</Text>
+          <Text style={styles.emptyText}>{cal.noEventsToday}</Text>
           <Pressable onPress={() => router.push({ pathname: "/lich-gia-dinh/them", params: { date: dateParam } })}>
-            <Text style={styles.addLink}>+ Thêm sự kiện</Text>
+            <Text style={styles.addLink}>{cal.addEventLink}</Text>
           </Pressable>
         </View>
       ) : (
@@ -158,34 +161,46 @@ export default function LichGiaDinhScreen() {
           <EventCard
             key={ev.id}
             ev={ev}
+            locale={locale}
+            eventTypes={cal.eventTypes}
             onEdit={() => router.push(`/lich-gia-dinh/sua/${ev.id}`)}
             onDelete={() => {
-              Alert.alert("Xóa sự kiện?", ev.title, [
-                { text: "Huỷ", style: "cancel" },
-                { text: "Xóa", style: "destructive", onPress: () => delMut.mutate(ev.id) },
+              appAlert(cal.deleteEvent, ev.title, [
+                { text: c.cancel, style: "cancel" },
+                { text: c.delete, style: "destructive", onPress: () => delMut.mutate(ev.id) },
               ]);
             }}
+            editA11y={c.edit}
+            deleteA11y={c.delete}
           />
         ))
       )}
-
     </Screen>
   );
 }
 
 function EventCard({
   ev,
+  locale,
+  eventTypes,
   onEdit,
   onDelete,
+  editA11y,
+  deleteA11y,
 }: {
   ev: FamilyEventRow;
+  locale: import("@mobile/hooks/useAppPrefs").AppLocale;
+  eventTypes: (typeof import("@mobile/i18n/strings").STRINGS)["vi"]["screens"]["calendar"]["eventTypes"];
   onEdit: () => void;
   onDelete: () => void;
+  editA11y: string;
+  deleteA11y: string;
 }) {
   const { colors } = useTheme();
-  const cat = CATS[ev.category] ?? CATS.family;
-  const barColor = colors[cat.bar];
-  const time = fmtTime(ev.starts_at);
+  const catMeta = EVENT_CAT_META[ev.category] ?? EVENT_CAT_META.family;
+  const catLabel = eventTypes[ev.category] ?? eventTypes.family;
+  const barColor = colors[catMeta.bar];
+  const time = formatTime(ev.starts_at, locale);
   const s = useThemedStyles((c, fontScale) => ({
     eventCard: {
       flexDirection: "row" as const,
@@ -230,7 +245,7 @@ function EventCard({
       <View style={s.eventBody}>
         <View style={s.eventTop}>
           <Text style={s.eventTitle}>
-            {cat.icon} {ev.title}
+            {catMeta.icon} {ev.title}
           </Text>
           <Text style={s.eventTime}>{time}</Text>
         </View>
@@ -243,7 +258,7 @@ function EventCard({
           </View>
         ) : null}
         <Text style={s.eventMeta}>
-          {cat.label}
+          {catLabel}
           {ev.member_name ? ` · ${ev.member_name}` : ""}
         </Text>
         {ev.notes ? (
@@ -252,10 +267,10 @@ function EventCard({
           </Text>
         ) : null}
         <View style={s.eventActions}>
-          <Pressable style={s.actionBtn} onPress={onEdit} accessibilityLabel="Sửa">
+          <Pressable style={s.actionBtn} onPress={onEdit} accessibilityLabel={editA11y}>
             <Pencil color={colors.foreground} size={16} />
           </Pressable>
-          <Pressable style={s.actionBtn} onPress={onDelete} accessibilityLabel="Xóa">
+          <Pressable style={s.actionBtn} onPress={onDelete} accessibilityLabel={deleteA11y}>
             <Trash2 color={colors.emergency} size={16} />
           </Pressable>
         </View>

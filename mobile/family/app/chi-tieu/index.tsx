@@ -1,4 +1,5 @@
-import { Alert, Pressable, Text, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
+import { appAlert } from "@mobile/utils/alert";
 import { useRouter } from "expo-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { LinearGradient } from "expo-linear-gradient";
@@ -9,19 +10,20 @@ import { Screen } from "@mobile/components/Screen";
 import { Card, PageHeader } from "@mobile/components/ui";
 import { SectionHeader } from "@mobile/components/SectionHeader";
 import { LoadingState } from "@mobile/components/states";
-import { BUDGET_MONTH_VND, EXPENSE_CATEGORY_META } from "@mobile/components/family/CategoryMeta";
+import { BUDGET_MONTH_VND, getCategoryLabel, getCategoryMeta } from "@mobile/components/family/CategoryMeta";
 import { useFamilyContext } from "@mobile/hooks/useFamilyContext";
+import { useI18n } from "@mobile/i18n/useI18n";
+import { formatCurrency } from "@mobile/i18n/format";
 import { useTheme } from "@mobile/theme/themeStore";
 import { useThemedStyles } from "@mobile/theme/useThemedStyles";
 import { radius } from "@mobile/theme/colors";
 
-function formatVnd(n: number) {
-  return `${(n ?? 0).toLocaleString("vi-VN")}đ`;
-}
-
 export default function ChiTieuScreen() {
   const router = useRouter();
   const { colors } = useTheme();
+  const { locale, s } = useI18n();
+  const ex = s.expense;
+  const c = s.common;
   const { familyId } = useFamilyContext();
   const qc = useQueryClient();
   const styles = useExpenseStyles();
@@ -33,23 +35,20 @@ export default function ChiTieuScreen() {
   });
 
   const rows = q.data ?? [];
-  const total = rows.reduce((s, r) => s + Number(r.amount), 0);
+  const total = rows.reduce((sum, r) => sum + Number(r.amount), 0);
   const pct = Math.min(100, Math.round((total / BUDGET_MONTH_VND) * 100));
-  const insight =
-    pct > 90
-      ? "Ngân sách tháng này sắp hết, hãy chú ý các khoản lớn!"
-      : "Chi tiêu tháng này đang trong tầm kiểm soát.";
+  const insight = pct > 90 ? ex.insightHigh : ex.insightOk;
 
   const catSums: Record<string, number> = {};
   for (const e of rows) {
-    const c = e.category ?? "Khác";
-    catSums[c] = (catSums[c] ?? 0) + Number(e.amount);
+    const cat = e.category ?? "Khác";
+    catSums[cat] = (catSums[cat] ?? 0) + Number(e.amount);
   }
   const categoryStats = Object.keys(catSums)
     .map((name) => ({
       name,
       amount: catSums[name],
-      meta: EXPENSE_CATEGORY_META[name] ?? EXPENSE_CATEGORY_META["Khác"],
+      meta: getCategoryMeta(name),
     }))
     .sort((a, b) => b.amount - a.amount);
 
@@ -57,14 +56,14 @@ export default function ChiTieuScreen() {
     mutationFn: deleteExpense,
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["expenses", familyId] });
-      toast.success("Đã xóa");
+      toast.success(c.deleted);
     },
     onError: (e: Error) => toast.error(e.message),
   });
 
   return (
     <Screen contentStyle={{ paddingTop: 0 }}>
-      <PageHeader eyebrow="Family Core" title="Chi tiêu gia đình" back="/(tabs)/gia-dinh" />
+      <PageHeader eyebrow={c.familyCore} title={ex.title} back="/(tabs)/gia-dinh" />
 
       <LinearGradient
         colors={[colors.brand, "#071A3D"]}
@@ -72,13 +71,13 @@ export default function ChiTieuScreen() {
         end={{ x: 1, y: 1 }}
         style={styles.summaryGrad}
       >
-        <Text style={styles.summaryLabel}>TỔNG CHI THÁNG NÀY</Text>
-        <Text style={styles.summaryAmount}>{formatVnd(total)}</Text>
-        <Text style={styles.summarySub}>Trên ngân sách {formatVnd(BUDGET_MONTH_VND)}</Text>
+        <Text style={styles.summaryLabel}>{ex.totalThisMonth}</Text>
+        <Text style={styles.summaryAmount}>{formatCurrency(total, locale)}</Text>
+        <Text style={styles.summarySub}>{c.onBudget(formatCurrency(BUDGET_MONTH_VND, locale))}</Text>
         <View style={styles.progressTrack}>
           <View style={[styles.progressFill, { width: `${pct}%` }]} />
         </View>
-        <Text style={styles.progressHint}>Đã dùng {pct}% ngân sách</Text>
+        <Text style={styles.progressHint}>{c.percentOfBudget(pct)}</Text>
       </LinearGradient>
 
       <View style={styles.insightCard}>
@@ -90,31 +89,31 @@ export default function ChiTieuScreen() {
 
       {categoryStats.length > 0 && (
         <>
-          <SectionHeader title="Theo danh mục" />
+          <SectionHeader title={ex.byCategory} />
           <View style={styles.catGrid}>
-            {categoryStats.map((c) => (
-              <View key={c.name} style={styles.catCard}>
+            {categoryStats.map((cat) => (
+              <View key={cat.name} style={styles.catCard}>
                 <View style={styles.catTop}>
-                  <Text style={styles.catEmoji}>{c.meta.icon}</Text>
-                  <View style={[styles.catDot, { backgroundColor: c.meta.color }]} />
+                  <Text style={styles.catEmoji}>{cat.meta.icon}</Text>
+                  <View style={[styles.catDot, { backgroundColor: cat.meta.color }]} />
                 </View>
-                <Text style={styles.catName}>{c.name}</Text>
-                <Text style={styles.catAmount}>{formatVnd(c.amount)}</Text>
+                <Text style={styles.catName}>{getCategoryLabel(cat.name, locale)}</Text>
+                <Text style={styles.catAmount}>{formatCurrency(cat.amount, locale)}</Text>
               </View>
             ))}
           </View>
         </>
       )}
 
-      <Text style={styles.listTitle}>Giao dịch gần đây</Text>
+      <Text style={styles.listTitle}>{ex.recent}</Text>
       <View style={styles.listActions}>
         <Pressable style={styles.scanBtn} onPress={() => router.push("/chi-tieu/scan")}>
           <Camera color={colors.white} size={16} />
-          <Text style={styles.actionBtnText}>Quét hoá đơn</Text>
+          <Text style={styles.actionBtnText}>{ex.scanTitle}</Text>
         </Pressable>
         <Pressable style={styles.addBtn} onPress={() => router.push("/chi-tieu/them")}>
           <Plus color={colors.foreground} size={16} />
-          <Text style={styles.addBtnText}>Thêm</Text>
+          <Text style={styles.addBtnText}>{c.add}</Text>
         </Pressable>
       </View>
 
@@ -122,22 +121,23 @@ export default function ChiTieuScreen() {
         <LoadingState />
       ) : rows.length === 0 ? (
         <Card>
-          <Text style={styles.muted}>Chưa có khoản chi nào.</Text>
+          <Text style={styles.muted}>{ex.emptyList}</Text>
         </Card>
       ) : (
         <Card style={{ padding: 0, overflow: "hidden" }}>
           {rows.map((row, i) => {
-            const meta = EXPENSE_CATEGORY_META[row.category ?? ""] ?? EXPENSE_CATEGORY_META["Khác"];
+            const meta = getCategoryMeta(row.category ?? "Khác");
             const isScan = row.source === "scan";
+            const catLabel = getCategoryLabel(row.category ?? "Khác", locale);
             return (
               <Pressable
                 key={row.id}
                 style={[styles.txRow, i > 0 && styles.txBorder, isScan && { backgroundColor: colors.tintGreen }]}
                 onPress={() => router.push({ pathname: "/chi-tieu/them", params: { id: row.id } })}
                 onLongPress={() =>
-                  Alert.alert("Xóa khoản chi?", row.title, [
-                    { text: "Huỷ", style: "cancel" },
-                    { text: "Xóa", style: "destructive", onPress: () => delMut.mutate({ id: row.id }) },
+                  appAlert(ex.deleteTitle, row.title, [
+                    { text: c.cancel, style: "cancel" },
+                    { text: c.delete, style: "destructive", onPress: () => delMut.mutate({ id: row.id }) },
                   ])
                 }
               >
@@ -154,11 +154,11 @@ export default function ChiTieuScreen() {
                     {row.title}
                   </Text>
                   <Text style={styles.muted} numberOfLines={1}>
-                    {row.category ?? "Khác"} · {row.spent_on}
-                    {isScan ? " · Quét AI" : ""}
+                    {catLabel} · {row.spent_on}
+                    {isScan ? ` · ${ex.scanAi}` : ""}
                   </Text>
                 </View>
-                <Text style={styles.txAmount}>-{formatVnd(Number(row.amount))}</Text>
+                <Text style={styles.txAmount}>-{formatCurrency(Number(row.amount), locale)}</Text>
                 {row.source !== "scan" && (
                   <Pressable
                     onPress={() => delMut.mutate({ id: row.id })}

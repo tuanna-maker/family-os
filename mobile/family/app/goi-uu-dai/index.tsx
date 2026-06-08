@@ -4,12 +4,16 @@ import { Screen } from "@mobile/components/Screen";
 import { PageHeader, PrimaryButton, TextField } from "@mobile/components/ui";
 import { useFamilyContext } from "@mobile/hooks/useFamilyContext";
 import { createFamilyServiceRequest } from "@mobile/api/service-requests";
+import { useI18n } from "@mobile/i18n/useI18n";
 import { toast } from "@mobile/utils/toast";
 import { useRouter } from "expo-router";
 
 export default function GoiUuDaiScreen() {
   const router = useRouter();
   const { familyId } = useFamilyContext();
+  const { s } = useI18n();
+  const pr = s.screens.promo;
+  const c = s.common;
   const [packageName, setPackageName] = useState("");
   const [note, setNote] = useState("");
 
@@ -17,13 +21,13 @@ export default function GoiUuDaiScreen() {
     mutationFn: () =>
       createFamilyServiceRequest({
         family_id: familyId!,
-        title: packageName.trim() || "Tư vấn gói ưu đãi",
+        title: packageName.trim() || pr.defaultTitle,
         description: note.trim() || undefined,
         category: "membership",
         priority: "normal",
       }),
     onSuccess: () => {
-      toast.success("Đã gửi yêu cầu tư vấn");
+      toast.success(pr.sent);
       router.back();
     },
     onError: (e: Error) => toast.error(e.message),
@@ -31,10 +35,10 @@ export default function GoiUuDaiScreen() {
 
   return (
     <Screen contentStyle={{ paddingTop: 0 }}>
-      <PageHeader title="Gói ưu đãi" back="/(tabs)/gia-dinh" />
-      <TextField label="Gói quan tâm" value={packageName} onChangeText={setPackageName} placeholder="Gói Premium gia đình" />
-      <TextField label="Ghi chú" value={note} onChangeText={setNote} multiline />
-      <PrimaryButton label="Nhận tư vấn" onPress={() => mut.mutate()} loading={mut.isPending} />
+      <PageHeader title={pr.title} back="/(tabs)/gia-dinh" />
+      <TextField label={pr.packageLabel} value={packageName} onChangeText={setPackageName} placeholder={pr.packagePh} />
+      <TextField label={c.notes} value={note} onChangeText={setNote} multiline />
+      <PrimaryButton label={pr.consult} onPress={() => mut.mutate()} loading={mut.isPending} />
     </Screen>
   );
 }

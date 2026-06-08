@@ -1,5 +1,5 @@
 import { Image, Modal, Pressable, ScrollView, Text, View } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, type Href } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
 import { Crown, Pencil, UserPlus, X } from "lucide-react-native";
 import { listFamilyMembers } from "@mobile/api/family-members";
@@ -7,6 +7,7 @@ import { useFamilyContext } from "@mobile/hooks/useFamilyContext";
 import { useTheme } from "@mobile/theme/themeStore";
 import { useThemedStyles } from "@mobile/theme/useThemedStyles";
 import { radius } from "@mobile/theme/colors";
+import { useI18n } from "@mobile/i18n/useI18n";
 import { memberDisplayName } from "./FamilyMemberSelect";
 
 function initials(name: string | null, email: string | null) {
@@ -27,6 +28,7 @@ export function FamilyMembersSheet({
   back?: string;
 }) {
   const { familyId, family, profile } = useFamilyContext();
+  const { locale, s } = useI18n();
   const { colors } = useTheme();
   const styles = useSheetStyles();
   const router = useRouter();
@@ -46,9 +48,9 @@ export function FamilyMembersSheet({
         <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
           <View style={styles.header}>
             <View style={{ flex: 1 }}>
-              <Text style={styles.title}>Thành viên gia đình</Text>
+              <Text style={styles.title}>{s.members.sheetTitle}</Text>
               <Text style={styles.sub}>
-                {family?.name ?? "Gia đình"} · {members.length} thành viên
+                {family?.name ?? s.common.familyLabel} · {s.members.count(members.length)}
               </Text>
             </View>
             <Pressable style={styles.closeBtn} onPress={onClose}>
@@ -58,16 +60,16 @@ export function FamilyMembersSheet({
 
           <ScrollView style={styles.list} keyboardShouldPersistTaps="handled">
             {members.map((m) => {
-              const name = memberDisplayName(m);
+              const name = memberDisplayName(m, locale);
               const isSelf = profile?.id === m.user_id;
               return (
                 <Pressable
-                  key={m.user_id}
+                  key={m.id}
                   style={styles.row}
                   onPress={() => {
                     onClose();
                     if (isSelf) router.push("/(tabs)/tai-khoan");
-                    else router.push("/gia-dinh/thanh-vien");
+                    else router.push("/gia-dinh/thanh-vien" as Href);
                   }}
                 >
                   {m.avatar_url ? (
@@ -82,15 +84,15 @@ export function FamilyMembersSheet({
                       <Text style={styles.name} numberOfLines={1}>
                         {name}
                       </Text>
-                      {isSelf ? <Text style={styles.selfBadge}>Bạn</Text> : null}
+                      {isSelf ? <Text style={styles.selfBadge}>{s.members.you}</Text> : null}
                       {m.is_owner ? (
                         <View style={styles.ownerBadge}>
                           <Crown color={colors.warning} size={10} />
-                          <Text style={styles.ownerText}>Chủ hộ</Text>
+                          <Text style={styles.ownerText}>{s.members.head}</Text>
                         </View>
                       ) : null}
                       {!m.is_owner && m.role === "family_owner" ? (
-                        <Text style={styles.coOwnerBadge}>Đồng chủ hộ</Text>
+                        <Text style={styles.coOwnerBadge}>{s.roles.coOwner}</Text>
                       ) : null}
                     </View>
                     {m.email ? (
@@ -109,23 +111,20 @@ export function FamilyMembersSheet({
             style={styles.actionBtn}
             onPress={() => {
               onClose();
-              router.push({
-                pathname: "/coming-soon",
-                params: { feature: "moi-thanh-vien", back },
-              });
+              router.push("/gia-dinh/moi-thanh-vien" as Href);
             }}
           >
             <UserPlus color={colors.brand} size={18} />
-            <Text style={styles.actionText}>Mời thành viên</Text>
+            <Text style={styles.actionText}>{s.members.invite}</Text>
           </Pressable>
           <Pressable
             style={[styles.actionBtn, styles.actionBtnMuted]}
             onPress={() => {
               onClose();
-              router.push("/gia-dinh/thanh-vien");
+              router.push("/gia-dinh/thanh-vien" as Href);
             }}
           >
-            <Text style={styles.actionText}>Xem chi tiết & quản lý</Text>
+            <Text style={styles.actionText}>{s.members.viewManage}</Text>
           </Pressable>
         </Pressable>
       </Pressable>

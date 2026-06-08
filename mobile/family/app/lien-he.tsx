@@ -7,16 +7,21 @@ import { Card, PageHeader, PrimaryButton, TextField } from "@mobile/components/u
 import { useFamilyContext } from "@mobile/hooks/useFamilyContext";
 import {
   loadFamilyContacts,
+  localizeContactSlots,
   resetFamilyContacts,
   updateFamilyContact,
   type ContactSlot,
 } from "@mobile/lib/family-contacts";
+import { useI18n } from "@mobile/i18n/useI18n";
 import { toast } from "@mobile/utils/toast";
 import { colors, radius } from "@mobile/theme/colors";
 
 export default function LienHeScreen() {
   const router = useRouter();
   const { familyId } = useFamilyContext();
+  const { locale, s } = useI18n();
+  const ct = s.screens.contact;
+  const c = s.common;
   const [contacts, setContacts] = useState<ContactSlot[]>([]);
   const [busy, setBusy] = useState(false);
 
@@ -29,14 +34,14 @@ export default function LienHeScreen() {
     if (!familyId) return;
     const cleaned = phone.replace(/[^\d+]/g, "");
     if (!cleaned) {
-      toast.error("Vui lòng nhập số điện thoại");
+      toast.error(ct.phoneRequired);
       return;
     }
     setBusy(true);
     try {
       const next = await updateFamilyContact(familyId, id, { name: name.trim(), phone: cleaned });
       setContacts(next);
-      toast.success("Đã lưu");
+      toast.success(c.saved);
     } finally {
       setBusy(false);
     }
@@ -44,11 +49,11 @@ export default function LienHeScreen() {
 
   return (
     <Screen contentStyle={{ paddingTop: 0 }}>
-      <PageHeader title="Người liên hệ" back="/cham-soc-ong-ba" />
-      <Text style={styles.sub}>Số gọi khẩn cấp dùng trên màn Chăm sóc ông bà.</Text>
+      <PageHeader title={ct.contactsTitle} back="/cham-soc-ong-ba" />
+      <Text style={styles.sub}>{ct.contactsSub}</Text>
 
-      {contacts.map((c) => (
-        <ContactEditor key={c.id} slot={c} disabled={busy} onSave={save} />
+      {localizeContactSlots(contacts, locale).map((slot) => (
+        <ContactEditor key={slot.id} slot={slot} disabled={busy} onSave={save} />
       ))}
 
       <Pressable
@@ -57,11 +62,11 @@ export default function LienHeScreen() {
           if (!familyId) return;
           const next = await resetFamilyContacts(familyId);
           setContacts(next);
-          toast.success("Đã khôi phục mặc định");
+          toast.success(ct.resetDone);
         }}
       >
         <RotateCcw color={colors.muted} size={16} />
-        <Text style={styles.resetText}>Khôi phục mặc định</Text>
+        <Text style={styles.resetText}>{ct.resetDefault}</Text>
       </Pressable>
       <View style={{ height: 24 }} />
     </Screen>
@@ -77,6 +82,9 @@ function ContactEditor({
   disabled: boolean;
   onSave: (id: ContactSlot["id"], name: string, phone: string) => void;
 }) {
+  const { s } = useI18n();
+  const ct = s.screens.contact;
+  const c = s.common;
   const [name, setName] = useState(slot.name);
   const [phone, setPhone] = useState(slot.phone);
 
@@ -91,16 +99,16 @@ function ContactEditor({
         {slot.icon} {slot.label}
       </Text>
       <Text style={styles.slotDesc}>{slot.description}</Text>
-      <TextField label="Tên hiển thị" value={name} onChangeText={setName} />
-      <TextField label="Số điện thoại" value={phone} onChangeText={setPhone} keyboardType="numeric" />
+      <TextField label={ct.displayName} value={name} onChangeText={setName} />
+      <TextField label={c.phone} value={phone} onChangeText={setPhone} keyboardType="numeric" />
       <View style={styles.row}>
         <PrimaryButton
-          label="Lưu"
+          label={c.save}
           onPress={() => onSave(slot.id, name, phone)}
           disabled={disabled}
         />
         <Pressable style={styles.callBtn} onPress={() => Linking.openURL(`tel:${phone.replace(/\s/g, "")}`)}>
-          <Text style={styles.callText}>Gọi thử</Text>
+          <Text style={styles.callText}>{ct.testCall}</Text>
         </Pressable>
       </View>
     </Card>

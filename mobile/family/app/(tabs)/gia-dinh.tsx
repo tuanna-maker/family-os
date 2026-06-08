@@ -1,7 +1,6 @@
-import { useState } from "react";
 import { Image, Pressable, ScrollView, Text, View } from "react-native";
 import { useRouter } from "expo-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   ChevronLeft,
@@ -21,7 +20,6 @@ import {
   ShoppingCart,
   Crown,
   Car,
-  Camera,
   TrendingDown,
   TrendingUp,
 } from "lucide-react-native";
@@ -35,11 +33,12 @@ import { useFamilyContext } from "@mobile/hooks/useFamilyContext";
 import { getDashboard } from "@mobile/api/dashboard";
 import { listMoments } from "@mobile/api/moments";
 import { listFamilyMembers } from "@mobile/api/family-members";
-import { FamilyMembersSheet } from "@mobile/components/family/FamilyMembersSheet";
-import { memberDisplayName } from "@mobile/components/family/FamilyMemberSelect";
-
-const HERO =
-  "https://images.unsplash.com/photo-1609220136736-443140cffec6?w=240&h=240&fit=crop&crop=faces&q=70&auto=format";
+import { AvatarUploadButton } from "@mobile/components/AvatarUploadButton";
+import { useI18n } from "@mobile/i18n/useI18n";
+import { formatApptTime, formatCurrency, formatDate, formatExpenseMonthLabel } from "@mobile/i18n/format";
+import { useAuth } from "@mobile/hooks/useAuth";
+import { uploadAvatarFromUri, updateFamilyAvatar } from "@mobile/api/avatars";
+import { toast } from "@mobile/utils/toast";
 
 const FOOD_THUMBS = [
   "https://images.unsplash.com/photo-1518635017498-87f514b751ba?w=80&h=80&fit=crop&q=70&auto=format",
@@ -56,21 +55,8 @@ const FALLBACK_MOMENTS = [
   },
 ];
 
-function formatVnd(n: number) {
-  return `${(n ?? 0).toLocaleString("vi-VN")}đ`;
-}
-
-function currentMonthLabel() {
-  return `Tổng chi tháng ${new Date().getMonth() + 1}`;
-}
-
-function formatApptDate(iso: string) {
-  const d = new Date(iso);
-  const today = new Date();
-  const sameDay = d.toDateString() === today.toDateString();
-  const hhmm = d.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
-  if (sameDay) return `${hhmm} hôm nay`;
-  return `${hhmm} · ${d.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" })}`;
+function formatVnd(n: number, locale: "vi" | "en") {
+  return formatCurrency(n, locale);
 }
 
 function useGiaDinhStyles() {
@@ -97,28 +83,12 @@ function useGiaDinhStyles() {
     heroRow: { flexDirection: "row" as const, gap: 14, alignItems: "flex-start" as const },
     heroImgWrap: { position: "relative" as const },
     heroImg: { width: 100, height: 100, borderRadius: 50 },
-    avatarStack: { flexDirection: "row" as const, marginTop: 10 },
-    stackAvatar: {
-      width: 32,
-      height: 32,
-      borderRadius: 16,
-      borderWidth: 2,
-      borderColor: c.card,
-      marginLeft: -10,
-    },
-    stackAvatarFirst: { marginLeft: 0 },
-    stackMore: {
-      width: 32,
-      height: 32,
-      borderRadius: 16,
-      backgroundColor: c.tintBlue,
+    heroImgFallback: {
+      backgroundColor: c.tintPurple,
       alignItems: "center" as const,
       justifyContent: "center" as const,
-      borderWidth: 2,
-      borderColor: c.card,
-      marginLeft: -10,
     },
-    stackMoreText: { fontSize: 10 * fontScale, fontWeight: "800" as const, color: c.brand },
+    heroImgInitial: { fontSize: 36 * fontScale, fontWeight: "800" as const, color: c.foreground },
     camBtn: {
       position: "absolute" as const,
       bottom: 2,
@@ -254,10 +224,17 @@ export default function GiaDinhScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
+  const { locale, s } = useI18n();
+  const f = s.family;
+  const c = s.common;
+  const t = s.time;
   const styles = useGiaDinhStyles();
+  const qc = useQueryClient();
+  const { user } = useAuth();
   const { familyId, family, profile } = useFamilyContext();
-  const familyName = family?.name ?? "Gia đình";
-  const [membersOpen, setMembersOpen] = useState(false);
+  const familyName = family?.name ?? c.defaultFamilyName;
+  const isOwner = !!user?.id && family?.owner_id === user.id;
+  const goMembers = () => router.push("/gia-dinh/thanh-vien" as import("expo-router").Href);
 
   const dashQ = useQuery({
     queryKey: ["family-dashboard", familyId],
@@ -284,12 +261,20 @@ export default function GiaDinhScreen() {
   const expDelta = expPrev > 0 ? ((expCur - expPrev) / expPrev) * 100 : 0;
   const expDown = expDelta <= 0;
   const members = membersQ.data?.members ?? [];
-  const memberCount =
-    Math.max(members.length, dash?.member_count ?? 0, dash?.children.length ?? 0) || 0;
+  const memberCount = members.length;
   const heroMember =
     members.find((m) => m.is_owner) ?? members[0] ?? null;
-  const heroAvatar = heroMember?.avatar_url ?? profile?.avatar_url ?? HERO;
-  const stackMembers = members.slice(0, 4);
+  const heroAvatar =
+    family?.avatar_url ?? heroMember?.avatar_url ?? profile?.avatar_url ?? null;
+
+  const onFamilyAvatarPick = async (uri: string) => {
+    if (!familyId) throw new Error(c.noFamilyYet);
+    if (!isOwner) throw new Error(c.ownerOnly);
+    const url = await uploadAvatarFromUri(uri, `family-${familyId}`);
+    await updateFamilyAvatar({ family_id: familyId, avatar_url: url });
+    toast.success(c.familyAvatarUpdated);
+    qc.invalidateQueries({ queryKey: ["my-context"] });
+  };
   const foodCount = (dash?.food.expiring_soon ?? 0) + (dash?.food.expired ?? 0);
   const nextMed = dash?.next_medicine;
   const nextAppt = dash?.next_appointment;
@@ -298,8 +283,8 @@ export default function GiaDinhScreen() {
     (momentsQ.data?.moments ?? []).length > 0
       ? (momentsQ.data?.moments ?? []).slice(0, 5).map((m) => ({
           id: m.id,
-          title: (m.caption ?? "Kỷ niệm").replace(/^\[Pilot\]\s*/, ""),
-          date: new Date(m.taken_at).toLocaleDateString("vi-VN"),
+          title: (m.caption ?? c.memory).replace(/^\[Pilot\]\s*/, ""),
+          date: formatDate(m.taken_at, locale),
           img: m.media_url,
         }))
       : FALLBACK_MOMENTS;
@@ -310,7 +295,7 @@ export default function GiaDinhScreen() {
         <Pressable style={styles.backBtn} onPress={() => router.push("/(tabs)/home")}>
           <ChevronLeft color={colors.foreground} size={22} />
         </Pressable>
-        <Text style={styles.pageTitle}>Gia đình tôi</Text>
+        <Text style={styles.pageTitle}>{f.myFamily}</Text>
       </View>
 
       <View style={styles.heroCard}>
@@ -319,72 +304,45 @@ export default function GiaDinhScreen() {
         </Pressable>
         <View style={styles.heroRow}>
           <View style={styles.heroImgWrap}>
-            <Image source={{ uri: heroAvatar }} style={styles.heroImg} />
-            <View style={styles.camBtn}>
-              <Camera color={colors.white} size={14} />
-            </View>
+            {isOwner ? (
+              <AvatarUploadButton
+                uri={heroAvatar}
+                fallbackInitial={familyName}
+                size={100}
+                hint=""
+                onPick={onFamilyAvatarPick}
+              />
+            ) : heroAvatar ? (
+              <Image source={{ uri: heroAvatar }} style={styles.heroImg} />
+            ) : (
+              <View style={[styles.heroImg, styles.heroImgFallback]}>
+                <Text style={styles.heroImgInitial}>{familyName.slice(0, 1).toUpperCase()}</Text>
+              </View>
+            )}
           </View>
           <View style={{ flex: 1, minWidth: 0, paddingRight: 20 }}>
             <Text style={styles.familyName} numberOfLines={1}>
               {familyName}
             </Text>
-            <Pressable style={styles.badge} onPress={() => setMembersOpen(true)}>
-              <Text style={styles.badgeText}>
-                {memberCount > 0 ? `${memberCount} thành viên` : "Gia đình"}
-              </Text>
+            <Pressable style={styles.badge} onPress={goMembers}>
+              <Text style={styles.badgeText}>{s.family.memberBadge(memberCount)}</Text>
             </Pressable>
-            {stackMembers.length > 0 ? (
-              <View style={styles.avatarStack}>
-                {stackMembers.map((m, i) => {
-                  const stackStyle = [styles.stackAvatar, i === 0 && styles.stackAvatarFirst];
-                  if (m.avatar_url) {
-                    return (
-                      <Image key={m.user_id} source={{ uri: m.avatar_url }} style={stackStyle} />
-                    );
-                  }
-                  return (
-                    <View
-                      key={m.user_id}
-                      style={[
-                        stackStyle,
-                        {
-                          backgroundColor: colors.tintBlue,
-                          alignItems: "center",
-                          justifyContent: "center",
-                        },
-                      ]}
-                    >
-                      <Text style={styles.stackMoreText}>
-                        {memberDisplayName(m).slice(0, 1).toUpperCase()}
-                      </Text>
-                    </View>
-                  );
-                })}
-                {members.length > 4 ? (
-                  <View style={styles.stackMore}>
-                    <Text style={styles.stackMoreText}>+{members.length - 4}</Text>
-                  </View>
-                ) : null}
-              </View>
-            ) : null}
-            <Text style={styles.tagline}>
-              "Cùng nhau xây dựng tổ ấm{"\n"}an toàn – hạnh phúc – tiện nghi" 💙
-            </Text>
+            <Text style={styles.tagline}>{c.tagline}</Text>
           </View>
         </View>
         <View style={styles.heroActions}>
           <HeroAction
             styles={styles}
             icon={Users}
-            label="Thành viên"
+            label={s.family.membersAction}
             tint={colors.tintBlue}
             iconColor={colors.brand}
-            onPress={() => setMembersOpen(true)}
+            onPress={goMembers}
           />
           <HeroAction
             styles={styles}
             icon={Calendar}
-            label="Lịch gia đình"
+            label={s.family.calendar}
             tint={colors.tintPurple}
             iconColor={colors.pink}
             onPress={() => router.push("/lich-gia-dinh")}
@@ -392,7 +350,7 @@ export default function GiaDinhScreen() {
           <HeroAction
             styles={styles}
             icon={Bookmark}
-            label="Kỷ niệm"
+            label={s.family.memories}
             tint={colors.tintOrange}
             iconColor={colors.warning}
             onPress={() => router.push("/ky-niem-gia-dinh")}
@@ -400,7 +358,7 @@ export default function GiaDinhScreen() {
           <HeroAction
             styles={styles}
             icon={Settings}
-            label="Cài đặt"
+            label={s.family.settings}
             tint={colors.tintGreen}
             iconColor={colors.success}
             onPress={() => router.push("/cai-dat/thong-bao")}
@@ -408,7 +366,7 @@ export default function GiaDinhScreen() {
         </View>
       </View>
 
-      <Text style={styles.sectionTitle}>Quản lý gia đình</Text>
+      <Text style={styles.sectionTitle}>{s.family.manage}</Text>
       <View style={styles.grid}>
         <Pressable
           style={[styles.gridCard, { backgroundColor: colors.tintBlue }]}
@@ -420,11 +378,11 @@ export default function GiaDinhScreen() {
               <Wallet color={colors.white} size={18} />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={styles.gridTitle}>Chi tiêu gia đình</Text>
-              <Text style={styles.gridMonth}>{currentMonthLabel()}</Text>
+              <Text style={styles.gridTitle}>{f.expense}</Text>
+              <Text style={styles.gridMonth}>{c.totalExpenseInMonth(formatExpenseMonthLabel(locale))}</Text>
             </View>
           </View>
-          <Text style={styles.gridAmount}>{formatVnd(expCur)}</Text>
+          <Text style={styles.gridAmount}>{formatVnd(expCur, locale)}</Text>
           {expPrev > 0 ? (
             <View style={styles.deltaRow}>
               {expDown ? (
@@ -433,11 +391,11 @@ export default function GiaDinhScreen() {
                 <TrendingUp color={colors.emergency} size={12} />
               )}
               <Text style={[styles.deltaText, { color: expDown ? colors.success : colors.emergency }]}>
-                {Math.abs(expDelta).toFixed(1).replace(".", ",")}% so với tháng trước
+                {c.comparedToLastMonth(Math.abs(expDelta).toFixed(1).replace(".", ","))}
               </Text>
             </View>
           ) : (
-            <Text style={[styles.deltaText, { color: colors.muted }]}>Chưa có dữ liệu tháng trước</Text>
+            <Text style={[styles.deltaText, { color: colors.muted }]}>{c.noPrevMonthData}</Text>
           )}
         </Pressable>
 
@@ -450,16 +408,16 @@ export default function GiaDinhScreen() {
             <View style={[styles.iconBox, { backgroundColor: colors.tintPurple }]}>
               <Text style={{ fontSize: 20 }}>👧</Text>
             </View>
-            <Text style={[styles.gridTitle, { paddingTop: 4 }]}>Đồng hành cùng con</Text>
+            <Text style={[styles.gridTitle, { paddingTop: 4 }]}>{f.children}</Text>
           </View>
           <View style={[styles.childList, { marginTop: 10 }]}>
-            {(dash?.children ?? []).slice(0, 2).map((c) => (
-              <Text key={c.id} style={styles.childDetail} numberOfLines={1}>
-                {c.name} · {c.today_count} lịch hôm nay
+            {(dash?.children ?? []).slice(0, 2).map((ch) => (
+              <Text key={ch.id} style={styles.childDetail} numberOfLines={1}>
+                {c.childScheduleToday(ch.name, ch.today_count)}
               </Text>
             ))}
             {(dash?.children ?? []).length === 0 && (
-              <Text style={styles.childDetail}>Chưa có con nào.</Text>
+              <Text style={styles.childDetail}>{c.noChildren}</Text>
             )}
           </View>
         </Pressable>
@@ -473,14 +431,15 @@ export default function GiaDinhScreen() {
             <View style={[styles.iconBox, { backgroundColor: colors.warning }]}>
               <ShoppingBasket color={colors.white} size={18} />
             </View>
-            <Text style={[styles.gridTitle, { paddingTop: 4 }]}>Thực phẩm & Tủ lạnh</Text>
+            <Text style={[styles.gridTitle, { paddingTop: 4 }]}>{f.food}</Text>
           </View>
           <View style={styles.foodBottom}>
             <View>
               <Text style={styles.bigNum}>{foodCount}</Text>
               <Text style={styles.childDetail}>
-                {dash && dash.food.expired > 0 ? `${dash.food.expired} đã hết hạn` : "thực phẩm"}
-                {"\n"}sắp hết hạn
+                {dash && dash.food.expired > 0
+                  ? `${c.foodExpired(dash.food.expired)}\n${c.foodExpiring.split("\n")[1] ?? ""}`
+                  : c.foodExpiring}
               </Text>
             </View>
             <View style={styles.foodThumbs}>
@@ -500,7 +459,7 @@ export default function GiaDinhScreen() {
             <View style={[styles.iconBox, { backgroundColor: colors.success }]}>
               <HeartPulse color={colors.white} size={18} />
             </View>
-            <Text style={[styles.gridTitle, { paddingTop: 4 }]}>Sức khỏe gia đình</Text>
+            <Text style={[styles.gridTitle, { paddingTop: 4 }]}>{f.health}</Text>
           </View>
           <View style={styles.healthList}>
             {nextMed ? (
@@ -509,11 +468,11 @@ export default function GiaDinhScreen() {
                 icon={Pill}
                 iconColor={colors.emergency}
                 tint={colors.tintRed}
-                title={`${nextMed.member_name} uống ${nextMed.medicine}`}
+                title={f.medicineToday(nextMed.member_name, nextMed.medicine)}
                 detail={
                   nextMed.time_of_day
-                    ? `${String(nextMed.time_of_day).slice(0, 5)} hôm nay`
-                    : "Hôm nay"
+                    ? t.todayAt(String(nextMed.time_of_day).slice(0, 5))
+                    : t.today
                 }
               />
             ) : (
@@ -522,8 +481,8 @@ export default function GiaDinhScreen() {
                 icon={Pill}
                 iconColor={colors.emergency}
                 tint={colors.tintRed}
-                title="Chưa có lịch thuốc"
-                detail="Thêm nhắc thuốc trong mục Sức khỏe"
+                title={f.noMedicineSchedule}
+                detail={f.addMedicineHint}
               />
             )}
             {nextAppt ? (
@@ -532,8 +491,8 @@ export default function GiaDinhScreen() {
                 icon={Stethoscope}
                 iconColor={colors.pink}
                 tint={colors.tintPurple}
-                title={`${nextAppt.member_name} có lịch khám`}
-                detail={formatApptDate(nextAppt.scheduled_at)}
+                title={f.apptSoon(nextAppt.member_name)}
+                detail={formatApptTime(nextAppt.scheduled_at, locale)}
               />
             ) : (
               <HealthRow
@@ -541,8 +500,8 @@ export default function GiaDinhScreen() {
                 icon={Stethoscope}
                 iconColor={colors.pink}
                 tint={colors.tintPurple}
-                title="Không có lịch khám sắp tới"
-                detail="Đặt lịch trong mục Sức khỏe"
+                title={f.noApptSoon}
+                detail={f.bookApptHint}
               />
             )}
           </View>
@@ -557,18 +516,18 @@ export default function GiaDinhScreen() {
             <View style={[styles.iconBox, { backgroundColor: colors.brand }]}>
               <HeartHandshake color={colors.white} size={18} />
             </View>
-            <Text style={[styles.gridTitle, { paddingTop: 4 }]}>Chăm sóc ông bà</Text>
+            <Text style={[styles.gridTitle, { paddingTop: 4 }]}>{f.elderlyCare}</Text>
           </View>
-          <Text style={[styles.childDetail, { marginTop: 10 }]}>Safe Check · nhắc thuốc</Text>
+          <Text style={[styles.childDetail, { marginTop: 10 }]}>{c.safeCheckNote}</Text>
         </Pressable>
       </View>
 
-      <Text style={styles.sectionTitle}>Dịch vụ gia đình</Text>
+      <Text style={styles.sectionTitle}>{f.familyServices}</Text>
       <View style={styles.servicesRow}>
         <ServiceTile
           styles={styles}
           icon={Plane}
-          label="Cả nhà du lịch"
+          label={f.travel}
           tint={colors.tintBlue}
           iconColor={colors.brand}
           onPress={() => router.push("/du-lich")}
@@ -576,7 +535,7 @@ export default function GiaDinhScreen() {
         <ServiceTile
           styles={styles}
           icon={HomeIcon}
-          label="Dịch vụ tại nhà"
+          label={f.homeService}
           tint={colors.tintGreen}
           iconColor={colors.success}
           onPress={() => router.push("/quan-ly-giup-viec")}
@@ -584,7 +543,7 @@ export default function GiaDinhScreen() {
         <ServiceTile
           styles={styles}
           icon={Car}
-          label="Đặt xe gia đình"
+          label={f.bookCar}
           tint={colors.tintOrange}
           iconColor={colors.warning}
           onPress={() => router.push({ pathname: "/coming-soon", params: { feature: "dat-xe-gia-dinh" } })}
@@ -592,7 +551,7 @@ export default function GiaDinhScreen() {
         <ServiceTile
           styles={styles}
           icon={ShoppingCart}
-          label={"Mua sắm hộ"}
+          label={f.shopForMe}
           tint={colors.tintPurple}
           iconColor={colors.pink}
           onPress={() => router.push({ pathname: "/coming-soon", params: { feature: "mua-sam-ho" } })}
@@ -600,7 +559,7 @@ export default function GiaDinhScreen() {
         <ServiceTile
           styles={styles}
           icon={Crown}
-          label={"Gói dịch vụ\nưu đãi"}
+          label={f.promoPackages}
           tint={colors.tintOrange}
           iconColor={colors.warning}
           onPress={() => router.push({ pathname: "/coming-soon", params: { feature: "goi-uu-dai" } })}
@@ -608,9 +567,9 @@ export default function GiaDinhScreen() {
       </View>
 
       <View style={styles.momentsHeader}>
-        <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>Khoảnh khắc gia đình</Text>
+        <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>{f.moments}</Text>
         <Pressable onPress={() => router.push("/ky-niem-gia-dinh")}>
-          <Text style={styles.link}>Xem tất cả</Text>
+          <Text style={styles.link}>{c.seeAll}</Text>
         </Pressable>
       </View>
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -627,11 +586,6 @@ export default function GiaDinhScreen() {
         </View>
       </ScrollView>
 
-      <FamilyMembersSheet
-        visible={membersOpen}
-        onClose={() => setMembersOpen(false)}
-        back="/(tabs)/gia-dinh"
-      />
     </Screen>
   );
 }

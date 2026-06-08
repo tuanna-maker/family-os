@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ScrollView, Text, View } from "react-native";
+import { ScrollView, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Screen } from "@mobile/components/Screen";
@@ -18,34 +18,32 @@ import {
 } from "@mobile/api/children";
 import { toast } from "@mobile/utils/toast";
 import { useThemedStyles } from "@mobile/theme/useThemedStyles";
+import { useI18n } from "@mobile/i18n/useI18n";
 
 type FormType = "child" | "schedule" | "homework" | "achievement" | "reminder";
 
-const TITLES: Record<FormType, [string, string]> = {
-  child: ["Thêm con", "Sửa hồ sơ con"],
-  schedule: ["Thêm tiết học", "Sửa tiết học"],
-  homework: ["Thêm bài tập", "Sửa bài tập"],
-  achievement: ["Thêm thành tích", "Sửa thành tích"],
-  reminder: ["Thêm nhắc", "Sửa nhắc"],
-};
-
-const WEEKDAYS = [
-  { value: 1, label: "Thứ 2" },
-  { value: 2, label: "Thứ 3" },
-  { value: 3, label: "Thứ 4" },
-  { value: 4, label: "Thứ 5" },
-  { value: 5, label: "Thứ 6" },
-  { value: 6, label: "Thứ 7" },
-  { value: 0, label: "Chủ nhật" },
-];
+const WEEKDAY_VALUES = [1, 2, 3, 4, 5, 6, 0] as const;
 
 export default function ConCaiThemScreen() {
   const router = useRouter();
   const styles = useFormStyles();
+  const { s } = useI18n();
+  const ch = s.screens.children;
+  const f = ch.form;
+  const c = s.common;
+  const ex = s.expense;
   const { type = "child", childId, id } = useLocalSearchParams<{ type?: FormType; childId?: string; id?: string }>();
   const formType = (type ?? "child") as FormType;
   const { familyId } = useFamilyContext();
   const qc = useQueryClient();
+
+  const titles: Record<FormType, [string, string]> = {
+    child: [f.addChild, f.editChild],
+    schedule: [f.addSchedule, f.editSchedule],
+    homework: [f.addHomework, f.editHomework],
+    achievement: [f.addAchievement, f.editAchievement],
+    reminder: [f.addReminder, f.editReminder],
+  };
 
   const q = useQuery({
     queryKey: ["children", familyId],
@@ -55,10 +53,10 @@ export default function ConCaiThemScreen() {
 
   const existing = useMemo(() => {
     if (!id || !q.data) return null;
-    if (formType === "child") return q.data.children.find((c) => c.id === id);
+    if (formType === "child") return q.data.children.find((child) => child.id === id);
     if (formType === "homework") return q.data.homeworks.find((h) => h.id === id);
     if (formType === "reminder") return q.data.reminders.find((r) => r.id === id);
-    if (formType === "schedule") return q.data.schedules.find((s) => s.id === id);
+    if (formType === "schedule") return q.data.schedules.find((item) => item.id === id);
     if (formType === "achievement") return q.data.achievements.find((a) => a.id === id);
     return null;
   }, [id, q.data, formType]);
@@ -81,7 +79,7 @@ export default function ConCaiThemScreen() {
   useEffect(() => {
     if (existing) {
       if (formType === "child") {
-        const c = existing as {
+        const child = existing as {
           name: string;
           school?: string | null;
           grade?: string | null;
@@ -89,12 +87,12 @@ export default function ConCaiThemScreen() {
           dob?: string | null;
           notes?: string | null;
         };
-        setName(c.name);
-        setSchool(c.school ?? "");
-        setGrade(c.grade ?? "");
-        setAvatar(c.avatar?.trim() || "🧒");
-        setDob(c.dob ?? "");
-        setNotes((c as { notes?: string | null }).notes ?? "");
+        setName(child.name);
+        setSchool(child.school ?? "");
+        setGrade(child.grade ?? "");
+        setAvatar(child.avatar?.trim() || "🧒");
+        setDob(child.dob ?? "");
+        setNotes((child as { notes?: string | null }).notes ?? "");
       }
       if (formType === "homework") {
         const h = existing as { title: string; subject: string; child_id: string; due_date?: string | null };
@@ -110,11 +108,11 @@ export default function ConCaiThemScreen() {
         if (r.child_id) setActiveChildId(r.child_id);
       }
       if (formType === "schedule") {
-        const s = existing as { subject: string; child_id: string; day_of_week: number; time_start?: string | null };
-        setSubject(s.subject);
-        setActiveChildId(s.child_id);
-        setDayOfWeek(s.day_of_week);
-        setTimeStart(s.time_start?.slice(0, 5) ?? "08:00");
+        const item = existing as { subject: string; child_id: string; day_of_week: number; time_start?: string | null };
+        setSubject(item.subject);
+        setActiveChildId(item.child_id);
+        setDayOfWeek(item.day_of_week);
+        setTimeStart(item.time_start?.slice(0, 5) ?? "08:00");
       }
       if (formType === "achievement") {
         const a = existing as { title: string; child_id: string; earned_at: string };
@@ -129,14 +127,14 @@ export default function ConCaiThemScreen() {
     if (!activeChildId && q.data?.children[0]) setActiveChildId(q.data.children[0].id);
   }, [q.data, activeChildId]);
 
-  const [addT, editT] = TITLES[formType];
+  const [addT, editT] = titles[formType];
   const pageTitle = existing ? editT : addT;
 
   const mut = useMutation({
     mutationFn: async () => {
-      if (!familyId) throw new Error("Chưa có gia đình");
+      if (!familyId) throw new Error(c.noFamilyYet);
       if (formType === "child") {
-        if (!name.trim()) throw new Error("Nhập tên bé");
+        if (!name.trim()) throw new Error(f.enterName);
         return upsertChild({
           id,
           family_id: familyId,
@@ -154,7 +152,7 @@ export default function ConCaiThemScreen() {
           family_id: familyId,
           child_id: activeChildId,
           title: title.trim(),
-          subject: subject.trim() || "Khác",
+          subject: subject.trim() || ex.other,
           due_date: dueDate.slice(0, 10),
         });
       }
@@ -168,8 +166,8 @@ export default function ConCaiThemScreen() {
         });
       }
       if (formType === "schedule") {
-        if (!subject.trim()) throw new Error("Nhập môn học");
-        if (!activeChildId) throw new Error("Chọn bé trước");
+        if (!subject.trim()) throw new Error(f.enterSubject);
+        if (!activeChildId) throw new Error(f.pickChildFirst);
         return upsertSchedule({
           id,
           family_id: familyId,
@@ -179,7 +177,7 @@ export default function ConCaiThemScreen() {
           time_start: timeStart,
         });
       }
-      if (!title.trim()) throw new Error("Nhập tiêu đề");
+      if (!title.trim()) throw new Error(f.enterTitle);
       return upsertAchievement({
         id,
         family_id: familyId,
@@ -190,7 +188,7 @@ export default function ConCaiThemScreen() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["children", familyId] });
-      toast.success("Đã lưu");
+      toast.success(c.saved);
       router.back();
     },
     onError: (e: Error) => toast.error(e.message),
@@ -202,31 +200,31 @@ export default function ConCaiThemScreen() {
 
   return (
     <Screen contentStyle={{ paddingTop: 0 }}>
-      <PageHeader eyebrow="Đồng hành cùng con" title={pageTitle} back="/con-cai" />
+      <PageHeader eyebrow={ch.title} title={pageTitle} back="/con-cai" />
 
       {formType === "child" && (
         <>
           <EmojiPicker value={avatar} onChange={setAvatar} />
-          <TextField label="Tên bé *" value={name} onChangeText={setName} placeholder="Bé Minh" />
-          <DateField label="Ngày sinh" value={dob} onChange={setDob} />
-          <TextField label="Trường" value={school} onChangeText={setSchool} placeholder="TH Nguyễn Du" />
-          <TextField label="Lớp" value={grade} onChangeText={setGrade} placeholder="Lớp 3A" />
-          <TextField label="Ghi chú" value={notes} onChangeText={setNotes} multiline placeholder="Sở thích, dị ứng…" />
+          <TextField label={f.childName} value={name} onChangeText={setName} placeholder="Bé Minh" />
+          <DateField label={f.dob} value={dob} onChange={setDob} />
+          <TextField label={f.schoolField} value={school} onChangeText={setSchool} placeholder="TH Nguyễn Du" />
+          <TextField label={f.grade} value={grade} onChangeText={setGrade} placeholder="Lớp 3A" />
+          <TextField label={f.notes} value={notes} onChangeText={setNotes} multiline placeholder={f.notesPh} />
         </>
       )}
 
       {formType === "homework" && (
         <>
-          <TextField label="Môn" value={subject} onChangeText={setSubject} placeholder="Toán" />
-          <TextField label="Bài tập" value={title} onChangeText={setTitle} placeholder="Làm bài 5" />
-          <DateField label="Hạn nộp" value={dueDate.slice(0, 10)} onChange={(d) => setDueDate(`${d}T09:00`)} />
+          <TextField label={f.subject} value={subject} onChangeText={setSubject} placeholder="Toán" />
+          <TextField label={f.homeworkTitle} value={title} onChangeText={setTitle} placeholder="Làm bài 5" />
+          <DateField label={f.dueDate} value={dueDate.slice(0, 10)} onChange={(d) => setDueDate(`${d}T09:00`)} />
         </>
       )}
 
       {formType === "reminder" && (
         <>
-          <TextField label="Nội dung nhắc" value={title} onChangeText={setTitle} />
-          <DateTimeField label="Thời gian" value={remindAt} onChange={setRemindAt} />
+          <TextField label={f.reminderContent} value={title} onChangeText={setTitle} />
+          <DateTimeField label={c.scheduledAt} value={remindAt} onChange={setRemindAt} />
         </>
       )}
 
@@ -234,48 +232,48 @@ export default function ConCaiThemScreen() {
         <>
           {children.length > 1 && (
             <>
-              <FieldLabel>Chọn bé</FieldLabel>
+              <FieldLabel>{f.pickChild}</FieldLabel>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 16 }}>
                 <View style={styles.chipRow}>
-                  {children.map((c) => (
+                  {children.map((child) => (
                     <SelectChip
-                      key={c.id}
-                      label={c.name}
-                      active={activeChildId === c.id}
-                      onPress={() => setActiveChildId(c.id)}
+                      key={child.id}
+                      label={child.name}
+                      active={activeChildId === child.id}
+                      onPress={() => setActiveChildId(child.id)}
                     />
                   ))}
                 </View>
               </ScrollView>
             </>
           )}
-          <TextField label="Môn học *" value={subject} onChangeText={setSubject} placeholder="Toán" />
-          <FieldLabel>Thứ trong tuần</FieldLabel>
+          <TextField label={f.subjectRequired} value={subject} onChangeText={setSubject} placeholder="Toán" />
+          <FieldLabel>{f.weekday}</FieldLabel>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 16 }}>
             <View style={styles.chipRow}>
-              {WEEKDAYS.map((d) => (
+              {WEEKDAY_VALUES.map((value) => (
                 <SelectChip
-                  key={d.value}
-                  label={d.label}
-                  active={dayOfWeek === d.value}
-                  onPress={() => setDayOfWeek(d.value)}
+                  key={value}
+                  label={ch.weekdays[value]}
+                  active={dayOfWeek === value}
+                  onPress={() => setDayOfWeek(value)}
                 />
               ))}
             </View>
           </ScrollView>
-          <TimeField label="Giờ học" value={timeStart} onChange={setTimeStart} />
+          <TimeField label={f.classTime} value={timeStart} onChange={setTimeStart} />
         </>
       )}
 
       {formType === "achievement" && (
         <>
-          <TextField label="Thành tích *" value={title} onChangeText={setTitle} placeholder="Học sinh giỏi tháng 5" />
-          <DateField label="Ngày đạt được" value={earnedAt} onChange={setEarnedAt} />
+          <TextField label={f.achievement} value={title} onChangeText={setTitle} placeholder="Học sinh giỏi tháng 5" />
+          <DateField label={f.earnedDate} value={earnedAt} onChange={setEarnedAt} />
         </>
       )}
 
       <View style={{ marginTop: 8 }}>
-        <PrimaryButton label="Lưu" onPress={() => mut.mutate()} loading={mut.isPending} />
+        <PrimaryButton label={c.save} onPress={() => mut.mutate()} loading={mut.isPending} />
       </View>
       <View style={{ height: 32 }} />
     </Screen>

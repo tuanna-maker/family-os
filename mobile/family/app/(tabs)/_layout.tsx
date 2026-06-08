@@ -3,6 +3,7 @@ import { Tabs } from "expo-router";
 import { Home, Users, ShieldCheck, Sparkles, User } from "lucide-react-native";
 import { GlassTabBar } from "@mobile/components/GlassTabBar";
 import { useTheme } from "@mobile/theme/themeStore";
+import { useI18n } from "@mobile/i18n/useI18n";
 
 function BaoAnTabIcon({ color, size, focused }: { color: string; size: number; focused: boolean }) {
   return (
@@ -12,6 +13,7 @@ function BaoAnTabIcon({ color, size, focused }: { color: string; size: number; f
 
 export default function TabsLayout() {
   const { colors } = useTheme();
+  const { s } = useI18n();
 
   return (
     <Tabs
@@ -25,21 +27,21 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="home"
         options={{
-          title: "Trang chủ",
+          title: s.tabs.home,
           tabBarIcon: ({ color, size }) => <Home color={color} size={size} />,
         }}
       />
       <Tabs.Screen
         name="gia-dinh"
         options={{
-          title: "Gia đình",
+          title: s.tabs.family,
           tabBarIcon: ({ color, size }) => <Users color={color} size={size} />,
         }}
       />
       <Tabs.Screen
         name="bao-an"
         options={{
-          title: "Bảo an",
+          title: s.tabs.security,
           tabBarIcon: ({ color, size, focused }) => (
             <BaoAnTabIcon color={color} size={size ?? 20} focused={focused} />
           ),
@@ -48,14 +50,14 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="cong-dong"
         options={{
-          title: "Cộng đồng",
+          title: s.tabs.community,
           tabBarIcon: ({ color, size }) => <Sparkles color={color} size={size} />,
         }}
       />
       <Tabs.Screen
         name="tai-khoan"
         options={{
-          title: "Tài khoản",
+          title: s.tabs.account,
           tabBarIcon: ({ color, size }) => <User color={color} size={size} />,
         }}
       />

@@ -11,6 +11,7 @@ import { AppPrefsProvider } from "@mobile/hooks/useAppPrefs";
 import { usePushNotifications } from "@mobile/hooks/usePushNotifications";
 import { ensureSupabase } from "@mobile/lib/supabase";
 import { ThemeBridge, useTheme } from "@mobile/theme/themeStore";
+import { AppAlertProvider } from "@mobile/components/AppAlert";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -66,7 +67,9 @@ export default function RootLayout() {
           <AuthProvider>
             <AppPrefsProvider>
               <ThemeBridge>
-                <AuthGate />
+                <AppAlertProvider>
+                  <AuthGate />
+                </AppAlertProvider>
               </ThemeBridge>
             </AppPrefsProvider>
           </AuthProvider>

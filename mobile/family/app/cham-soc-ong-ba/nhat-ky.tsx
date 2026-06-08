@@ -13,35 +13,28 @@ import {
   listElderlyProfiles,
   type ActivityRow,
 } from "@mobile/api/elderly-care";
+import { useI18n } from "@mobile/i18n/useI18n";
+import { formatDate, formatTime } from "@mobile/i18n/format";
 import { colors, radius } from "@mobile/theme/colors";
-
-function fmtDate(iso: string) {
-  return new Date(iso).toLocaleDateString("vi-VN", {
-    weekday: "short",
-    day: "2-digit",
-    month: "2-digit",
-  });
-}
-
-function fmtTime(iso: string) {
-  return new Date(iso).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
-}
-
-const kindStyle: Record<
-  ActivityRow["kind"],
-  { bg: string; Icon: typeof Pill; label: string }
-> = {
-  check: { bg: colors.tintGreen, Icon: ShieldCheck, label: "Safe Check" },
-  med: { bg: colors.tintBlue, Icon: Pill, label: "Thuốc" },
-  note: { bg: colors.tintOrange, Icon: NotebookPen, label: "Ghi chú" },
-  vital: { bg: colors.tintPurple, Icon: Activity, label: "Sinh hiệu" },
-};
 
 export default function NhatKyChamSocScreen() {
   const router = useRouter();
   const { familyId } = useFamilyContext();
+  const { locale, s } = useI18n();
+  const ec = s.elderlyCare;
   const [days, setDays] = useState<7 | 30>(7);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  const kindStyle = useMemo(
+    () =>
+      ({
+        check: { bg: colors.tintGreen, Icon: ShieldCheck, label: ec.activityKinds.check },
+        med: { bg: colors.tintBlue, Icon: Pill, label: ec.activityKinds.med },
+        note: { bg: colors.tintOrange, Icon: NotebookPen, label: ec.activityKinds.note },
+        vital: { bg: colors.tintPurple, Icon: Activity, label: ec.activityKinds.vital },
+      }) as Record<ActivityRow["kind"], { bg: string; Icon: typeof Pill; label: string }>,
+    [ec.activityKinds],
+  );
 
   const profilesQ = useQuery({
     queryKey: ["elderly-profiles", familyId],
@@ -86,7 +79,7 @@ export default function NhatKyChamSocScreen() {
 
   return (
     <Screen contentStyle={{ paddingTop: 0 }}>
-      <PageHeader eyebrow="Chăm sóc ông bà" title="Nhật ký chăm sóc" back="/cham-soc-ong-ba" />
+      <PageHeader eyebrow={ec.title} title={ec.journal} back="/cham-soc-ong-ba" />
 
       {profiles.length > 1 && (
         <View style={styles.chipRow}>
@@ -111,16 +104,16 @@ export default function NhatKyChamSocScreen() {
             style={[styles.rangeBtn, days === d && styles.rangeBtnActive]}
             onPress={() => setDays(d)}
           >
-            <Text style={[styles.rangeText, days === d && styles.rangeTextActive]}>{d} ngày</Text>
+            <Text style={[styles.rangeText, days === d && styles.rangeTextActive]}>{ec.journalDays(d)}</Text>
           </Pressable>
         ))}
       </View>
 
       {!profile ? (
         <EmptyState
-          title="Chưa có hồ sơ"
-          description="Thêm hồ sơ ở màn Chăm sóc ông bà."
-          actionLabel="Quay lại"
+          title={ec.noProfile}
+          description={ec.noProfileJournalDesc}
+          actionLabel={s.common.back}
           onAction={() => router.back()}
         />
       ) : timelineQ.isLoading ? (
@@ -128,28 +121,31 @@ export default function NhatKyChamSocScreen() {
       ) : (
         <>
           <Card style={styles.summary}>
-            <SectionHeader title="Tổng quan" subtitle={`${rows.length} hoạt động`} />
+            <SectionHeader title={ec.overview} subtitle={ec.activityCount(rows.length)} />
             <View style={styles.stats}>
-              <Stat label="Safe Check" value={counts.check} tone={colors.tintGreen} />
-              <Stat label="Thuốc" value={counts.med} tone={colors.tintBlue} />
-              <Stat label="Ghi chú" value={counts.note} tone={colors.tintOrange} />
+              <Stat label={ec.activityKinds.check} value={counts.check} tone={colors.tintGreen} />
+              <Stat label={ec.activityKinds.med} value={counts.med} tone={colors.tintBlue} />
+              <Stat label={ec.activityKinds.note} value={counts.note} tone={colors.tintOrange} />
             </View>
           </Card>
 
           {groups.length === 0 ? (
-            <EmptyState title={`Chưa có hoạt động trong ${days} ngày`} />
+            <EmptyState title={ec.noActivityInDays(days)} />
           ) : (
             groups.map(([day, items]) => (
               <View key={day} style={{ marginBottom: 16 }}>
                 <Text style={styles.dayLabel}>
-                  {fmtDate(day + "T00:00:00")} · {items.length} hoạt động
+                  {ec.dayActivities(
+                    formatDate(day + "T00:00:00", locale, { weekday: "short", day: "2-digit", month: "2-digit" }),
+                    items.length,
+                  )}
                 </Text>
                 {items.map((r) => {
-                  const s = kindStyle[r.kind];
-                  const Icon = s.Icon;
+                  const kind = kindStyle[r.kind];
+                  const Icon = kind.Icon;
                   return (
                     <Card key={r.id} style={styles.item}>
-                      <View style={[styles.iconWrap, { backgroundColor: s.bg }]}>
+                      <View style={[styles.iconWrap, { backgroundColor: kind.bg }]}>
                         <Icon color={colors.foreground} size={16} />
                       </View>
                       <View style={{ flex: 1 }}>
@@ -157,7 +153,7 @@ export default function NhatKyChamSocScreen() {
                           <Text style={styles.itemTitle} numberOfLines={1}>
                             {r.title}
                           </Text>
-                          <Text style={styles.itemTime}>{fmtTime(r.at)}</Text>
+                          <Text style={styles.itemTime}>{formatTime(r.at, locale)}</Text>
                         </View>
                         {r.detail ? <Text style={styles.itemDetail}>{r.detail}</Text> : null}
                       </View>

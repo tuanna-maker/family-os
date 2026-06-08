@@ -1,17 +1,32 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
+import { setLocaleRef } from "@mobile/i18n/localeRef";
+
+export type AppLocale = "vi" | "en";
 
 type AppPrefs = {
   theme: "light" | "dark";
   easyRead: boolean;
+  locale: AppLocale;
+  hideProfileEmail: boolean;
+  shareAnalytics: boolean;
 };
 
 const KEY = "stos:app-prefs";
-const DEFAULTS: AppPrefs = { theme: "dark", easyRead: false };
+const DEFAULTS: AppPrefs = {
+  theme: "dark",
+  easyRead: false,
+  locale: "vi",
+  hideProfileEmail: false,
+  shareAnalytics: true,
+};
 
 type Ctx = AppPrefs & {
   setTheme: (t: "light" | "dark") => void;
   setEasyRead: (v: boolean) => void;
+  setLocale: (l: AppLocale) => void;
+  setHideProfileEmail: (v: boolean) => void;
+  setShareAnalytics: (v: boolean) => void;
   ready: boolean;
 };
 
@@ -28,6 +43,10 @@ export function AppPrefsProvider({ children }: { children: ReactNode }) {
       })
       .finally(() => setReady(true));
   }, []);
+
+  useEffect(() => {
+    setLocaleRef(prefs.locale);
+  }, [prefs.locale]);
 
   const persist = useCallback((next: AppPrefs) => {
     setPrefs(next);
@@ -52,8 +71,45 @@ export function AppPrefsProvider({ children }: { children: ReactNode }) {
     [],
   );
 
+  const setLocale = useCallback(
+    (locale: AppLocale) => setPrefs((p) => {
+      const next = { ...p, locale };
+      AsyncStorage.setItem(KEY, JSON.stringify(next));
+      return next;
+    }),
+    [],
+  );
+
+  const setHideProfileEmail = useCallback(
+    (hideProfileEmail: boolean) => setPrefs((p) => {
+      const next = { ...p, hideProfileEmail };
+      AsyncStorage.setItem(KEY, JSON.stringify(next));
+      return next;
+    }),
+    [],
+  );
+
+  const setShareAnalytics = useCallback(
+    (shareAnalytics: boolean) => setPrefs((p) => {
+      const next = { ...p, shareAnalytics };
+      AsyncStorage.setItem(KEY, JSON.stringify(next));
+      return next;
+    }),
+    [],
+  );
+
   return (
-    <AppPrefsContext.Provider value={{ ...prefs, setTheme, setEasyRead, ready }}>
+    <AppPrefsContext.Provider
+      value={{
+        ...prefs,
+        setTheme,
+        setEasyRead,
+        setLocale,
+        setHideProfileEmail,
+        setShareAnalytics,
+        ready,
+      }}
+    >
       {children}
     </AppPrefsContext.Provider>
   );
