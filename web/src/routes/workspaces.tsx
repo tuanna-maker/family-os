@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { listMyWorkspaces, type WorkspaceItem } from "@/lib/workspaces.functions";
-import { Home, Building2, ShieldCheck, Crown, ChevronRight, LayoutDashboard, HeartPulse, Shield } from "lucide-react";
+import { Home, Building2, ShieldCheck, Crown, ChevronRight, LayoutDashboard, HeartPulse, Smartphone } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/workspaces")({
@@ -32,8 +32,7 @@ const KIND_META: Record<
   ops: { label: "Operations", tint: "bg-tint-green", color: "text-success", icon: Building2 },
   security: { label: "Security", tint: "bg-tint-orange", color: "text-warning", icon: ShieldCheck },
   family_gov: { label: "Family Core", tint: "bg-tint-blue", color: "text-brand", icon: HeartPulse },
-  guard: { label: "App Bảo vệ", tint: "bg-tint-green", color: "text-success", icon: Shield },
-
+  guard: { label: "STOS Guard", tint: "bg-tint-green", color: "text-success", icon: Smartphone },
 };
 
 function WorkspacesPage() {

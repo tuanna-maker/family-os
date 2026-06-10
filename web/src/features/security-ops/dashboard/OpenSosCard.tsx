@@ -1,13 +1,13 @@
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Siren, MapPin, Clock, Users, RefreshCw } from "lucide-react";
 import { listOpenSos, type OpenSosRow } from "@/lib/security.functions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { supabase } from "@/integrations/supabase/client";
 import { SosTicketDrawer } from "./SosTicketDrawer";
-import { useSosOpsStream } from "./use-sos-ops-stream";
 
 const PRIORITY_CLS: Record<string, string> = {
   P1: "border-red-500/60 bg-red-500/15 text-red-600 dark:text-red-300",
@@ -39,6 +39,7 @@ function ageTone(sec: number, priority: string) {
 
 export function OpenSosCard() {
   const fetchFn = useServerFn(listOpenSos);
+  const qc = useQueryClient();
   const { data, isLoading, refetch, isFetching } = useQuery<OpenSosRow[]>({
     queryKey: ["open-sos"],
     queryFn: () => fetchFn(),
@@ -48,10 +49,22 @@ export function OpenSosCard() {
   const [selected, setSelected] = useState<OpenSosRow | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
 
-  // Shared ref-counted realtime channel (merged with DispatchAssignmentsCard)
-  useSosOpsStream();
-
-
+  // Realtime: invalidate when any SOS request row changes
+  useEffect(() => {
+    const ch = supabase
+      .channel("open-sos-stream")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "security_requests", filter: "request_type=eq.sos" },
+        () => {
+          qc.invalidateQueries({ queryKey: ["open-sos"] });
+        },
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(ch);
+    };
+  }, [qc]);
 
 
   const rows = data ?? [];

@@ -1,15 +1,18 @@
-import { createFileRoute, Link, redirect } from "@tanstack/react-router";
-import { useMemo, useRef, useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
-import { Plus, Heart, Sparkles, Upload, Calendar, Lock, ImagePlus, Loader2, Play } from "lucide-react";
+import { createFileRoute } from "@tanstack/react-router";
+import { useMemo, useState } from "react";
+import { Plus, Heart, Sparkles, Upload, Calendar, Lock, ImagePlus } from "lucide-react";
 import { MobileShell } from "@/components/mobile/MobileShell";
 import { PageHeader } from "@/components/common/PageHeader";
 import { RoundedCard, SectionHeader } from "@/components/common/RoundedCard";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
-import { getMyContext } from "@/lib/auth.functions";
-import { listMoments, createMoment, type Moment } from "@/lib/moments.functions";
+import {
+  albums,
+  milestones,
+  timeline,
+  aiSuggestions,
+  albumCategories,
+  type AlbumCategory,
+} from "@/features/family-core/memories";
 
 export const Route = createFileRoute("/ky-niem-gia-dinh")({
   head: () => ({
@@ -18,102 +21,33 @@ export const Route = createFileRoute("/ky-niem-gia-dinh")({
       { name: "description", content: "Album ảnh, dấu mốc và những khoảnh khắc đáng nhớ của gia đình." },
     ],
   }),
-  beforeLoad: async ({ location }) => {
-    if (typeof window === "undefined") return;
-    const { data } = await supabase.auth.getSession();
-    if (!data.session) throw redirect({ to: "/login", search: { redirect: location.pathname } });
-  },
   component: MemoriesPage,
 });
 
-function formatVnDate(iso: string) {
-  const d = new Date(iso);
-  return `${d.getDate().toString().padStart(2, "0")}/${(d.getMonth() + 1).toString().padStart(2, "0")}/${d.getFullYear()}`;
-}
-function monthLabel(iso: string) {
-  const d = new Date(iso);
-  return `Tháng ${d.getMonth() + 1}/${d.getFullYear()}`;
-}
+const toneBg: Record<string, string> = {
+  blue: "bg-tint-blue",
+  pink: "bg-tint-pink",
+  green: "bg-tint-green",
+  orange: "bg-tint-orange",
+  purple: "bg-tint-purple",
+};
 
 function MemoriesPage() {
-  const getCtx = useServerFn(getMyContext);
-  const loadList = useServerFn(listMoments);
-  const create = useServerFn(createMoment);
-  const qc = useQueryClient();
+  const [activeCat, setActiveCat] = useState<AlbumCategory | "Tất cả">("Tất cả");
 
-  const ctxQ = useQuery({ queryKey: ["my-ctx"], queryFn: () => getCtx(), staleTime: 5 * 60_000 });
-  const userId = ctxQ.data?.userId ?? null;
-  const familyId = ctxQ.data?.family?.id ?? null;
-
-  const dataQ = useQuery({
-    queryKey: ["moments", familyId],
-    queryFn: () => loadList({ data: { family_id: familyId! } }),
-    enabled: !!familyId,
-    staleTime: 30_000,
-  });
-
-  const moments: Moment[] = dataQ.data?.moments ?? [];
-  const featured = moments[0] ?? null;
-  const grid = moments.slice(0, 12);
+  const filteredAlbums = useMemo(
+    () => (activeCat === "Tất cả" ? albums : albums.filter((a) => a.category === activeCat)),
+    [activeCat]
+  );
 
   const grouped = useMemo(() => {
-    const map = new Map<string, Moment[]>();
-    for (const m of moments) {
-      const key = monthLabel(m.taken_at);
-      if (!map.has(key)) map.set(key, []);
-      map.get(key)!.push(m);
+    const map = new Map<string, typeof timeline>();
+    for (const t of timeline) {
+      if (!map.has(t.monthLabel)) map.set(t.monthLabel, []);
+      map.get(t.monthLabel)!.push(t);
     }
     return Array.from(map.entries());
-  }, [moments]);
-
-  // Upload
-  const fileRef = useRef<HTMLInputElement>(null);
-  const [uploading, setUploading] = useState(false);
-
-  const submitMut = useMutation({
-    mutationFn: async (file: File) => {
-      if (!familyId || !userId) throw new Error("Chưa có gia đình");
-      setUploading(true);
-      const ext = file.name.split(".").pop() || "jpg";
-      const isVideo = file.type.startsWith("video/");
-      const path = `${userId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
-      const { error: upErr } = await supabase.storage.from("family-moments").upload(path, file, {
-        contentType: file.type,
-        upsert: false,
-      });
-      if (upErr) throw new Error(upErr.message);
-      const { data: pub } = supabase.storage.from("family-moments").getPublicUrl(path);
-      return create({
-        data: {
-          family_id: familyId,
-          media_url: pub.publicUrl,
-          media_type: isVideo ? "video" : "image",
-          tagged_member_ids: [],
-        },
-      });
-    },
-    onSuccess: () => {
-      toast.success("Đã thêm kỷ niệm 🎉");
-      qc.invalidateQueries({ queryKey: ["moments"] });
-      qc.invalidateQueries({ queryKey: ["moments-preview"] });
-    },
-    onError: (e: Error) => toast.error(e.message),
-    onSettled: () => {
-      setUploading(false);
-      if (fileRef.current) fileRef.current.value = "";
-    },
-  });
-
-  const onPick = () => fileRef.current?.click();
-  const onFile = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const f = e.target.files?.[0];
-    if (!f) return;
-    if (f.size > 20 * 1024 * 1024) return toast.error("File quá lớn (>20MB)");
-    submitMut.mutate(f);
-  };
-
-  const loading = ctxQ.isLoading || (familyId && dataQ.isLoading);
-  const empty = !loading && moments.length === 0;
+  }, []);
 
   return (
     <MobileShell>
@@ -124,17 +58,14 @@ function MemoriesPage() {
         emoji="📸"
         right={
           <button
-            onClick={onPick}
-            disabled={uploading || !familyId}
-            className="h-10 w-10 rounded-2xl bg-brand text-white grid place-items-center shadow-[var(--shadow-soft)] disabled:opacity-50"
+            onClick={() => toast("Thêm kỷ niệm mới", { description: "Tính năng sẽ sớm có mặt." })}
+            className="h-10 w-10 rounded-2xl bg-brand text-white grid place-items-center shadow-[var(--shadow-soft)]"
             aria-label="Thêm kỷ niệm"
           >
-            {uploading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Plus className="h-5 w-5" />}
+            <Plus className="h-5 w-5" />
           </button>
         }
       />
-
-      <input ref={fileRef} type="file" accept="image/*,video/*" onChange={onFile} className="hidden" />
 
       {/* Privacy banner */}
       <section className="px-4 mt-2">
@@ -145,164 +76,206 @@ function MemoriesPage() {
       </section>
 
       {/* Featured */}
-      {featured ? (
-        <section className="px-4 mt-3">
-          <RoundedCard className="bg-gradient-to-br from-pink/15 to-brand/15 border-0 overflow-hidden p-0">
-            <div className="relative aspect-[16/10] bg-muted">
-              {featured.media_type === "video" ? (
-                <video src={featured.media_url} className="w-full h-full object-cover" muted playsInline />
-              ) : (
-                <img src={featured.media_url} alt={featured.caption ?? "Khoảnh khắc"} className="w-full h-full object-cover" loading="lazy" />
-              )}
-              {featured.media_type === "video" && (
-                <div className="absolute inset-0 grid place-items-center">
-                  <div className="h-12 w-12 rounded-full bg-black/50 grid place-items-center">
-                    <Play className="h-6 w-6 text-white" />
+      <section className="px-4 mt-3">
+        <RoundedCard className="bg-gradient-to-br from-pink/15 to-brand/15 border-0">
+          <p className="text-[11px] uppercase tracking-wider font-semibold text-pink">Khoảnh khắc gần nhất</p>
+          <p className="mt-1 text-lg font-bold leading-tight">Sinh nhật bé Na 5 tuổi 🎂</p>
+          <p className="text-xs text-muted-foreground mt-1">42 ảnh · 23/05/2026</p>
+          <div className="flex gap-2 mt-3">
+            <button className="h-8 px-3 rounded-xl bg-white text-xs font-semibold flex items-center gap-1.5">
+              <Heart className="h-3.5 w-3.5 text-pink" /> Yêu thích
+            </button>
+            <button
+              onClick={() => toast("Xem album")}
+              className="h-8 px-3 rounded-xl bg-white text-xs font-semibold"
+            >
+              Xem album
+            </button>
+          </div>
+        </RoundedCard>
+      </section>
+
+      {/* AI Suggestions */}
+      <section className="px-4 mt-6">
+        <SectionHeader title="Gợi ý từ AI" subtitle="Dựa trên ảnh gần đây" />
+        <div className="flex gap-3 overflow-x-auto -mx-4 px-4 pb-1 snap-x">
+          {aiSuggestions.map((s) => (
+            <button
+              key={s.id}
+              onClick={() => toast(s.title, { description: s.hint })}
+              className="snap-start min-w-[78%] text-left"
+            >
+              <RoundedCard className="bg-gradient-to-br from-brand/10 to-purple/15 border-0 h-full">
+                <div className="flex items-start gap-3">
+                  <div className="h-10 w-10 rounded-2xl bg-white grid place-items-center text-xl shrink-0">
+                    {s.icon}
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <Sparkles className="h-3.5 w-3.5 text-brand" />
+                      <p className="text-[10px] uppercase tracking-wider font-semibold text-brand">AI Memory</p>
+                    </div>
+                    <p className="text-sm font-semibold mt-1 leading-snug">{s.title}</p>
+                    <p className="text-[11px] text-muted-foreground mt-1 leading-snug">{s.hint}</p>
                   </div>
                 </div>
-              )}
-            </div>
-            <div className="p-4">
-              <p className="text-[11px] uppercase tracking-wider font-semibold text-pink">Khoảnh khắc mới nhất</p>
-              <p className="mt-1 text-base font-bold leading-tight line-clamp-2">
-                {featured.caption?.trim() || "Khoảnh khắc gia đình"}
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">{formatVnDate(featured.taken_at)}</p>
-              <div className="flex gap-2 mt-3">
-                <Link
-                  to="/khoanh-khac"
-                  className="h-8 px-3 rounded-xl bg-white text-xs font-semibold flex items-center gap-1.5"
-                >
-                  <Heart className="h-3.5 w-3.5 text-pink" /> Mở album
-                </Link>
-              </div>
-            </div>
-          </RoundedCard>
-        </section>
-      ) : null}
+              </RoundedCard>
+            </button>
+          ))}
+        </div>
+      </section>
 
-      {/* Upload card */}
+      {/* Upload placeholder */}
       <section className="px-4 mt-6">
-        <button onClick={onPick} disabled={uploading || !familyId} className="w-full disabled:opacity-50">
+        <button
+          onClick={() => toast("Tải ảnh lên", { description: "Tính năng đang chuẩn bị." })}
+          className="w-full"
+        >
           <RoundedCard className="border-2 border-dashed border-border bg-transparent">
             <div className="flex items-center gap-3">
               <div className="h-12 w-12 rounded-2xl bg-tint-blue grid place-items-center">
-                {uploading ? <Loader2 className="h-5 w-5 text-brand animate-spin" /> : <Upload className="h-5 w-5 text-brand" />}
+                <Upload className="h-5 w-5 text-brand" />
               </div>
               <div className="text-left">
-                <p className="text-sm font-semibold">{uploading ? "Đang tải lên…" : "Tải ảnh / video lên"}</p>
-                <p className="text-[11px] text-muted-foreground">Tối đa 20MB · Chỉ gia đình xem được</p>
+                <p className="text-sm font-semibold">Tải ảnh lên</p>
+                <p className="text-[11px] text-muted-foreground">Kéo thả hoặc chọn từ thư viện</p>
               </div>
             </div>
           </RoundedCard>
         </button>
       </section>
 
-      {/* Empty / Loading */}
-      {loading ? (
-        <section className="px-4 mt-6">
-          <RoundedCard className="grid place-items-center py-10 text-muted-foreground">
-            <Loader2 className="h-5 w-5 animate-spin" />
-          </RoundedCard>
-        </section>
-      ) : empty ? (
-        <section className="px-4 mt-6">
-          <RoundedCard className="text-center py-8">
-            <div className="h-14 w-14 rounded-2xl bg-tint-pink mx-auto grid place-items-center text-2xl">📷</div>
-            <p className="mt-3 text-sm font-semibold">Chưa có kỷ niệm nào</p>
-            <p className="text-[11px] text-muted-foreground mt-1">Tải ảnh đầu tiên để bắt đầu album gia đình.</p>
-          </RoundedCard>
-        </section>
-      ) : null}
-
-      {/* Recent grid */}
-      {grid.length > 0 && (
-        <section className="px-4 mt-6">
-          <SectionHeader title="Gần đây" subtitle={`${moments.length} khoảnh khắc`} />
-          <div className="grid grid-cols-3 gap-2">
-            {grid.map((m) => (
-              <Link
-                key={m.id}
-                to="/khoanh-khac"
-                className="relative aspect-square rounded-2xl overflow-hidden bg-muted active:scale-[0.98] transition"
+      {/* Categories filter */}
+      <section className="px-4 mt-6">
+        <SectionHeader title="Danh mục" />
+        <div className="flex gap-2 overflow-x-auto -mx-4 px-4 pb-1">
+          {(["Tất cả", ...albumCategories.map((c) => c.key)] as const).map((cat) => {
+            const active = activeCat === cat;
+            const emoji = cat === "Tất cả" ? "🗂️" : albumCategories.find((c) => c.key === cat)?.emoji;
+            return (
+              <button
+                key={cat}
+                onClick={() => setActiveCat(cat as AlbumCategory | "Tất cả")}
+                className={`shrink-0 h-9 px-3 rounded-2xl text-xs font-semibold flex items-center gap-1.5 transition ${
+                  active ? "bg-foreground text-background" : "bg-card border border-border text-foreground"
+                }`}
               >
-                {m.media_type === "video" ? (
-                  <>
-                    <video src={m.media_url} className="w-full h-full object-cover" muted playsInline />
-                    <div className="absolute inset-0 grid place-items-center bg-black/20">
-                      <Play className="h-5 w-5 text-white" />
-                    </div>
-                  </>
-                ) : (
-                  <img src={m.media_url} alt={m.caption ?? ""} className="w-full h-full object-cover" loading="lazy" />
-                )}
-              </Link>
-            ))}
-            <button
-              onClick={onPick}
-              disabled={uploading || !familyId}
-              className="aspect-square rounded-2xl border-2 border-dashed border-border grid place-items-center text-muted-foreground disabled:opacity-50"
-            >
-              <ImagePlus className="h-5 w-5" />
-            </button>
-          </div>
-        </section>
-      )}
+                <span>{emoji}</span>
+                {cat}
+              </button>
+            );
+          })}
+        </div>
+      </section>
 
-      {/* Timeline by month */}
-      {grouped.length > 0 && (
-        <section className="px-4 mt-6">
-          <SectionHeader title="Dòng thời gian" subtitle="Theo tháng" />
-          <div className="space-y-5">
-            {grouped.map(([month, entries]) => (
-              <div key={month}>
-                <p className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground mb-2">{month}</p>
-                <RoundedCard className="p-0 divide-y divide-border">
-                  {entries.slice(0, 5).map((t) => (
-                    <div key={t.id} className="flex items-start gap-3 p-3">
-                      <div className="h-12 w-12 rounded-2xl bg-muted overflow-hidden shrink-0">
-                        {t.media_type === "video" ? (
-                          <video src={t.media_url} className="w-full h-full object-cover" muted playsInline />
-                        ) : (
-                          <img src={t.media_url} alt="" className="w-full h-full object-cover" loading="lazy" />
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold truncate">
-                          {t.caption?.trim() || (t.media_type === "video" ? "Video gia đình" : "Ảnh gia đình")}
-                        </p>
-                        <p className="text-[11px] text-muted-foreground mt-0.5">{formatVnDate(t.taken_at)}</p>
-                      </div>
-                    </div>
-                  ))}
-                  {entries.length > 5 && (
-                    <Link to="/khoanh-khac" className="block p-3 text-center text-xs font-semibold text-brand">
-                      Xem thêm {entries.length - 5} khoảnh khắc →
-                    </Link>
-                  )}
-                </RoundedCard>
+      {/* Albums grid */}
+      <section className="px-4 mt-4">
+        <SectionHeader title="Album" subtitle={`${filteredAlbums.length} album`} />
+        <div className="grid grid-cols-2 gap-3">
+          {filteredAlbums.map((a) => (
+            <button key={a.id} className="text-left active:scale-[0.98] transition">
+              <div className={`relative aspect-square rounded-2xl grid place-items-center text-5xl ${toneBg[a.tone]}`}>
+                {a.cover}
+                <span className="absolute top-2 left-2 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-white/80 backdrop-blur">
+                  {a.category}
+                </span>
               </div>
-            ))}
-          </div>
-        </section>
-      )}
+              <p className="mt-2 text-sm font-semibold truncate">{a.title}</p>
+              <p className="text-[11px] text-muted-foreground truncate">
+                {a.count} ảnh · {a.date}
+              </p>
+            </button>
+          ))}
+          {/* Add album tile */}
+          <button
+            onClick={() => toast("Tạo album mới")}
+            className="text-left active:scale-[0.98] transition"
+          >
+            <div className="aspect-square rounded-2xl border-2 border-dashed border-border grid place-items-center text-muted-foreground">
+              <div className="flex flex-col items-center gap-1">
+                <ImagePlus className="h-6 w-6" />
+                <span className="text-[11px] font-semibold">Album mới</span>
+              </div>
+            </div>
+          </button>
+        </div>
+      </section>
 
-      {/* AI Recap teaser — honest about coming-soon */}
-      <section className="px-4 mt-6 mb-2">
+      {/* Monthly recap placeholder */}
+      <section className="px-4 mt-6">
         <RoundedCard className="bg-gradient-to-br from-purple/15 to-pink/10 border-0">
           <div className="flex items-start gap-3">
             <div className="h-11 w-11 rounded-2xl bg-white grid place-items-center text-xl shrink-0">
-              <Sparkles className="h-5 w-5 text-purple" />
+              <Calendar className="h-5 w-5 text-purple" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-[10px] uppercase tracking-wider font-semibold text-purple">AI Recap</p>
-              <p className="text-sm font-semibold mt-0.5">Tóm tắt tháng tự động — sắp ra mắt</p>
+              <p className="text-[10px] uppercase tracking-wider font-semibold text-purple">Recap tháng</p>
+              <p className="text-sm font-semibold mt-0.5">Tháng 5/2026 — sắp sẵn sàng</p>
               <p className="text-[11px] text-muted-foreground mt-1 leading-snug">
-                AI sẽ tự gợi ý album và ghép recap video từ kỷ niệm của bạn.
+                AI sẽ tự ghép video kỷ niệm tháng vào ngày cuối tháng.
               </p>
+              <button
+                onClick={() => toast("Recap sẽ sẵn sàng vào 31/05")}
+                className="mt-3 h-8 px-3 rounded-xl bg-white text-xs font-semibold"
+              >
+                Đặt lịch nhắc
+              </button>
             </div>
-            <Calendar className="h-4 w-4 text-muted-foreground shrink-0" />
           </div>
+        </RoundedCard>
+      </section>
+
+      {/* Family Timeline */}
+      <section className="px-4 mt-6">
+        <SectionHeader title="Dòng thời gian" subtitle="Theo tháng" />
+        <div className="space-y-5">
+          {grouped.map(([month, entries]) => (
+            <div key={month}>
+              <p className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground mb-2">
+                {month}
+              </p>
+              <RoundedCard className="p-0 divide-y divide-border">
+                {entries.map((t) => (
+                  <div key={t.id} className="flex items-start gap-3 p-4">
+                    <div className={`h-11 w-11 rounded-2xl ${toneBg[t.tone]} grid place-items-center text-xl shrink-0`}>
+                      {t.icon}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-sm font-semibold truncate">{t.title}</p>
+                        <span className="text-[10px] text-muted-foreground shrink-0">{t.date}</span>
+                      </div>
+                      <p className="text-[11px] text-muted-foreground leading-snug mt-0.5">
+                        {t.description}
+                      </p>
+                      {t.photoCount ? (
+                        <p className="text-[10px] text-brand font-semibold mt-1">{t.photoCount} ảnh</p>
+                      ) : null}
+                    </div>
+                  </div>
+                ))}
+              </RoundedCard>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Milestones */}
+      <section className="px-4 mt-6">
+        <SectionHeader title="Dấu mốc gia đình" />
+        <RoundedCard className="p-0 divide-y divide-border">
+          {milestones.map((m) => (
+            <div key={m.id} className="flex items-start gap-3 p-4">
+              <div className="h-11 w-11 rounded-2xl bg-tint-pink grid place-items-center text-xl shrink-0">
+                {m.icon}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold">{m.title}</p>
+                <p className="text-[11px] text-muted-foreground leading-snug mt-0.5">{m.description}</p>
+                <p className="text-[10px] text-muted-foreground mt-1">{m.date}</p>
+              </div>
+            </div>
+          ))}
         </RoundedCard>
       </section>
     </MobileShell>

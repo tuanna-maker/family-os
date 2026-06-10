@@ -1,9 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
-import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
+import { useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 import { MobileShell } from "@/components/mobile/MobileShell";
 import {
   Bell,
@@ -26,52 +24,62 @@ import {
   Pill,
   Stethoscope,
   Camera,
-  Ticket,
-  Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { getMyContext, updateFamilyAvatar } from "@/lib/auth.functions";
+import { getMyContext } from "@/lib/auth.functions";
 import { getDashboard } from "@/lib/dashboard.functions";
-import { listMoments } from "@/lib/moments.functions";
 import { requireAuth } from "@/lib/require-auth";
-import { materializeEventReminders } from "@/lib/family-events.functions";
-import { SosButton } from "@/components/sos/SosButton";
-
-// Cache constants — context hiếm khi đổi, dashboard refresh nhanh hơn
-const CTX_STALE_MS = 5 * 60_000;
-const DASH_STALE_MS = 60_000;
 
 export const Route = createFileRoute("/gia-dinh")({
   beforeLoad: ({ location }) => requireAuth({ location }),
-  head: () => ({
-    meta: [
-      { title: "Gia đình tôi — STOS Life" },
-      { name: "viewport", content: "width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover" },
-      { name: "theme-color", content: "#2563eb" },
-      { name: "apple-mobile-web-app-capable", content: "yes" },
-      { name: "apple-mobile-web-app-status-bar-style", content: "default" },
-      { name: "apple-mobile-web-app-title", content: "Gia đình" },
-    ],
-    links: [
-      { rel: "manifest", href: "/manifest-family.json" },
-      { rel: "apple-touch-icon", href: "/icons/family-192.png" },
-    ],
-  }),
+  head: () => ({ meta: [{ title: "Gia đình tôi — STOS Life" }] }),
   component: FamilyPage,
 });
 
-
-import stosLogo from "@/assets/stos-logo.webp";
-const HERO_FAMILY_FALLBACK = stosLogo;
+const HERO_FAMILY =
+  "https://images.unsplash.com/photo-1609220136736-443140cffec6?w=400&h=400&fit=crop&crop=faces";
+const AVATAR_FAMILY =
+  "https://images.unsplash.com/photo-1581952976147-5a2d15560349?w=120&h=120&fit=crop&crop=faces";
 
 const FOOD_THUMBS = [
-  "https://images.unsplash.com/photo-1518635017498-87f514b751ba?w=80&h=80&fit=crop&q=70&auto=format",
-  "https://images.unsplash.com/photo-1563636619-e9143da7973b?w=80&h=80&fit=crop&q=70&auto=format",
-  "https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=80&h=80&fit=crop&q=70&auto=format",
+  "https://images.unsplash.com/photo-1518635017498-87f514b751ba?w=160&h=160&fit=crop", // strawberries
+  "https://images.unsplash.com/photo-1563636619-e9143da7973b?w=160&h=160&fit=crop", // milk bottle
+  "https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=160&h=160&fit=crop", // salmon
 ];
 
-
-
+type Moment = { id: string; title: string; date: string; img: string };
+const MOMENTS: Moment[] = [
+  {
+    id: "1",
+    title: "Đà Nẵng – Hội An",
+    date: "20/05/2024",
+    img: "https://images.unsplash.com/photo-1559128010-7c1ad6e1b6a5?w=400&h=400&fit=crop",
+  },
+  {
+    id: "2",
+    title: "Sinh nhật bé An",
+    date: "12/05/2024",
+    img: "https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=400&h=400&fit=crop",
+  },
+  {
+    id: "3",
+    title: "Bữa cơm cuối tuần",
+    date: "05/05/2024",
+    img: "https://images.unsplash.com/photo-1547573854-74d2a71d0826?w=400&h=400&fit=crop",
+  },
+  {
+    id: "4",
+    title: "Ngày của mẹ",
+    date: "10/05/2024",
+    img: "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=400&h=400&fit=crop",
+  },
+  {
+    id: "5",
+    title: "Bé Minh học bài",
+    date: "28/04/2024",
+    img: "https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?w=400&h=400&fit=crop",
+  },
+];
 
 function formatVnd(n: number) {
   return `${(n ?? 0).toLocaleString("vi-VN")}đ`;
@@ -95,195 +103,20 @@ function formatApptDate(iso: string) {
   return `${hhmm} · ${d.getDate().toString().padStart(2, "0")}/${(d.getMonth() + 1).toString().padStart(2, "0")}`;
 }
 
-const AVATAR_MAX_BYTES = 5 * 1024 * 1024;
-const AVATAR_MIN_BYTES = 1024;
-const AVATAR_MIME_WHITELIST = ["image/jpeg", "image/png", "image/webp", "image/gif", "image/heic", "image/heif"] as const;
-const AVATAR_EXT_WHITELIST = ["jpg", "jpeg", "png", "webp", "gif", "heic", "heif"] as const;
-const AVATAR_ACCEPT = AVATAR_MIME_WHITELIST.join(",");
-
-function formatBytes(n: number): string {
-  if (n >= 1024 * 1024) return `${(n / (1024 * 1024)).toFixed(1)} MB`;
-  if (n >= 1024) return `${Math.round(n / 1024)} KB`;
-  return `${n} B`;
-}
-
-function validateAvatarFile(file: File): { ok: true } | { ok: false; title: string; description: string } {
-  const ext = (file.name.split(".").pop() || "").toLowerCase();
-  const mimeOk = AVATAR_MIME_WHITELIST.includes(file.type as (typeof AVATAR_MIME_WHITELIST)[number]);
-  const extOk = AVATAR_EXT_WHITELIST.includes(ext as (typeof AVATAR_EXT_WHITELIST)[number]);
-  if (!mimeOk || !extOk) {
-    return {
-      ok: false,
-      title: "Định dạng ảnh không hỗ trợ",
-      description: `Chỉ chấp nhận JPG, PNG, WEBP, GIF hoặc HEIC. Tệp bạn chọn: ${file.type || ext || "không xác định"}.`,
-    };
-  }
-  if (file.size > AVATAR_MAX_BYTES) {
-    return {
-      ok: false,
-      title: "Ảnh quá lớn",
-      description: `Dung lượng ${formatBytes(file.size)} vượt giới hạn 5 MB. Vui lòng nén hoặc chọn ảnh khác.`,
-    };
-  }
-  if (file.size < AVATAR_MIN_BYTES) {
-    return {
-      ok: false,
-      title: "Tệp không hợp lệ",
-      description: "Ảnh quá nhỏ hoặc bị hỏng, vui lòng chọn tệp khác.",
-    };
-  }
-  if (file.name.length > 200) {
-    return { ok: false, title: "Tên tệp quá dài", description: "Vui lòng đổi tên tệp ngắn hơn 200 ký tự." };
-  }
-  return { ok: true };
-}
-
-// Nén & resize ảnh phía client để giảm dung lượng dưới 5MB trước khi upload.
-// Bỏ qua HEIC/HEIF (trình duyệt thường không decode được) và GIF (giữ nguyên animation).
-const AVATAR_COMPRESS_SKIP = new Set(["image/heic", "image/heif", "image/gif"]);
-const AVATAR_TARGET_BYTES = 4.5 * 1024 * 1024; // chừa biên dưới 5MB
-const AVATAR_MAX_DIMENSION = 1600;
-
-async function compressAvatarImage(file: File): Promise<File> {
-  if (AVATAR_COMPRESS_SKIP.has(file.type)) return file;
-  if (file.size <= AVATAR_TARGET_BYTES) return file;
-
-  const dataUrl: string = await new Promise((resolve, reject) => {
-    const r = new FileReader();
-    r.onload = () => resolve(r.result as string);
-    r.onerror = () => reject(new Error("Không đọc được tệp ảnh"));
-    r.readAsDataURL(file);
-  });
-  const img: HTMLImageElement = await new Promise((resolve, reject) => {
-    const i = new Image();
-    i.onload = () => resolve(i);
-    i.onerror = () => reject(new Error("Không decode được ảnh"));
-    i.src = dataUrl;
-  });
-
-  let { width, height } = img;
-  const scale = Math.min(1, AVATAR_MAX_DIMENSION / Math.max(width, height));
-  width = Math.round(width * scale);
-  height = Math.round(height * scale);
-
-  const canvas = document.createElement("canvas");
-  canvas.width = width;
-  canvas.height = height;
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return file;
-  ctx.drawImage(img, 0, 0, width, height);
-
-  const hasAlpha = file.type === "image/png" || file.type === "image/webp";
-  const mime = hasAlpha ? "image/webp" : "image/jpeg";
-  const ext = hasAlpha ? "webp" : "jpg";
-
-  let blob: Blob | null = null;
-  for (const q of [0.85, 0.75, 0.65, 0.55, 0.45]) {
-    blob = await new Promise<Blob | null>((resolve) =>
-      canvas.toBlob((b) => resolve(b), mime, q),
-    );
-    if (blob && blob.size <= AVATAR_TARGET_BYTES) break;
-  }
-  if (!blob) return file;
-
-  const baseName = (file.name.split(".").slice(0, -1).join(".") || "avatar").slice(0, 80);
-  return new File([blob], `${baseName}.${ext}`, { type: mime, lastModified: Date.now() });
-}
-
 function FamilyPage() {
   // Theme do người dùng quyết định qua Dark/Light toggle toàn cục
 
 
   const ctxFn = useServerFn(getMyContext);
   const dashFn = useServerFn(getDashboard);
-  const momentsFn = useServerFn(listMoments);
-  const remindFn = useServerFn(materializeEventReminders);
-  const updateAvatarFn = useServerFn(updateFamilyAvatar);
-  const qc = useQueryClient();
-  const fileRef = useRef<HTMLInputElement>(null);
-  const [pendingFile, setPendingFile] = useState<File | null>(null);
-  const [processing, setProcessing] = useState(false);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!pendingFile) {
-      setPreviewUrl(null);
-      return;
-    }
-    const url = URL.createObjectURL(pendingFile);
-    setPreviewUrl(url);
-    return () => URL.revokeObjectURL(url);
-  }, [pendingFile]);
-
-  const { data: ctx } = useQuery({
-    queryKey: ["my-context"],
-    queryFn: () => ctxFn(),
-    staleTime: CTX_STALE_MS,
-  });
+  const { data: ctx } = useQuery({ queryKey: ["my-context"], queryFn: () => ctxFn() });
   const familyId = ctx?.family?.id;
   const { data: dash } = useQuery({
     queryKey: ["family-dashboard", familyId],
     queryFn: () => dashFn({ data: { family_id: familyId! } }),
     enabled: !!familyId,
-    staleTime: DASH_STALE_MS,
-    refetchOnWindowFocus: false,
+    refetchInterval: 60_000,
   });
-  const { data: momentsData } = useQuery({
-    queryKey: ["moments-preview", familyId],
-    queryFn: () => momentsFn({ data: { family_id: familyId! } }),
-    enabled: !!familyId,
-    staleTime: 60_000,
-  });
-  const recentMoments = (momentsData?.moments ?? []).slice(0, 8);
-
-  // Best-effort: materialize due event reminders into the notifications table.
-  useEffect(() => {
-    if (!familyId) return;
-    remindFn({ data: { family_id: familyId } }).catch(() => {});
-  }, [familyId, remindFn]);
-
-
-  const familyName = ctx?.family?.name?.trim() || "Gia đình tôi";
-  const familyAvatar = ctx?.family?.avatar_url ?? null;
-  const isFamilyOwner = !!ctx?.userId && ctx?.family?.owner_id === ctx?.userId;
-  const userAvatar = (ctx as { profile?: { avatar_url?: string | null } } | undefined)?.profile?.avatar_url ?? null;
-
-  const avatarMut = useMutation({
-    mutationFn: async (file: File) => {
-      if (!familyId) throw new Error("Chưa có gia đình");
-      if (!ctx?.userId) throw new Error("Cần đăng nhập");
-      if (!isFamilyOwner) throw new Error("Chỉ chủ hộ được đổi ảnh gia đình");
-      const check = validateAvatarFile(file);
-      if (!check.ok) throw new Error(`${check.title}: ${check.description}`);
-      const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
-      const path = `${ctx.userId}/family-${familyId}-${Date.now()}.${ext}`;
-      const { error: upErr } = await supabase.storage
-        .from("avatars")
-        .upload(path, file, { upsert: true, contentType: file.type });
-      if (upErr) throw upErr;
-      const { data: pub } = supabase.storage.from("avatars").getPublicUrl(path);
-      const url = pub.publicUrl;
-      await updateAvatarFn({ data: { familyId, avatarUrl: url } });
-      return url;
-    },
-    onSuccess: () => {
-      toast.success("Đã cập nhật ảnh gia đình");
-      qc.invalidateQueries({ queryKey: ["my-context"] });
-      setPendingFile(null);
-    },
-    onError: (e: Error) => toast.error("Tải ảnh thất bại", { description: e.message }),
-  });
-  const userInitial = (
-    (ctx as { profile?: { full_name?: string | null } } | undefined)?.profile?.full_name ||
-    ctx?.userId ||
-    "?"
-  )
-    .toString()
-    .trim()
-    .charAt(0)
-    .toUpperCase();
-
-
 
   const expCur = dash?.expenses_month.total ?? 0;
   const expPrev = dash?.expenses_prev_month.total ?? 0;
@@ -297,7 +130,6 @@ function FamilyPage() {
 
   return (
     <MobileShell>
-      <SosButton />
       {/* Top bar */}
       <header className="px-4 pt-3 pb-2 flex items-center justify-between gap-3">
         <div className="flex items-center gap-2 shrink-0">
@@ -315,118 +147,43 @@ function FamilyPage() {
         </div>
         <h1 className="text-[17px] font-bold tracking-tight">Gia đình tôi</h1>
         <div className="flex items-center gap-2 shrink-0">
-          <Link
-            to="/thong-bao"
-            aria-label="Thông báo"
-            className="relative h-11 w-11 grid place-items-center rounded-full hover:bg-muted/60"
-          >
+          <button className="relative h-9 w-9 grid place-items-center rounded-full hover:bg-muted/60">
             <Bell className="h-[18px] w-[18px]" />
-          </Link>
-          <button className="flex items-center gap-0.5" aria-label="Tài khoản">
-            {userAvatar ? (
-              <img
-                src={userAvatar}
-                alt={`Avatar ${familyName}`}
-                width={36}
-                height={36}
-                loading="eager"
-                decoding="async"
-                className="h-9 w-9 rounded-full object-cover ring-2 ring-white shadow"
-              />
-            ) : (
-              <div className="h-9 w-9 rounded-full bg-tint-blue text-brand grid place-items-center text-sm font-bold ring-2 ring-white shadow" aria-hidden>
-                {userInitial}
-              </div>
-            )}
+            <span className="absolute -top-0.5 -right-0.5 h-4 min-w-4 px-1 rounded-full bg-emergency text-white text-[9px] font-bold grid place-items-center">
+              3
+            </span>
+          </button>
+          <button className="flex items-center gap-0.5">
+            <img
+              src={AVATAR_FAMILY}
+              alt="Avatar gia đình"
+              className="h-9 w-9 rounded-full object-cover ring-2 ring-white shadow"
+            />
             <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
           </button>
-
         </div>
       </header>
 
       {/* Hero card */}
       <section className="px-4 mt-1">
         <div className="rounded-[28px] bg-card border border-border p-[18px] shadow-sm relative">
-          <Link to="/gia-dinh/invites" aria-label="Quản lý gia đình" className="absolute top-4 right-4 h-8 w-8 grid place-items-center text-muted-foreground rounded-full hover:bg-muted/60">
+          <button className="absolute top-4 right-4 h-5 w-5 grid place-items-center text-muted-foreground">
             <ChevronRight className="h-4 w-4" />
-          </Link>
+          </button>
           <div className="flex items-start gap-4">
             <div className="relative shrink-0">
               <img
-                src={familyAvatar || HERO_FAMILY_FALLBACK}
-                alt={familyName}
-                width={112}
-                height={112}
-                loading="eager"
-                fetchPriority="high"
-                decoding="async"
-                className={`h-[112px] w-[112px] rounded-full ${familyAvatar ? "object-cover" : "object-contain bg-white p-1.5 ring-1 ring-border"}`}
+                src={HERO_FAMILY}
+                alt="Gia đình Minh"
+                className="h-[112px] w-[112px] rounded-full object-cover"
               />
-              <input
-                ref={fileRef}
-                type="file"
-                accept={AVATAR_ACCEPT}
-                className="hidden"
-                onChange={async (e) => {
-                  const f = e.target.files?.[0];
-                  e.target.value = "";
-                  if (!f) return;
-                  // Cho phép format hợp lệ; chỉ chặn sớm nếu sai định dạng/tên.
-                  const ext = (f.name.split(".").pop() || "").toLowerCase();
-                  const mimeOk = AVATAR_MIME_WHITELIST.includes(f.type as (typeof AVATAR_MIME_WHITELIST)[number]);
-                  const extOk = AVATAR_EXT_WHITELIST.includes(ext as (typeof AVATAR_EXT_WHITELIST)[number]);
-                  if (!mimeOk || !extOk) {
-                    toast.error("Định dạng ảnh không hỗ trợ", {
-                      description: `Chỉ chấp nhận JPG, PNG, WEBP, GIF hoặc HEIC.`,
-                    });
-                    return;
-                  }
-                  setProcessing(true);
-                  try {
-                    const originalSize = f.size;
-                    const compressed = await compressAvatarImage(f);
-                    const check = validateAvatarFile(compressed);
-                    if (!check.ok) {
-                      toast.error(check.title, { description: check.description });
-                      return;
-                    }
-                    if (compressed.size < originalSize) {
-                      toast.success("Đã nén ảnh", {
-                        description: `${formatBytes(originalSize)} → ${formatBytes(compressed.size)}`,
-                      });
-                    }
-                    setPendingFile(compressed);
-                  } catch (err) {
-                    toast.error("Không xử lý được ảnh", {
-                      description: err instanceof Error ? err.message : "Vui lòng chọn ảnh khác.",
-                    });
-                  } finally {
-                    setProcessing(false);
-                  }
-                }}
-              />
-              {familyId && isFamilyOwner && (
-                <button
-                  type="button"
-                  aria-label="Đổi ảnh gia đình"
-                  disabled={avatarMut.isPending || processing}
-                  onClick={() => {
-                    if (avatarMut.isPending || processing) return;
-                    fileRef.current?.click();
-                  }}
-                  className="absolute bottom-1 right-1 h-8 w-8 rounded-full bg-brand grid place-items-center ring-[3px] ring-card disabled:opacity-60 active:scale-95 transition"
-                >
-                  {avatarMut.isPending || processing ? (
-                    <Loader2 className="h-4 w-4 text-white animate-spin" />
-                  ) : (
-                    <Camera className="h-4 w-4 text-white" />
-                  )}
-                </button>
-              )}
+              <button className="absolute bottom-1 right-1 h-8 w-8 rounded-full bg-brand grid place-items-center ring-[3px] ring-card">
+                <Camera className="h-4 w-4 text-white" />
+              </button>
             </div>
             <div className="flex-1 min-w-0 pt-1.5">
               <div className="flex items-center gap-2 flex-wrap pr-6">
-                <h2 className="text-[22px] font-bold leading-none tracking-tight truncate">{familyName}</h2>
+                <h2 className="text-[22px] font-bold leading-none tracking-tight">Gia đình Minh</h2>
                 <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-tint-blue text-brand whitespace-nowrap">
                   {memberCount > 0 ? `${memberCount} thành viên` : "Gia đình"}
                 </span>
@@ -440,7 +197,7 @@ function FamilyPage() {
             </div>
           </div>
           <div className="mt-5 grid grid-cols-4 gap-3">
-            <HeroAction icon={Users} label="Thành viên" tint="bg-tint-blue" color="text-brand" to="/gia-dinh/thanh-vien" />
+            <HeroAction icon={Users} label="Thành viên" tint="bg-tint-blue" color="text-brand" to="/admin/family" />
             <HeroAction
               icon={Calendar}
               label="Lịch gia đình"
@@ -456,61 +213,20 @@ function FamilyPage() {
               to="/ky-niem-gia-dinh"
             />
             <HeroAction
-              icon={Bell}
-              label="Nhắc cha mẹ"
+              icon={Settings}
+              label="Cài đặt"
               tint="bg-tint-green"
               color="text-success"
-              to="/gia-dinh/nhac-cha-me"
+              to="/cai-dat/thong-bao"
             />
-
           </div>
         </div>
       </section>
 
-      {/* Onboarding banner — hiện khi chưa thiết lập căn hộ */}
-      {ctx?.family && !ctx.family.apartment && ctx.family.owner_id === ctx.userId && (
-        <section className="px-4 mt-4">
-          <Link
-            to="/gia-dinh/onboarding"
-            className="flex items-center justify-between gap-3 rounded-2xl bg-tint-blue border border-brand/20 p-3.5"
-          >
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="h-9 w-9 rounded-xl bg-brand grid place-items-center shrink-0">
-                <Home className="h-4 w-4 text-white" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-[13px] font-bold leading-tight">Hoàn tất thiết lập hộ</p>
-                <p className="text-[11px] text-muted-foreground mt-0.5">Đặt tên hộ, gắn căn hộ, mời người thân.</p>
-              </div>
-            </div>
-            <ChevronRight className="h-4 w-4 text-brand shrink-0" />
-          </Link>
-        </section>
-      )}
-
 
       {/* Quản lý gia đình */}
       <section className="px-4 mt-7">
-        <div className="flex items-center justify-between mb-3.5 gap-3">
-          <h3 className="text-[17px] font-bold tracking-tight">Quản lý gia đình</h3>
-          <div className="flex items-center gap-3 shrink-0">
-            <Link
-              to="/gia-dinh/nhap-ma"
-              className="text-[13px] font-semibold text-brand inline-flex items-center gap-1"
-            >
-              <Ticket className="h-4 w-4" />
-              Chấp nhận lời mời
-            </Link>
-            <Link
-              to="/gia-dinh/invites"
-              className="text-[13px] font-semibold text-brand inline-flex items-center gap-1"
-            >
-              <Users className="h-4 w-4" />
-              Mời thành viên
-            </Link>
-          </div>
-        </div>
-
+        <h3 className="text-[17px] font-bold mb-3.5 tracking-tight">Quản lý gia đình</h3>
         <div className="grid grid-cols-2 gap-3">
           {/* Chi tiêu */}
           <Link to="/chi-tieu" className="block">
@@ -605,10 +321,6 @@ function FamilyPage() {
                       key={i}
                       src={src}
                       alt=""
-                      width={36}
-                      height={36}
-                      loading="lazy"
-                      decoding="async"
                       className="h-9 w-9 rounded-xl object-cover ring-1 ring-white/40"
                     />
                   ))}
@@ -688,104 +400,23 @@ function FamilyPage() {
       <section className="mt-7 pb-2">
         <div className="px-4 flex items-center justify-between mb-3.5">
           <h3 className="text-[17px] font-bold tracking-tight">Khoảnh khắc gia đình</h3>
-          <Link to="/khoanh-khac" className="text-[12px] font-semibold text-brand">
+          <Link to="/ky-niem-gia-dinh" className="text-[12px] font-semibold text-brand">
             Xem tất cả
           </Link>
         </div>
-        {recentMoments.length === 0 ? (
-          <div className="mx-4 rounded-2xl border border-dashed border-border p-6 text-center text-[12px] text-muted-foreground">
-            Chưa có khoảnh khắc nào. <Link to="/khoanh-khac" className="text-brand font-semibold">Đăng cái đầu tiên →</Link>
-          </div>
-        ) : (
-          <div className="flex gap-3 overflow-x-auto pb-2 px-4 scrollbar-none">
-            {recentMoments.map((m) => (
-              <Link
-                key={m.id}
-                to="/khoanh-khac"
-                className="shrink-0 w-[136px]"
-              >
-                <div className="h-[136px] w-[136px] rounded-2xl overflow-hidden bg-muted">
-                  {m.media_type === "video" ? (
-                    <video src={m.media_url} className="h-full w-full object-cover" muted playsInline />
-                  ) : (
-                    <img
-                      src={m.thumbnail_url ?? m.media_url}
-                      alt={m.caption ?? "Khoảnh khắc"}
-                      width={136}
-                      height={136}
-                      loading="lazy"
-                      decoding="async"
-                      className="h-full w-full object-cover"
-                    />
-                  )}
-                </div>
-                <p className="mt-2 text-[13px] font-semibold leading-tight truncate">
-                  {m.caption ?? "Khoảnh khắc"}
-                </p>
-                <p className="text-[11px] text-muted-foreground mt-0.5">
-                  {new Date(m.taken_at).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" })}
-                </p>
-              </Link>
-            ))}
-          </div>
-        )}
+        <div className="flex gap-3 overflow-x-auto pb-2 px-4 scrollbar-none">
+          {MOMENTS.map((m) => (
+            <div key={m.id} className="shrink-0 w-[136px]">
+              <div className="h-[136px] w-[136px] rounded-2xl overflow-hidden bg-muted">
+                <img src={m.img} alt={m.title} className="h-full w-full object-cover" />
+              </div>
+              <p className="mt-2 text-[13px] font-semibold leading-tight truncate">{m.title}</p>
+              <p className="text-[11px] text-muted-foreground mt-0.5">{m.date}</p>
+            </div>
+          ))}
+        </div>
       </section>
 
-      {pendingFile && previewUrl && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm grid place-items-end sm:place-items-center p-4 animate-in fade-in"
-          onClick={() => !avatarMut.isPending && setPendingFile(null)}
-        >
-          <div
-            className="w-full max-w-sm rounded-3xl bg-card border border-border p-5 shadow-xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 className="text-base font-bold text-center">Xem trước ảnh gia đình</h3>
-            <p className="text-xs text-muted-foreground text-center mt-1">
-              Kiểm tra trước khi lưu thay đổi
-            </p>
-            <div className="mt-4 grid place-items-center">
-              <img
-                src={previewUrl}
-                alt="Xem trước"
-                className="h-44 w-44 rounded-full object-cover ring-4 ring-tint-blue"
-              />
-            </div>
-            <p className="mt-3 text-[11px] text-center text-muted-foreground truncate">
-              {pendingFile.name} · {(pendingFile.size / 1024).toFixed(0)} KB
-            </p>
-            <div className="mt-5 grid grid-cols-2 gap-3">
-              <button
-                type="button"
-                disabled={avatarMut.isPending}
-                onClick={() => setPendingFile(null)}
-                className="h-11 rounded-2xl border border-border text-sm font-semibold active:bg-muted/40 disabled:opacity-60"
-              >
-                Huỷ
-              </button>
-              <button
-                type="button"
-                disabled={avatarMut.isPending}
-                onClick={() => avatarMut.mutate(pendingFile)}
-                className="h-11 rounded-2xl bg-brand text-white text-sm font-semibold active:scale-[0.98] transition disabled:opacity-60 flex items-center justify-center gap-2"
-              >
-                {avatarMut.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
-                {avatarMut.isPending ? "Đang lưu..." : "Lưu ảnh"}
-              </button>
-            </div>
-            <button
-              type="button"
-              disabled={avatarMut.isPending}
-              onClick={() => fileRef.current?.click()}
-              className="mt-3 w-full text-xs font-medium text-brand active:opacity-70 disabled:opacity-60"
-            >
-              Chọn ảnh khác
-            </button>
-          </div>
-        </div>
-      )}
     </MobileShell>
   );
 }

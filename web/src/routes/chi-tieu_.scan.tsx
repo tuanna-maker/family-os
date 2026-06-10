@@ -47,20 +47,15 @@ function ScanPage() {
       setPhase("error");
       return;
     }
-    if (file.size > 25_000_000) {
-      setError("Ảnh quá lớn (>25MB).");
+    if (file.size > 6_000_000) {
+      setError("Ảnh quá lớn (>6MB).");
       setPhase("error");
       return;
     }
+    const dataUrl = await fileToDataUrl(file);
+    setPreview(dataUrl);
     setPhase("scanning");
     setError("");
-    let dataUrl: string;
-    try {
-      dataUrl = await compressImage(file, 1600, 0.82);
-    } catch {
-      dataUrl = await fileToDataUrl(file);
-    }
-    setPreview(dataUrl);
 
     const res = await runScan({ data: { family_id: familyId, imageDataUrl: dataUrl } });
     if (!res.ok) {
@@ -324,24 +319,4 @@ function fileToDataUrl(file: File): Promise<string> {
     r.onerror = reject;
     r.readAsDataURL(file);
   });
-}
-
-async function compressImage(file: File, maxSide: number, quality: number): Promise<string> {
-  const dataUrl = await fileToDataUrl(file);
-  const img = await new Promise<HTMLImageElement>((resolve, reject) => {
-    const el = new Image();
-    el.onload = () => resolve(el);
-    el.onerror = reject;
-    el.src = dataUrl;
-  });
-  const scale = Math.min(1, maxSide / Math.max(img.width, img.height));
-  const w = Math.round(img.width * scale);
-  const h = Math.round(img.height * scale);
-  const canvas = document.createElement("canvas");
-  canvas.width = w;
-  canvas.height = h;
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return dataUrl;
-  ctx.drawImage(img, 0, 0, w, h);
-  return canvas.toDataURL("image/jpeg", quality);
 }

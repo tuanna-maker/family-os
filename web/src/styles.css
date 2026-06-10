@@ -133,8 +133,8 @@
   --popover: oklch(0.21 0.04 264);
   --popover-foreground: oklch(0.97 0.005 250);
 
-  --navy: oklch(0.28 0.10 264);
-  --brand: oklch(0.58 0.20 264);
+  --navy: oklch(0.97 0.005 250);
+  --brand: oklch(0.7 0.18 264);
   --primary: oklch(0.97 0.005 250);
   --primary-foreground: oklch(0.18 0.04 264);
   --secondary: oklch(0.25 0.04 264);
@@ -183,6 +183,15 @@
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
   }
+
+  /* iOS Safari / WKWebView (Capacitor): zoom khi focus input có font < 16px */
+  @supports (-webkit-touch-callout: none) {
+    input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="button"]):not([type="submit"]):not([type="file"]),
+    select,
+    textarea {
+      font-size: 1rem;
+    }
+  }
 }
 
 /* Easy-read mode for elderly users:
@@ -190,6 +199,35 @@
    - More generous line-height
    - Minimum tap target size on interactive elements
    - Larger inputs and form controls */
+/* STOS Guard mobile — Apple HIG safe areas & scroll */
+.guard-app {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.guard-main-scroll {
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.guard-has-tabbar .guard-main-scroll {
+  max-height: calc(100dvh - 12rem);
+}
+
+.guard-tab-bar-inner {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+@media (min-width: 768px) {
+  .guard-tab-bar,
+  .guard-app {
+    max-width: 28rem;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
 html.easy-read {
   font-size: 19px;
   line-height: 1.7;
@@ -382,9 +420,4 @@ html.easy-read a {
   background-position: calc(100% - 18px) 50%, calc(100% - 13px) 50%;
   background-size: 5px 5px; background-repeat: no-repeat;
   padding-right: 32px;
-}
-
-/* Hide elements when running as installed PWA (standalone display mode) */
-@media (display-mode: standalone), (display-mode: fullscreen), (display-mode: minimal-ui) {
-  .hide-in-pwa { display: none !important; }
 }

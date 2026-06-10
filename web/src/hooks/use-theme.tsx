@@ -7,26 +7,26 @@ const ThemeContext = createContext<Ctx | null>(null);
 const STORAGE_KEY = "ui:theme";
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>(() => {
-    if (typeof document !== "undefined") {
-      if (document.documentElement.classList.contains("light")) return "light";
-      if (document.documentElement.classList.contains("dark")) return "dark";
-    }
-    return "dark";
-  });
+  const [theme, setThemeState] = useState<Theme>("dark");
+
+  useEffect(() => {
+    try {
+      const v = localStorage.getItem(STORAGE_KEY);
+      if (v === "light" || v === "dark") setThemeState(v);
+      else if (typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: light)").matches) {
+        setThemeState("light");
+      }
+    } catch {}
+  }, []);
 
   useEffect(() => {
     if (typeof document === "undefined") return;
     const root = document.documentElement;
-    if (root.classList.contains(theme)) {
-      // Đồng bộ sẵn từ inline script — chỉ cần persist
-      try { localStorage.setItem(STORAGE_KEY, theme); } catch {}
-      return;
-    }
-    root.classList.remove("light", "dark");
-    root.classList.add(theme);
-    root.style.colorScheme = theme;
-    try { localStorage.setItem(STORAGE_KEY, theme); } catch {}
+    root.classList.toggle("dark", theme === "dark");
+    root.classList.toggle("light", theme === "light");
+    try {
+      localStorage.setItem(STORAGE_KEY, theme);
+    } catch {}
   }, [theme]);
 
   const setTheme = (t: Theme) => setThemeState(t);

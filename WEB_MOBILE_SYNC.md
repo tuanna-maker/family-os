@@ -37,3 +37,28 @@
 ## Git
 
 Monorepo push lên `stoslife` branch **`monorepo`** — `main` giữ app Lovable web.
+
+### Kéo web từ `main` vào `web/` (không merge cả nhánh)
+
+**Không** chạy `git merge main` hoặc `git pull origin main` ở gốc repo — sẽ đè `apps/`, `mobile/`, cấu trúc monorepo.
+
+| Nhánh `main` (gốc) | Nhánh `mobileapp_kieet` (monorepo) |
+|--------------------|-------------------------------------|
+| `src/`             | `web/src/`                          |
+| `supabase/`        | `web/supabase/`                     |
+| `package.json`     | `web/package.json`                  |
+| …                  | `web/…`                             |
+
+```bash
+# Xem trước
+npm run sync:web-from-main -- --dry-run
+
+# Áp dụng
+npm run sync:web-from-main
+
+cd web && npm install
+git add web/
+git commit -m "sync: pull web from main into web/"
+```
+
+Giữ nguyên: `web/.env`, `web/public/downloads/` (APK). Sau sync, port thay đổi sang `apps/family`, `mobile/*` theo bảng trên.

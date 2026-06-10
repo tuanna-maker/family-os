@@ -1,162 +1,104 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/react-start";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { AlertCircle, Check, QrCode, Nfc, Keyboard, MapPin } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
-import { SubHeader } from "@/features/guard/SubHeader";
-import { listPatrolLogs, logPatrolCheckpoint, getActiveShift } from "@/lib/guard.functions";
+import { GuardMobileShell } from "@/components/guard/GuardMobileShell";
+import { GroupedSection } from "@/components/guard/ios/GroupedCard";
+import { patrolCheckpoints } from "@/features/guard-mobile/data";
+import { cn } from "@/lib/utils";
+import { hapticLight, hapticMedium } from "@/lib/haptic";
+import { CheckCircle2, Circle, MapPin, ScanLine } from "lucide-react";
 
 export const Route = createFileRoute("/guard/patrol")({
-  head: () => ({ meta: [{ title: "Tuần tra — Bảo vệ" }] }),
-  component: PatrolPage,
+  head: () => ({ meta: [{ title: "Tuần tra — STOS Guard" }] }),
+  component: GuardPatrolPage,
 });
 
-type Coords = { lat: number; lng: number; accuracy?: number } | null;
+function GuardPatrolPage() {
+  const [points, setPoints] = useState(patrolCheckpoints);
+  const done = points.filter((p) => p.done).length;
+  const pct = Math.round((done / points.length) * 100);
 
-function PatrolPage() {
-  const qc = useQueryClient();
-  const fetchLogs = useServerFn(listPatrolLogs);
-  const fetchShift = useServerFn(getActiveShift);
-  const logCheckpoint = useServerFn(logPatrolCheckpoint);
-
-  const [code, setCode] = useState("");
-  const [routeCode, setRouteCode] = useState("");
-  const [method, setMethod] = useState<"qr" | "nfc" | "manual">("qr");
-  const [coords, setCoords] = useState<Coords>(null);
-
-  const shiftQ = useQuery({ queryKey: ["guard-active-shift"], queryFn: () => fetchShift() });
-  const logsQ = useQuery({
-    queryKey: ["patrol-logs", "today"],
-    queryFn: () => fetchLogs({ data: { scope: "today" } }),
-    refetchInterval: shiftQ.data ? 15000 : false,
-  });
-
-  useEffect(() => {
-    if (typeof navigator === "undefined" || !navigator.geolocation) return;
-    navigator.geolocation.getCurrentPosition(
-      (p) => setCoords({ lat: p.coords.latitude, lng: p.coords.longitude, accuracy: p.coords.accuracy }),
-      () => void 0,
-      { enableHighAccuracy: true, timeout: 10000 },
+  function markDone(id: string) {
+    hapticMedium();
+    setPoints((prev) =>
+      prev.map((p) => (p.id === id ? { ...p, done: true } : p)),
     );
-  }, []);
-
-  const submit = useMutation({
-    mutationFn: async (m: "qr" | "nfc" | "manual") => {
-      if (!code.trim()) throw new Error("Nhập mã điểm tuần tra");
-      return logCheckpoint({
-        data: {
-          checkpoint_code: code.trim(),
-          route_code: routeCode.trim() || undefined,
-          scan_method: m,
-          location: coords ?? undefined,
-        },
-      });
-    },
-    onSuccess: () => {
-      toast.success(`Đã ghi nhận điểm ${code.trim()}`);
-      setCode("");
-      qc.invalidateQueries({ queryKey: ["patrol-logs"] });
-    },
-    onError: (e: Error) => toast.error(e.message || "Không ghi nhận được"),
-  });
-
-  const logs = logsQ.data ?? [];
-  const uniquePoints = new Set(logs.map((l) => l.checkpoint_code)).size;
+    toast.success("Đã xác nhận checkpoint", {
+      description: "Vị trí GPS & thời gian đã ghi nhận.",
+    });
+  }
 
   return (
-    <>
-      <SubHeader title="TUẦN TRA" back="/guard" />
-      <section className="px-5 mt-4">
-        <p className="text-success text-sm font-semibold">
-          {shiftQ.data ? `Ca đang mở · ${shiftQ.data.shift_type}` : "Chưa có ca trực đang mở"}
-        </p>
-        <div className="mt-4 rounded-2xl bg-card border border-border p-4">
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">Hôm nay</span>
-            <span className="font-semibold">{logs.length} lượt · {uniquePoints} điểm</span>
-          </div>
-          {coords && (
-            <p className="mt-2 text-[11px] text-muted-foreground flex items-center gap-1">
-              <MapPin className="h-3 w-3" /> {coords.lat.toFixed(5)}, {coords.lng.toFixed(5)}
-            </p>
-          )}
+    <GuardMobileShell
+      largeTitle="Tuần tra"
+      subtitle={`${done}/${points.length} điểm · ${pct}% hoàn thành`}
+    >
+      <section className="px-4 mt-2">
+        <div className="h-2 rounded-full bg-muted overflow-hidden">
+          <div
+            className="h-full bg-brand transition-all duration-500 ease-out"
+            style={{ width: `${pct}%` }}
+          />
         </div>
       </section>
 
-      <section className="px-5 mt-5 space-y-3">
-        <p className="text-xs font-semibold text-muted-foreground">Quét / nhập điểm</p>
-        <input
-          value={code}
-          onChange={(e) => setCode(e.target.value)}
-          placeholder="Mã điểm (VD: CP-A1)"
-          className="w-full h-12 rounded-xl bg-card border border-border px-4 text-sm"
-        />
-        <input
-          value={routeCode}
-          onChange={(e) => setRouteCode(e.target.value)}
-          placeholder="Mã tuyến (tuỳ chọn)"
-          className="w-full h-12 rounded-xl bg-card border border-border px-4 text-sm"
-        />
-        <div className="grid grid-cols-3 gap-2">
-          {([
-            { k: "qr", label: "QR", icon: QrCode },
-            { k: "nfc", label: "NFC", icon: Nfc },
-            { k: "manual", label: "Thủ công", icon: Keyboard },
-          ] as const).map((m) => (
-            <button
-              key={m.k}
-              onClick={() => setMethod(m.k)}
-              className={`h-11 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1 ${
-                method === m.k ? "bg-brand text-white border-brand" : "bg-card border-border"
-              }`}
-            >
-              <m.icon className="h-4 w-4" /> {m.label}
-            </button>
-          ))}
-        </div>
+      <GroupedSection
+        title="Lộ trình ca trực"
+        footer="Giữ màn hình sáng khi tuần tra. Quét QR tại mỗi điểm để tránh bỏ sót."
+      >
+        {points.map((cp, i) => (
+          <div
+            key={cp.id}
+            className={cn(
+              "flex items-center gap-3 px-4 py-3 min-h-[56px] border-b border-border last:border-b-0",
+              !cp.done && "bg-muted/20",
+            )}
+          >
+            <div className="w-6 shrink-0 text-center text-[11px] font-mono text-muted-foreground">
+              {i + 1}
+            </div>
+            {cp.done ? (
+              <CheckCircle2 className="h-5 w-5 text-success shrink-0" />
+            ) : (
+              <Circle className="h-5 w-5 text-muted-foreground shrink-0" />
+            )}
+            <div className="flex-1 min-w-0">
+              <p className="text-[15px] font-medium">{cp.name}</p>
+              <p className="text-[12px] text-muted-foreground flex items-center gap-1 mt-0.5">
+                <MapPin className="h-3 w-3" />
+                Hạn {cp.due}
+              </p>
+            </div>
+            {!cp.done ? (
+              <button
+                type="button"
+                onClick={() => markDone(cp.id)}
+                className="shrink-0 flex items-center gap-1 rounded-full bg-brand text-primary-foreground text-[12px] font-semibold px-3 min-h-[36px] active:scale-95 transition"
+              >
+                <ScanLine className="h-3.5 w-3.5" />
+                Quét
+              </button>
+            ) : (
+              <span className="text-[12px] font-medium text-success shrink-0">Xong</span>
+            )}
+          </div>
+        ))}
+      </GroupedSection>
+
+      <section className="px-4 mt-6">
         <button
-          disabled={submit.isPending}
-          onClick={() => submit.mutate(method)}
-          className="w-full h-14 rounded-2xl bg-brand text-white font-bold tracking-wide shadow-lg flex items-center justify-center gap-2 active:scale-[0.98] transition disabled:opacity-60"
+          type="button"
+          onClick={() => {
+            hapticLight();
+            toast.message("Bản đồ tuần tra", {
+              description: "Tích hợp bản đồ realtime — Phase 3.",
+            });
+          }}
+          className="w-full min-h-[48px] rounded-[14px] border border-border bg-card text-[15px] font-semibold active:scale-[0.98] transition"
         >
-          <QrCode className="h-5 w-5" />
-          {submit.isPending ? "ĐANG GHI..." : "GHI NHẬN ĐIỂM"}
+          Mở bản đồ lộ trình
         </button>
       </section>
-
-      <section className="px-5 mt-6 mb-10">
-        <p className="text-xs font-semibold text-muted-foreground mb-2">Nhật ký hôm nay</p>
-        {logsQ.isLoading ? (
-          <p className="text-sm text-muted-foreground">Đang tải...</p>
-        ) : logs.length === 0 ? (
-          <div className="rounded-2xl bg-card border border-border p-4 text-sm text-muted-foreground flex items-center gap-2">
-            <AlertCircle className="h-4 w-4" /> Chưa có lượt tuần tra nào hôm nay
-          </div>
-        ) : (
-          <ul className="rounded-2xl bg-card border border-border divide-y divide-border overflow-hidden">
-            {logs.map((l) => (
-              <li key={l.id} className="flex items-center gap-3 p-3.5">
-                <span className="h-6 w-6 rounded-full bg-success grid place-items-center shrink-0">
-                  <Check className="h-3.5 w-3.5 text-white" strokeWidth={3} />
-                </span>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold truncate">{l.checkpoint_code}</p>
-                  {l.route_code && (
-                    <p className="text-[11px] text-muted-foreground">Tuyến {l.route_code}</p>
-                  )}
-                </div>
-                <div className="text-right">
-                  <p className="text-[11px] text-muted-foreground">
-                    {new Date(l.scanned_at).toLocaleTimeString("vi-VN", { hour12: false })}
-                  </p>
-                  <p className="text-[10px] text-muted-foreground uppercase">{l.scan_method}</p>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-    </>
+    </GuardMobileShell>
   );
 }

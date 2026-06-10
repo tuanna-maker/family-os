@@ -6,24 +6,16 @@ import {
   useRouter,
   HeadContent,
   Scripts,
-  redirect,
 } from "@tanstack/react-router";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import { toast, Toaster } from "sonner";
 import { AuthProvider } from "@/hooks/use-auth";
-import { PagePendingSkeleton } from "@/components/PagePendingSkeleton";
-import { supabase } from "@/integrations/supabase/client";
-import { getMyContext } from "@/lib/auth.functions";
-import { resolveDestinationPure } from "@/lib/resolve-destination";
-
 import { EasyReadProvider } from "@/hooks/use-easy-read";
 import { ThemeProvider } from "@/hooks/use-theme";
 import { MockAuthProvider } from "@/contexts/MockAuthContext";
 import { TenantProvider } from "@/contexts/TenantContext";
-import { startWebVitals } from "@/lib/report-web-vitals";
 
 import appCss from "../styles.css?url";
-
 
 // Tạo mã lỗi ngắn ổn định từ message để dễ tra cứu
 function makeErrorCode(error: unknown): string {
@@ -100,58 +92,14 @@ function NotFoundComponent() {
   );
 }
 
-// Cờ tự-thử-lại trong im lặng cho mỗi pathname. Cho phép tối đa
-// MAX_SILENT_RETRIES lần để xử lý các lỗi transient lặp lại (hydration
-// mismatch, dynamic import race, vite preload chậm) — chỉ hiển thị
-// "trang lỗi" sau khi đã thật sự hết lượt retry.
-const MAX_SILENT_RETRIES = 3;
-function shouldSilentAutoRetry(pathname: string, error: unknown): boolean {
-  if (typeof window === "undefined") return false;
-  if (isModuleLoadError(error)) return false; // đã có reload-once riêng
-  const key = `route-silent-retry:${pathname}`;
-  let count = 0;
-  try {
-    const raw = window.sessionStorage.getItem(key);
-    count = raw ? parseInt(raw, 10) || 0 : 0;
-  } catch { /* noop */ }
-  if (count >= MAX_SILENT_RETRIES) return false;
-  try {
-    window.sessionStorage.setItem(key, String(count + 1));
-    window.setTimeout(() => {
-      try { window.sessionStorage.removeItem(key); } catch { /* noop */ }
-    }, 8000);
-  } catch { /* noop */ }
-  return true;
-}
-
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   const router = useRouter();
   const { code, status, message } = describeError(error);
-  const [autoRetrying, setAutoRetrying] = useState(true);
 
   useEffect(() => {
     if (reloadOnceForModuleLoadError(error)) return;
-    const pathname = router.state.location.pathname;
-    if (shouldSilentAutoRetry(pathname, error)) {
-      // Đợi invalidate xong rồi mới reset để loader chạy lại trước khi
-      // boundary clear, tránh remount với cùng error cũ.
-      // eslint-disable-next-line no-console
-      console.warn(`[route-error ${code}] silent retry on ${pathname}`);
-      void router
-        .invalidate({ sync: true })
-        .then(() => reset())
-        .catch(() => reset());
-      return;
-    }
-    setAutoRetrying(false);
-    notifyRouteError(error, pathname);
-  }, [error, router, reset, code]);
-
-  // Trong lúc auto-retry: KHÔNG hiển thị trang lỗi — chỉ giữ skeleton trống
-  // để tránh "chớp" UI lỗi rồi vào trang đích.
-  if (autoRetrying) {
-    return <PagePendingSkeleton />;
-  }
+    notifyRouteError(error, router.state.location.pathname);
+  }, [error, router]);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -179,7 +127,6 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
             className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
           >
             Về trang chủ
-
           </a>
         </div>
       </div>
@@ -188,33 +135,21 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
 }
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
-  // Global guard: nếu đã đăng nhập, chặn MỌI điều hướng về "/" (back/forward,
-  // deep link, click logo, link nội bộ) và đẩy về app home tương ứng.
-  beforeLoad: async ({ location }) => {
-    if (typeof window === "undefined") return;
-    if (location.pathname !== "/") return;
-    try {
-      const { data } = await supabase.auth.getSession();
-      if (!data.session) return;
-      const ctx = await getMyContext();
-      const to = resolveDestinationPure({ ctx, requestedRedirect: null, entrySource: "landing" });
-      if (to && to !== "/") throw redirect({ to, replace: true });
-    } catch (e) {
-      if (e && typeof e === "object" && "to" in e) throw e;
-    }
-  },
   head: () => ({
     meta: [
       { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "STOS - Hệ điều hành chung cư" },
-      { name: "description", content: "Hệ điều hành chung cư" },
-      { name: "author", content: "STOS" },
-      { property: "og:title", content: "STOS - Hệ điều hành chung cư" },
-      { property: "og:description", content: "Hệ điều hành chung cư" },
+      {
+        name: "viewport",
+        content: "width=device-width, initial-scale=1, viewport-fit=cover",
+      },
+      { title: "Lovable App" },
+      { name: "description", content: "Lovable Generated Project" },
+      { name: "author", content: "Lovable" },
+      { property: "og:title", content: "Lovable App" },
+      { property: "og:description", content: "Lovable Generated Project" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { name: "twitter:site", content: "@STOS" },
+      { name: "twitter:site", content: "@Lovable" },
     ],
     links: [{ rel: "stylesheet", href: appCss }],
   }),
@@ -224,15 +159,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   errorComponent: ErrorComponent,
 });
 
-const THEME_INIT_SCRIPT = `(function(){try{var t=localStorage.getItem('ui:theme');if(t!=='light'&&t!=='dark'){t=window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark';}var r=document.documentElement;r.classList.remove('light','dark');r.classList.add(t);r.style.colorScheme=t;}catch(e){document.documentElement.classList.add('dark');}})();`;
-
 function RootShell({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <head>
         <HeadContent />
-        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
-
       </head>
       <body>
         {children}
@@ -285,8 +216,6 @@ function RouterErrorWatcher() {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
-  useEffect(() => { startWebVitals(); }, []);
-
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -298,7 +227,6 @@ function RootComponent() {
                 <Outlet />
                 <RouterErrorWatcher />
                 <Toaster richColors closeButton position="top-center" />
-                
               </EasyReadProvider>
             </ThemeProvider>
           </TenantProvider>

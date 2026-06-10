@@ -12,9 +12,8 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
-import { useQueryClient } from "@tanstack/react-query";
 import { createSosDispatch } from "@/lib/security.functions";
-import { ALL_TEAMS, suggestTeam, type DispatchPriority } from "./dispatchStore";
+import { addDispatch, ALL_TEAMS, suggestTeam, type DispatchPriority } from "./dispatchStore";
 import { validateSosDispatch, SOS_SCHEMA_VERSION } from "./sosSchema";
 
 type Priority = DispatchPriority;
@@ -73,7 +72,6 @@ export function SosDispatchButton() {
   };
 
   const dispatchFn = useServerFn(createSosDispatch);
-  const qc = useQueryClient();
 
   const handleDispatch = async () => {
     const typeLabel = INCIDENT_TYPES.find((t) => t.value === type)?.label ?? type;
@@ -106,8 +104,17 @@ export function SosDispatchButton() {
     setSubmitting(true);
     try {
       const res = await dispatchFn({ data: payload });
-      qc.invalidateQueries({ queryKey: ["recent-dispatches"] });
-      qc.invalidateQueries({ queryKey: ["open-sos"] });
+      addDispatch({
+        id: res.ticket_code,
+        priority: payload.priority,
+        incidentType: payload.incident_type,
+        zone: payload.zone,
+        location: payload.location,
+        teamId: payload.team_id,
+        teamName: payload.team_name,
+        autoAssigned: payload.auto_assigned,
+        note: payload.note,
+      });
       toast.success(`Đã tạo ticket ${res.ticket_code}`, {
         description: `${payload.priority} · ${payload.incident_type} · ${payload.zone} → ${payload.team_name}`,
       });

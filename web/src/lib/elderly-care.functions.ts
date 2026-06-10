@@ -528,13 +528,7 @@ export const addVital = createServerFn({ method: "POST" })
 export const listElderlyActivity = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
-    z
-      .object({
-        elderlyId: z.string().uuid(),
-        familyId: z.string().uuid(),
-        memberName: z.string().min(1).optional(),
-      })
-      .parse(d),
+    z.object({ elderlyId: z.string().uuid(), familyId: z.string().uuid() }).parse(d),
   )
   .handler(async ({ data, context }): Promise<ActivityRow[]> => {
     const { supabase } = context;
@@ -542,22 +536,7 @@ export const listElderlyActivity = createServerFn({ method: "GET" })
     since.setDate(since.getDate() - 7);
     const sinceIso = since.toISOString();
 
-    // Pre-load reminders so we can label medicine logs
-    let remMap = new Map<string, { medicine: string; dosage: string | null }>();
-    let remIds: string[] = [];
-    if (data.memberName) {
-      const remRes = await supabase
-        .from("medicine_reminders")
-        .select("id, medicine, dosage")
-        .eq("family_id", data.familyId)
-        .eq("member_name", data.memberName);
-      for (const r of remRes.data ?? []) {
-        remMap.set(r.id as string, { medicine: r.medicine as string, dosage: (r.dosage as string | null) ?? null });
-      }
-      remIds = Array.from(remMap.keys());
-    }
-
-    const [checks, notes, logs] = await Promise.all([
+    const [checks, notes] = await Promise.all([
       supabase
         .from("safe_checks")
         .select("id, status, note, checked_at")
@@ -572,16 +551,6 @@ export const listElderlyActivity = createServerFn({ method: "GET" })
         .gte("created_at", sinceIso)
         .order("created_at", { ascending: false })
         .limit(20),
-      remIds.length > 0
-        ? supabase
-            .from("medicine_logs")
-            .select("id, reminder_id, note, taken_at")
-            .eq("family_id", data.familyId)
-            .in("reminder_id", remIds)
-            .gte("taken_at", sinceIso)
-            .order("taken_at", { ascending: false })
-            .limit(30)
-        : Promise.resolve({ data: [] as Array<{ id: string; reminder_id: string; note: string | null; taken_at: string }> }),
     ]);
 
     const out: ActivityRow[] = [];
@@ -601,16 +570,6 @@ export const listElderlyActivity = createServerFn({ method: "GET" })
         title: `${n.author_name} đã ghi chú`,
         detail: n.content,
         at: n.created_at,
-      });
-    }
-    for (const l of (logs.data ?? []) as Array<{ id: string; reminder_id: string; note: string | null; taken_at: string }>) {
-      const rem = remMap.get(l.reminder_id);
-      out.push({
-        id: `med-${l.id}`,
-        kind: "med",
-        title: rem ? `Đã uống ${rem.medicine}` : "Đã uống thuốc",
-        detail: l.note ?? (rem?.dosage ? `Liều: ${rem.dosage}` : ""),
-        at: l.taken_at,
       });
     }
     out.sort((a, b) => (a.at < b.at ? 1 : -1));

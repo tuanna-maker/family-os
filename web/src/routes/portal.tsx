@@ -55,16 +55,8 @@ import { listNotifications, type NotificationRow } from "@/lib/notifications.fun
 
 export const Route = createFileRoute("/portal")({
   beforeLoad: async () => {
-    if (typeof window === "undefined") return;
     const { data } = await supabase.auth.getUser();
     if (!data.user) throw redirect({ to: "/login" });
-  },
-  loader: ({ context }) => {
-    if (typeof window === "undefined") return;
-    context.queryClient.prefetchQuery({
-      queryKey: ["my-context"],
-      queryFn: () => getMyContext(),
-    });
   },
   head: () => ({ meta: [{ title: "Cổng gia đình — STOS Life" }] }),
   component: PortalPage,
@@ -201,8 +193,7 @@ const INSIGHTS = [
 function PortalPage() {
   const myCtx = useServerFn(getMyContext);
   const dash = useServerFn(getDashboard);
-  // Unified queryKey with /chi-tieu so cache is shared (was "my-ctx" → duplicate fetch)
-  const { data: ctx } = useQuery({ queryKey: ["my-context"], queryFn: () => myCtx() });
+  const { data: ctx } = useQuery({ queryKey: ["my-ctx"], queryFn: () => myCtx() });
   const familyId = ctx?.family?.id ?? null;
   const { data: d } = useQuery({
     queryKey: ["dashboard", familyId],

@@ -1,12 +1,7 @@
-import { createFileRoute, Link, redirect } from "@tanstack/react-router";
-import { useState, useMemo, lazy, Suspense } from "react";
-const QRCodeSVG = lazy(() => import("qrcode.react").then((m) => ({ default: m.QRCodeSVG })));
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useState } from "react";
 import { submitDemoLead } from "@/lib/demo-leads.functions";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
-import { getMyContext } from "@/lib/auth.functions";
-import { resolveDestinationPure } from "@/lib/resolve-destination";
-import { MOBILE_APK, apkDownloadUrl } from "@/lib/mobile-apk";
 import {
   Shield, Building2, Users, Bell, MapPin, Phone, ArrowRight, CheckCircle2,
   Sparkles, Truck, Leaf, MessageCircle, Activity, Smartphone, Lock,
@@ -27,25 +22,8 @@ export const Route = createFileRoute("/")({
       { property: "og:type", content: "website" },
     ],
   }),
-  // Đã đăng nhập mà vào "/" (back button, bookmark, link landing) → đẩy
-  // thẳng về app home tương ứng (family → /home, guard → /guard, ...).
-  // Bỏ qua SSR vì không có session phía server.
-  beforeLoad: async () => {
-    if (typeof window === "undefined") return;
-    const { data } = await supabase.auth.getSession();
-    if (!data.session) return;
-    try {
-      const ctx = await getMyContext();
-      const to = resolveDestinationPure({ ctx, requestedRedirect: null, entrySource: "landing" });
-      if (to && to !== "/") throw redirect({ to, replace: true });
-    } catch (e) {
-      // Re-throw redirect; nuốt mọi lỗi context khác (giữ landing public)
-      if (e && typeof e === "object" && "to" in e) throw e;
-    }
-  },
   component: LandingPage,
 });
-
 
 /* ──────────── NAV ──────────── */
 function Nav() {
@@ -71,8 +49,8 @@ function Nav() {
             <a href="#command" className="hover:text-foreground transition-colors">Command Center</a>
           </div>
           <div className="flex items-center gap-2">
-            <Link to="/login" search={{ source: "landing" }} className="inline-flex h-9 items-center px-2.5 sm:px-3 text-sm font-medium text-muted-foreground hover:text-foreground transition">Đăng nhập</Link>
-            <Link to="/login" search={{ source: "landing" }} className="inline-flex h-9 items-center gap-1.5 rounded-full px-4 text-sm font-semibold text-white shadow-sm transition hover:opacity-95"
+            <Link to="/login" className="inline-flex h-9 items-center px-2.5 sm:px-3 text-sm font-medium text-muted-foreground hover:text-foreground transition">Đăng nhập</Link>
+            <Link to="/login" className="inline-flex h-9 items-center gap-1.5 rounded-full px-4 text-sm font-semibold text-white shadow-sm transition hover:opacity-95"
               style={{ background: "var(--grad-electric)" }}>
               Dùng thử <ArrowRight className="h-3.5 w-3.5" />
             </Link>
@@ -107,7 +85,7 @@ function Hero() {
               <strong className="text-foreground font-semibold"> hệ sinh thái sống hiện đại</strong>.
             </p>
             <div className="mt-8 flex flex-wrap items-center gap-3">
-              <Link to="/login" search={{ source: "landing" }} className="inline-flex h-12 items-center gap-2 rounded-full px-6 text-sm font-semibold text-white shadow-lg transition hover:scale-[1.02]"
+              <Link to="/login" className="inline-flex h-12 items-center gap-2 rounded-full px-6 text-sm font-semibold text-white shadow-lg transition hover:scale-[1.02]"
                 style={{ background: "var(--grad-electric)", boxShadow: "0 14px 40px -10px hsl(var(--brand-electric) / 0.5)" }}>
                 Dùng thử nền tảng <ArrowRight className="h-4 w-4" />
               </Link>
@@ -1762,92 +1740,6 @@ function BqlCaseStudy() {
   );
 }
 
-function InstallQrSection() {
-  const familyApkUrl = useMemo(() => apkDownloadUrl("family"), []);
-  const guardApkUrl = useMemo(() => apkDownloadUrl("guard"), []);
-
-  const cards = [
-    {
-      title: MOBILE_APK.family.title,
-      desc: "Quét QR bằng camera Android để tải file APK và cài app Gia đình (STOS Life).",
-      url: familyApkUrl,
-      fg: "#2563eb",
-      cta: "Tải APK Gia đình",
-      icon: Heart,
-      tone: "from-blue-50 to-white",
-      fileName: MOBILE_APK.family.fileName,
-    },
-    {
-      title: MOBILE_APK.guard.title,
-      desc: "Dành cho đội ngũ bảo vệ. Quét QR để tải APK và cài app Bảo vệ trên thiết bị trực.",
-      url: guardApkUrl,
-      fg: "#0f172a",
-      cta: "Tải APK Bảo vệ",
-      icon: ShieldCheck,
-      tone: "from-slate-50 to-white",
-      fileName: MOBILE_APK.guard.fileName,
-    },
-  ];
-
-  return (
-    <section className="py-20 bg-white">
-      <div className="max-w-6xl mx-auto px-4">
-        <div className="text-center mb-10">
-          <div className="inline-flex items-center gap-2 text-sm font-medium text-blue-600 mb-3">
-            <QrCode className="w-4 h-4" /> Cài đặt nhanh
-          </div>
-          <h2 className="text-3xl md:text-4xl font-bold text-slate-900">Quét QR để tải app</h2>
-          <p className="text-slate-600 mt-3 max-w-2xl mx-auto">
-            Mở camera điện thoại Android, quét mã QR → trình duyệt tải file APK → mở file và cài đặt.
-          </p>
-        </div>
-
-        <div className="grid md:grid-cols-2 gap-6">
-          {cards.map((c) => {
-            const Icon = c.icon;
-            return (
-              <div
-                key={c.title}
-                className={`rounded-3xl border border-slate-200 bg-gradient-to-b ${c.tone} p-6 md:p-8 flex flex-col md:flex-row items-center gap-6 shadow-sm`}
-              >
-                <div className="rounded-2xl bg-white p-4 border border-slate-200 shadow-sm shrink-0">
-                  <Suspense fallback={<div style={{ width: 176, height: 176 }} className="bg-slate-100 rounded-md animate-pulse" />}>
-                    <QRCodeSVG
-                      value={c.url}
-                      size={176}
-                      fgColor={c.fg}
-                      bgColor="#ffffff"
-                      level="M"
-                      marginSize={2}
-                    />
-                  </Suspense>
-                </div>
-                <div className="flex-1 text-center md:text-left">
-                  <div className="inline-flex items-center gap-2 text-slate-900 font-semibold text-lg">
-                    <Icon className="w-5 h-5" style={{ color: c.fg }} /> {c.title}
-                  </div>
-                  <p className="text-slate-600 mt-2 text-sm leading-relaxed">{c.desc}</p>
-                  <a
-                    href={c.url}
-                    download={c.fileName}
-                    className="inline-flex items-center gap-1 mt-4 text-sm font-medium text-blue-600 hover:underline"
-                  >
-                    {c.cta} <ArrowRight className="w-4 h-4" />
-                  </a>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        <p className="text-center text-xs text-slate-500 mt-6">
-          Chỉ hỗ trợ Android. Sau khi tải, bật &quot;Cài từ nguồn không xác định&quot; nếu hệ thống yêu cầu.
-        </p>
-      </div>
-    </section>
-  );
-}
-
 function LandingPage() {
   return (
     <div className="stos-landing min-h-screen">
@@ -1870,7 +1762,6 @@ function LandingPage() {
         <MobileFirst />
         <Trust />
         <FinalCTA />
-        <InstallQrSection />
         <DemoForm />
       </main>
       <Footer />

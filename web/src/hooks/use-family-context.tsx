@@ -8,12 +8,7 @@ import { getMyContext } from "@/lib/auth.functions";
 export function useFamilyContext() {
   const getCtx = useServerFn(getMyContext);
   const navigate = useNavigate();
-  const q = useQuery({
-    queryKey: ["my-context"],
-    queryFn: () => getCtx(),
-    staleTime: 5 * 60_000,
-    gcTime: 30 * 60_000,
-  });
+  const q = useQuery({ queryKey: ["my-context"], queryFn: () => getCtx() });
 
   useEffect(() => {
     if (q.error && (q.error as Error).message?.includes("Unauthorized")) {

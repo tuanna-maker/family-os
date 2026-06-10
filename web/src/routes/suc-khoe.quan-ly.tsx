@@ -160,17 +160,7 @@ function HealthPage() {
                       <p className="text-[11px] text-muted-foreground">
                         {new Date(a.scheduled_at).toLocaleString("vi-VN")} • {a.location || "—"}
                       </p>
-                      <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-                        <span className="text-[10px] inline-block px-2 py-0.5 rounded-full bg-muted">{a.status}</span>
-                        {a.remind_hours_before != null && (
-                          <span className="text-[10px] inline-block px-2 py-0.5 rounded-full bg-tint-blue text-brand">
-                            🔔 Nhắc trước {a.remind_hours_before}h
-                          </span>
-                        )}
-                        {a.reminded_at && (
-                          <span className="text-[10px] text-muted-foreground">Đã nhắc</span>
-                        )}
-                      </div>
+                      <p className="text-[10px] mt-1 inline-block px-2 py-0.5 rounded-full bg-muted">{a.status}</p>
                     </div>
                     <RowActions onEdit={() => setDlg({ type: "appt", row: a })} onDelete={() => delMut.mutate({ table: "medical_appointments", id: a.id })} />
                   </RoundedCard>
@@ -270,17 +260,7 @@ function HealthDialog({
       if (state.type === "medicine") return saveMed({ data: { ...base, active: form.active ?? true } });
       if (state.type === "appt") {
         if (!form.scheduled_at) throw new Error("Vui lòng chọn thời gian");
-        const rh = form.remind_hours_before;
-        const remind_hours_before =
-          rh === "" || rh === null || rh === undefined ? null : Number(rh);
-        return saveAppt({
-          data: {
-            ...base,
-            scheduled_at: new Date(form.scheduled_at).toISOString(),
-            status: form.status ?? "planned",
-            remind_hours_before,
-          },
-        });
+        return saveAppt({ data: { ...base, scheduled_at: new Date(form.scheduled_at).toISOString(), status: form.status ?? "planned" } });
       }
       return saveRec({ data: { ...base, recorded_at: form.recorded_at ? new Date(form.recorded_at).toISOString() : undefined } });
     },
@@ -327,23 +307,6 @@ function HealthDialog({
               <FormField label="Địa điểm"><Input value={form.location ?? ""} onChange={(e) => set("location", e.target.value)} /></FormField>
               <FormField label="Thời gian *">
                 <Input type="datetime-local" value={form.scheduled_at ? toLocalInput(form.scheduled_at) : ""} onChange={(e) => set("scheduled_at", e.target.value)} />
-              </FormField>
-              <FormField label="Nhắc trước (giờ)">
-                <select
-                  className="w-full h-10 px-3 rounded-md border bg-background text-sm"
-                  value={form.remind_hours_before ?? 24}
-                  onChange={(e) => set("remind_hours_before", e.target.value === "" ? null : Number(e.target.value))}
-                >
-                  <option value="">Không nhắc</option>
-                  <option value={1}>1 giờ</option>
-                  <option value={2}>2 giờ</option>
-                  <option value={6}>6 giờ</option>
-                  <option value={12}>12 giờ</option>
-                  <option value={24}>24 giờ (1 ngày)</option>
-                  <option value={48}>48 giờ (2 ngày)</option>
-                  <option value={72}>72 giờ (3 ngày)</option>
-                  <option value={168}>168 giờ (1 tuần)</option>
-                </select>
               </FormField>
               <FormField label="Trạng thái">
                 <select className="w-full h-10 px-3 rounded-md border bg-background text-sm" value={form.status ?? "planned"} onChange={(e) => set("status", e.target.value)}>

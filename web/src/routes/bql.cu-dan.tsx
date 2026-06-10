@@ -1,13 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { useServerFn } from "@tanstack/react-start";
-import { useQuery } from "@tanstack/react-query";
-import { listBqlResidents } from "@/lib/bql.functions";
-import { useBqlProject } from "@/lib/bql-context";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Card } from "@/components/ui/card";
-import { Search, Users, Home, Star } from "lucide-react";
+import { toast } from "sonner";
+import { CrudScreen, type CrudConfig } from "@/components/core/CrudScreen";
+import { StatusBadge } from "@/components/core/StatusBadge";
+import { useCollection } from "@/mock-data/store";
+import { useTenant } from "@/contexts/TenantContext";
+import { useMockAuth } from "@/contexts/MockAuthContext";
+import { hasPermission } from "@/constants/permissions";
+import { svc } from "@/lib/services";
+import type { Apartment, Resident, ResidentChange } from "@/types/core";
+import { Button } from "@/components/ui/button";
+import { CheckCircle2, XCircle } from "lucide-react";
 
 export const Route = createFileRoute("/bql/cu-dan")({
   head: () => ({ meta: [{ title: "Cư dân — BQL" }] }),
@@ -15,126 +18,111 @@ export const Route = createFileRoute("/bql/cu-dan")({
 });
 
 function ResidentsScreen() {
-  const { projectId } = useBqlProject();
-  const [q, setQ] = useState("");
-  const [activeOnly, setActiveOnly] = useState(true);
-  const fn = useServerFn(listBqlResidents);
-  const { data, isLoading } = useQuery({
-    queryKey: ["bql-residents", projectId || "all", activeOnly],
-    queryFn: () => fn({ data: { projectId: projectId || undefined, activeOnly } }),
-  });
-  const rows = data?.rows ?? [];
-  const filtered = useMemo(() => {
-    if (!q.trim()) return rows;
-    const n = q.toLowerCase();
-    return rows.filter(
-      (r) =>
-        r.family_name.toLowerCase().includes(n) ||
-        r.apartment_code.toLowerCase().includes(n) ||
-        (r.block_name ?? "").toLowerCase().includes(n),
-    );
-  }, [rows, q]);
+  const { user } = useMockAuth();
+  const residents = useCollection<Resident>("residents");
+  const apartments = useCollection<Apartment>("apartments");
+  const changes = useCollection<ResidentChange>("resident_changes");
+  const { scope } = useTenant();
+  const aptMap = useMemo(() => new Map(apartments.map((a) => [a.id, a.code])), [apartments]);
+  const canApprove = hasPermission(user?.role, "resident.approve");
 
-  const stats = useMemo(() => {
-    const families = new Set(rows.map((r) => r.family_id)).size;
-    const apartments = new Set(rows.map((r) => r.apartment_id)).size;
-    const primary = rows.filter((r) => r.is_primary).length;
-    return { residents: rows.length, families, apartments, primary };
-  }, [rows]);
+  function verify(r: Resident, approved: boolean) {
+    svc.update<Resident>("residents", r.id, { status: approved ? "active" : "rejected" });
+    svc.create<ResidentChange>("resident_changes", "rch", {
+      tenantId: r.tenantId, residentId: r.id, apartmentId: r.apartmentId,
+      actorId: user!.id, actorName: user!.fullName,
+      action: approved ? "verified" : "rejected",
+      note: approved ? "Xác minh CCCD & hợp đồng." : "Từ chối xác minh.",
+      at: new Date().toISOString(),
+    } as any);
+    toast.success(approved ? "Đã xác minh cư dân" : "Đã từ chối");
+  }
 
-  return (
-    <div className="space-y-4">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Cư dân</h1>
-        <p className="text-sm text-muted-foreground">Danh sách hộ gia đình đang cư trú theo dự án.</p>
-      </div>
-
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <StatCard icon={<Users className="h-4 w-4" />} label="Cư dân" value={stats.residents} />
-        <StatCard icon={<Home className="h-4 w-4" />} label="Hộ gia đình" value={stats.families} />
-        <StatCard icon={<Home className="h-4 w-4" />} label="Căn hộ" value={stats.apartments} />
-        <StatCard icon={<Star className="h-4 w-4" />} label="Chủ hộ" value={stats.primary} />
-      </div>
-
-      <div className="flex items-center gap-2">
-        <div className="relative flex-1">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Tìm theo tên hộ / mã căn / block…"
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            className="pl-8"
-          />
-        </div>
-        <label className="flex items-center gap-2 text-xs text-muted-foreground">
-          <input
-            type="checkbox"
-            checked={activeOnly}
-            onChange={(e) => setActiveOnly(e.target.checked)}
-          />
-          Đang ở
-        </label>
-      </div>
-
-      <Card className="overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-muted/50 text-xs uppercase text-muted-foreground">
-              <tr>
-                <th className="text-left p-3">Hộ gia đình</th>
-                <th className="text-left p-3">Căn hộ</th>
-                <th className="text-left p-3">Dự án</th>
-                <th className="text-left p-3">Quan hệ</th>
-                <th className="text-left p-3">Ngày vào</th>
-                <th className="text-left p-3">Trạng thái</th>
-              </tr>
-            </thead>
-            <tbody>
-              {isLoading && (
-                <tr><td colSpan={6} className="p-6 text-center text-muted-foreground">Đang tải…</td></tr>
-              )}
-              {!isLoading && filtered.length === 0 && (
-                <tr><td colSpan={6} className="p-6 text-center text-muted-foreground">Chưa có cư dân.</td></tr>
-              )}
-              {filtered.map((r, i) => (
-                <tr key={`${r.family_id}-${r.apartment_id}-${i}`} className="border-t hover:bg-muted/30">
-                  <td className="p-3 font-medium">
-                    {r.family_name}
-                    {r.is_primary && <Badge variant="secondary" className="ml-2 text-[10px]">Chủ hộ</Badge>}
-                  </td>
-                  <td className="p-3 tabular-nums">
-                    {r.apartment_code}
-                    {r.block_name && <span className="text-muted-foreground"> · {r.block_name}</span>}
-                    {r.floor_number != null && <span className="text-muted-foreground"> · T{r.floor_number}</span>}
-                  </td>
-                  <td className="p-3 text-muted-foreground">{r.project_name}</td>
-                  <td className="p-3 capitalize">{r.relation}</td>
-                  <td className="p-3 tabular-nums text-xs">{new Date(r.move_in_date).toLocaleDateString("vi-VN")}</td>
-                  <td className="p-3">
-                    {r.move_out_date ? (
-                      <Badge variant="outline">Đã chuyển</Badge>
-                    ) : (
-                      <Badge>Đang ở</Badge>
-                    )}
-                  </td>
-                </tr>
+  const config: CrudConfig<Resident> = {
+    collection: "residents",
+    entityLabel: "Cư dân",
+    entityLabelPlural: "cư dân",
+    idPrefix: "res",
+    permissions: { view: "resident.view", create: "resident.create", edit: "resident.edit", delete: "resident.delete" },
+    searchKeys: ["fullName", "phone", "email", "idNumber"],
+    filters: [
+      { key: "status", label: "Trạng thái", options: [
+        { value: "active", label: "Active" }, { value: "pending", label: "Pending" },
+        { value: "moved_out", label: "Chuyển đi" }, { value: "rejected", label: "Từ chối" },
+      ]},
+      { key: "relationship", label: "Quan hệ", options: [
+        { value: "owner", label: "Chủ sở hữu" }, { value: "tenant", label: "Thuê" }, { value: "family", label: "Người thân" },
+      ]},
+    ],
+    columns: [
+      { key: "fullName", label: "Họ tên" },
+      { key: "apartmentId", label: "Căn hộ", render: (r) => aptMap.get(r.apartmentId) ?? "—" },
+      { key: "phone", label: "Điện thoại" },
+      { key: "relationship", label: "Quan hệ" },
+      { key: "isHeadOfHousehold", label: "Chủ hộ", render: (r) => r.isHeadOfHousehold ? "✓" : "—" },
+      { key: "status", label: "Trạng thái", render: (r) => <StatusBadge status={r.status} /> },
+    ],
+    fields: [
+      { key: "fullName", label: "Họ và tên", required: true },
+      { key: "phone", label: "Điện thoại", required: true },
+      { key: "email", label: "Email", type: "email" },
+      { key: "idNumber", label: "CCCD" },
+      { key: "apartmentId", label: "Căn hộ", type: "select", required: true,
+        options: scope(apartments).map((a) => ({ value: a.id, label: a.code })) },
+      { key: "relationship", label: "Quan hệ", type: "select", required: true, options: [
+        { value: "owner", label: "Chủ sở hữu" }, { value: "tenant", label: "Thuê" }, { value: "family", label: "Người thân" },
+      ]},
+      { key: "status", label: "Trạng thái", type: "select", required: true, options: [
+        { value: "active", label: "Active" }, { value: "pending", label: "Pending" },
+        { value: "moved_out", label: "Chuyển đi" }, { value: "rejected", label: "Từ chối" },
+      ]},
+    ],
+    defaults: { status: "pending", relationship: "owner", isHeadOfHousehold: false },
+    detail: (r) => {
+      const hist = changes.filter((c) => c.residentId === r.id).sort((a, b) => b.at.localeCompare(a.at));
+      return (
+        <div className="space-y-3">
+          <dl className="space-y-1.5 text-[12px]">
+            <Row k="Họ tên" v={r.fullName} />
+            <Row k="Căn hộ" v={aptMap.get(r.apartmentId) ?? "—"} />
+            <Row k="Điện thoại" v={r.phone} />
+            <Row k="Email" v={r.email ?? "—"} />
+            <Row k="CCCD" v={r.idNumber ?? "—"} />
+            <Row k="Quan hệ" v={r.relationship} />
+            <Row k="Chủ hộ" v={r.isHeadOfHousehold ? "Có" : "Không"} />
+            <Row k="Trạng thái" v={r.status} />
+          </dl>
+          {canApprove && r.status === "pending" && (
+            <div className="flex gap-2">
+              <Button size="sm" className="flex-1" onClick={() => verify(r, true)}>
+                <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" />Xác minh
+              </Button>
+              <Button size="sm" variant="outline" className="flex-1" onClick={() => verify(r, false)}>
+                <XCircle className="h-3.5 w-3.5 mr-1.5" />Từ chối
+              </Button>
+            </div>
+          )}
+          <div>
+            <h4 className="font-semibold text-[12px] mb-1.5">Lịch sử thay đổi</h4>
+            <ol className="space-y-1.5 relative border-l pl-3">
+              {hist.length === 0 && <li className="text-[11px] text-muted-foreground italic">Chưa có lịch sử.</li>}
+              {hist.map((c) => (
+                <li key={c.id} className="text-[12px]">
+                  <div className="absolute -left-1 mt-1.5 h-2 w-2 rounded-full bg-primary" />
+                  <p className="capitalize">{c.action.replace("_", " ")} — {c.note}</p>
+                  <p className="text-[10px] text-muted-foreground">{c.actorName} · {new Date(c.at).toLocaleString("vi-VN")}</p>
+                </li>
               ))}
-            </tbody>
-          </table>
+            </ol>
+          </div>
         </div>
-      </Card>
-    </div>
-  );
+      );
+    },
+  };
+
+  return <CrudScreen<Resident> config={config} rows={scope(residents)} title="Cư dân" subtitle="Phê duyệt, xác minh & quản lý cư dân." />;
 }
 
-function StatCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: number }) {
-  return (
-    <Card className="p-3">
-      <div className="flex items-center justify-between">
-        <span className="text-xs text-muted-foreground">{label}</span>
-        <span className="text-muted-foreground">{icon}</span>
-      </div>
-      <div className="text-2xl font-semibold tabular-nums mt-1">{value}</div>
-    </Card>
-  );
+function Row({ k, v }: { k: string; v: string }) {
+  return <div className="flex justify-between gap-3"><dt className="text-muted-foreground">{k}</dt><dd className="font-medium text-right">{v}</dd></div>;
 }

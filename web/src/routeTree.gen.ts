@@ -12,7 +12,6 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as WorkspacesRouteImport } from './routes/workspaces'
 import { Route as ThucPhamRouteImport } from './routes/thuc-pham'
 import { Route as ThongBaoRouteImport } from './routes/thong-bao'
-import { Route as ThanhHangNguoiHoTroRouteImport } from './routes/thanh-hang-nguoi-ho-tro'
 import { Route as TaiKhoanRouteImport } from './routes/tai-khoan'
 import { Route as SucKhoeRouteImport } from './routes/suc-khoe'
 import { Route as SecurityRouteImport } from './routes/security'
@@ -22,20 +21,15 @@ import { Route as QuanLyGiupViecRouteImport } from './routes/quan-ly-giup-viec'
 import { Route as QrVaoRaRouteImport } from './routes/qr-vao-ra'
 import { Route as PortalRouteImport } from './routes/portal'
 import { Route as OpsRouteImport } from './routes/ops'
-import { Route as NhanHangHoRouteImport } from './routes/nhan-hang-ho'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as LienHeRouteImport } from './routes/lien-he'
 import { Route as LichGiaDinhRouteImport } from './routes/lich-gia-dinh'
 import { Route as KyNiemGiaDinhRouteImport } from './routes/ky-niem-gia-dinh'
-import { Route as KhoanhKhacRouteImport } from './routes/khoanh-khac'
 import { Route as HomeRouteImport } from './routes/home'
-import { Route as GuiHangDiRouteImport } from './routes/gui-hang-di'
 import { Route as GuardRouteImport } from './routes/guard'
-import { Route as GiaoTanCanHoRouteImport } from './routes/giao-tan-can-ho'
 import { Route as GiaDinhRouteImport } from './routes/gia-dinh'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as FamilyRouteImport } from './routes/family'
-import { Route as DuaDonCanHoRouteImport } from './routes/dua-don-can-ho'
 import { Route as DuLichRouteImport } from './routes/du-lich'
 import { Route as DichVuRouteImport } from './routes/dich-vu'
 import { Route as DemoLoginRouteImport } from './routes/demo-login'
@@ -44,15 +38,9 @@ import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as ConsoleRouteImport } from './routes/console'
 import { Route as CongDongRouteImport } from './routes/cong-dong'
 import { Route as ConCaiRouteImport } from './routes/con-cai'
-import { Route as ChuyenHangTuXaRouteImport } from './routes/chuyen-hang-tu-xa'
 import { Route as ChiTieuRouteImport } from './routes/chi-tieu'
-import { Route as ChamSocTaiNhaRouteImport } from './routes/cham-soc-tai-nha'
 import { Route as ChamSocOngBaRouteImport } from './routes/cham-soc-ong-ba'
 import { Route as BqlRouteImport } from './routes/bql'
-import { Route as BaoVeXuLyHoRouteImport } from './routes/bao-ve-xu-ly-ho'
-import { Route as BaoVeTheoNhuCauRiengRouteImport } from './routes/bao-ve-theo-nhu-cau-rieng'
-import { Route as BaoVeTheoGioRouteImport } from './routes/bao-ve-theo-gio'
-import { Route as BaoVeRouteImport } from './routes/bao-ve'
 import { Route as BaoAnRouteImport } from './routes/bao-an'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SecurityIndexRouteImport } from './routes/security.index'
@@ -63,20 +51,14 @@ import { Route as FamilyIndexRouteImport } from './routes/family.index'
 import { Route as ConsoleIndexRouteImport } from './routes/console.index'
 import { Route as BqlIndexRouteImport } from './routes/bql.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
-import { Route as SucKhoeTheoDoiRouteImport } from './routes/suc-khoe.theo-doi'
 import { Route as SucKhoeQuanLyRouteImport } from './routes/suc-khoe.quan-ly'
-import { Route as SosEventIdRouteImport } from './routes/sos.$eventId'
 import { Route as SaasUsersRouteImport } from './routes/saas.users'
 import { Route as SaasTenantsRouteImport } from './routes/saas.tenants'
-import { Route as SaasSecurityOpsRouteImport } from './routes/saas.security-ops'
 import { Route as SaasProjectsRouteImport } from './routes/saas.projects'
 import { Route as SaasPlansRouteImport } from './routes/saas.plans'
-import { Route as SaasObservabilityRouteImport } from './routes/saas.observability'
 import { Route as SaasLeadsRouteImport } from './routes/saas.leads'
 import { Route as SaasIncidentsRouteImport } from './routes/saas.incidents'
-import { Route as SaasGuardsRouteImport } from './routes/saas.guards'
 import { Route as SaasFeatureFlagsRouteImport } from './routes/saas.feature-flags'
-import { Route as SaasFamiliesRouteImport } from './routes/saas.families'
 import { Route as SaasCaiDatRouteImport } from './routes/saas.cai-dat'
 import { Route as SaasBillingRouteImport } from './routes/saas.billing'
 import { Route as SaasAuditRouteImport } from './routes/saas.audit'
@@ -85,28 +67,11 @@ import { Route as OpsSlaRouteImport } from './routes/ops.sla'
 import { Route as OpsOccupancyRouteImport } from './routes/ops.occupancy'
 import { Route as OpsFeeRouteImport } from './routes/ops.fee'
 import { Route as OpsComplaintsRouteImport } from './routes/ops.complaints'
-import { Route as GuardScheduleRouteImport } from './routes/guard.schedule'
-import { Route as GuardRequestsRouteImport } from './routes/guard.requests'
+import { Route as GuardTasksRouteImport } from './routes/guard.tasks'
+import { Route as GuardScanRouteImport } from './routes/guard.scan'
 import { Route as GuardPatrolRouteImport } from './routes/guard.patrol'
-import { Route as GuardNotificationsRouteImport } from './routes/guard.notifications'
-import { Route as GuardIncidentRouteImport } from './routes/guard.incident'
-import { Route as GuardCheckOutRouteImport } from './routes/guard.check-out'
-import { Route as GuardCheckInRouteImport } from './routes/guard.check-in'
-import { Route as GuardAccountRouteImport } from './routes/guard.account'
-import { Route as GiaDinhThanhVienRouteImport } from './routes/gia-dinh_.thanh-vien'
-import { Route as GiaDinhOnboardingRouteImport } from './routes/gia-dinh_.onboarding'
-import { Route as GiaDinhNhapMaRouteImport } from './routes/gia-dinh_.nhap-ma'
-import { Route as GiaDinhNhacChaMeRouteImport } from './routes/gia-dinh_.nhac-cha-me'
-import { Route as GiaDinhInvitesRouteImport } from './routes/gia-dinh_.invites'
-import { Route as ChiTieuThongBaoRouteImport } from './routes/chi-tieu_.thong-bao'
+import { Route as GuardMeRouteImport } from './routes/guard.me'
 import { Route as ChiTieuScanRouteImport } from './routes/chi-tieu_.scan'
-import { Route as ChiTieuQuyetToanRouteImport } from './routes/chi-tieu_.quyet-toan'
-import { Route as ChiTieuPremiumRouteImport } from './routes/chi-tieu_.premium'
-import { Route as ChiTieuNganSachRouteImport } from './routes/chi-tieu_.ngan-sach'
-import { Route as ChiTieuInsightsRouteImport } from './routes/chi-tieu_.insights'
-import { Route as ChiTieuDinhKyRouteImport } from './routes/chi-tieu_.dinh-ky'
-import { Route as ChiTieuChiaSeRouteImport } from './routes/chi-tieu_.chia-se'
-import { Route as ChiTieuBaoCaoRouteImport } from './routes/chi-tieu_.bao-cao'
 import { Route as ChamSocOngBaNhatKyRouteImport } from './routes/cham-soc-ong-ba.nhat-ky'
 import { Route as CaiDatThongBaoRouteImport } from './routes/cai-dat.thong-bao'
 import { Route as BqlYeuCauRouteImport } from './routes/bql.yeu-cau'
@@ -130,23 +95,13 @@ import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminSuperRouteImport } from './routes/admin.super'
 import { Route as AdminSecurityRouteImport } from './routes/admin.security'
 import { Route as AdminRolesRouteImport } from './routes/admin.roles'
-import { Route as AdminProjectsRouteImport } from './routes/admin.projects'
 import { Route as AdminMemoriesRouteImport } from './routes/admin.memories'
 import { Route as AdminHelpersRouteImport } from './routes/admin.helpers'
 import { Route as AdminFamilyRouteImport } from './routes/admin.family'
 import { Route as AdminElderlyCareRouteImport } from './routes/admin.elderly-care'
 import { Route as AdminCalendarRouteImport } from './routes/admin.calendar'
 import { Route as AdminAuditRouteImport } from './routes/admin.audit'
-import { Route as GuardSosEventIdRouteImport } from './routes/guard.sos.$eventId'
-import { Route as GuardRequestsIdRouteImport } from './routes/guard.requests.$id'
-import { Route as GiaDinhInviteTokenRouteImport } from './routes/gia-dinh_.invite.$token'
 import { Route as ConsoleMetricsKeyRouteImport } from './routes/console.metrics.$key'
-import { Route as ApiPublicVitalsRouteImport } from './routes/api/public/vitals'
-import { Route as ApiPublicHooksOcrWorkerRouteImport } from './routes/api/public/hooks/ocr-worker'
-import { Route as ApiPublicHooksDispatchSosRouteImport } from './routes/api/public/hooks/dispatch-sos'
-import { Route as ApiPublicHooksDispatchRemindersRouteImport } from './routes/api/public/hooks/dispatch-reminders'
-import { Route as ApiPublicDownloadsGuardRouteImport } from './routes/api/public/downloads/guard'
-import { Route as ApiPublicDownloadsFamilyRouteImport } from './routes/api/public/downloads/family'
 
 const WorkspacesRoute = WorkspacesRouteImport.update({
   id: '/workspaces',
@@ -161,11 +116,6 @@ const ThucPhamRoute = ThucPhamRouteImport.update({
 const ThongBaoRoute = ThongBaoRouteImport.update({
   id: '/thong-bao',
   path: '/thong-bao',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ThanhHangNguoiHoTroRoute = ThanhHangNguoiHoTroRouteImport.update({
-  id: '/thanh-hang-nguoi-ho-tro',
-  path: '/thanh-hang-nguoi-ho-tro',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TaiKhoanRoute = TaiKhoanRouteImport.update({
@@ -213,11 +163,6 @@ const OpsRoute = OpsRouteImport.update({
   path: '/ops',
   getParentRoute: () => rootRouteImport,
 } as any)
-const NhanHangHoRoute = NhanHangHoRouteImport.update({
-  id: '/nhan-hang-ho',
-  path: '/nhan-hang-ho',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
@@ -238,29 +183,14 @@ const KyNiemGiaDinhRoute = KyNiemGiaDinhRouteImport.update({
   path: '/ky-niem-gia-dinh',
   getParentRoute: () => rootRouteImport,
 } as any)
-const KhoanhKhacRoute = KhoanhKhacRouteImport.update({
-  id: '/khoanh-khac',
-  path: '/khoanh-khac',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const HomeRoute = HomeRouteImport.update({
   id: '/home',
   path: '/home',
   getParentRoute: () => rootRouteImport,
 } as any)
-const GuiHangDiRoute = GuiHangDiRouteImport.update({
-  id: '/gui-hang-di',
-  path: '/gui-hang-di',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const GuardRoute = GuardRouteImport.update({
   id: '/guard',
   path: '/guard',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const GiaoTanCanHoRoute = GiaoTanCanHoRouteImport.update({
-  id: '/giao-tan-can-ho',
-  path: '/giao-tan-can-ho',
   getParentRoute: () => rootRouteImport,
 } as any)
 const GiaDinhRoute = GiaDinhRouteImport.update({
@@ -276,11 +206,6 @@ const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
 const FamilyRoute = FamilyRouteImport.update({
   id: '/family',
   path: '/family',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DuaDonCanHoRoute = DuaDonCanHoRouteImport.update({
-  id: '/dua-don-can-ho',
-  path: '/dua-don-can-ho',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DuLichRoute = DuLichRouteImport.update({
@@ -323,19 +248,9 @@ const ConCaiRoute = ConCaiRouteImport.update({
   path: '/con-cai',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ChuyenHangTuXaRoute = ChuyenHangTuXaRouteImport.update({
-  id: '/chuyen-hang-tu-xa',
-  path: '/chuyen-hang-tu-xa',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ChiTieuRoute = ChiTieuRouteImport.update({
   id: '/chi-tieu',
   path: '/chi-tieu',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ChamSocTaiNhaRoute = ChamSocTaiNhaRouteImport.update({
-  id: '/cham-soc-tai-nha',
-  path: '/cham-soc-tai-nha',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ChamSocOngBaRoute = ChamSocOngBaRouteImport.update({
@@ -346,26 +261,6 @@ const ChamSocOngBaRoute = ChamSocOngBaRouteImport.update({
 const BqlRoute = BqlRouteImport.update({
   id: '/bql',
   path: '/bql',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const BaoVeXuLyHoRoute = BaoVeXuLyHoRouteImport.update({
-  id: '/bao-ve-xu-ly-ho',
-  path: '/bao-ve-xu-ly-ho',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const BaoVeTheoNhuCauRiengRoute = BaoVeTheoNhuCauRiengRouteImport.update({
-  id: '/bao-ve-theo-nhu-cau-rieng',
-  path: '/bao-ve-theo-nhu-cau-rieng',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const BaoVeTheoGioRoute = BaoVeTheoGioRouteImport.update({
-  id: '/bao-ve-theo-gio',
-  path: '/bao-ve-theo-gio',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const BaoVeRoute = BaoVeRouteImport.update({
-  id: '/bao-ve',
-  path: '/bao-ve',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BaoAnRoute = BaoAnRouteImport.update({
@@ -418,20 +313,10 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   path: '/admin/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const SucKhoeTheoDoiRoute = SucKhoeTheoDoiRouteImport.update({
-  id: '/theo-doi',
-  path: '/theo-doi',
-  getParentRoute: () => SucKhoeRoute,
-} as any)
 const SucKhoeQuanLyRoute = SucKhoeQuanLyRouteImport.update({
   id: '/quan-ly',
   path: '/quan-ly',
   getParentRoute: () => SucKhoeRoute,
-} as any)
-const SosEventIdRoute = SosEventIdRouteImport.update({
-  id: '/sos/$eventId',
-  path: '/sos/$eventId',
-  getParentRoute: () => rootRouteImport,
 } as any)
 const SaasUsersRoute = SaasUsersRouteImport.update({
   id: '/users',
@@ -441,11 +326,6 @@ const SaasUsersRoute = SaasUsersRouteImport.update({
 const SaasTenantsRoute = SaasTenantsRouteImport.update({
   id: '/tenants',
   path: '/tenants',
-  getParentRoute: () => SaasRoute,
-} as any)
-const SaasSecurityOpsRoute = SaasSecurityOpsRouteImport.update({
-  id: '/security-ops',
-  path: '/security-ops',
   getParentRoute: () => SaasRoute,
 } as any)
 const SaasProjectsRoute = SaasProjectsRouteImport.update({
@@ -458,11 +338,6 @@ const SaasPlansRoute = SaasPlansRouteImport.update({
   path: '/plans',
   getParentRoute: () => SaasRoute,
 } as any)
-const SaasObservabilityRoute = SaasObservabilityRouteImport.update({
-  id: '/observability',
-  path: '/observability',
-  getParentRoute: () => SaasRoute,
-} as any)
 const SaasLeadsRoute = SaasLeadsRouteImport.update({
   id: '/leads',
   path: '/leads',
@@ -473,19 +348,9 @@ const SaasIncidentsRoute = SaasIncidentsRouteImport.update({
   path: '/incidents',
   getParentRoute: () => SaasRoute,
 } as any)
-const SaasGuardsRoute = SaasGuardsRouteImport.update({
-  id: '/guards',
-  path: '/guards',
-  getParentRoute: () => SaasRoute,
-} as any)
 const SaasFeatureFlagsRoute = SaasFeatureFlagsRouteImport.update({
   id: '/feature-flags',
   path: '/feature-flags',
-  getParentRoute: () => SaasRoute,
-} as any)
-const SaasFamiliesRoute = SaasFamiliesRouteImport.update({
-  id: '/families',
-  path: '/families',
   getParentRoute: () => SaasRoute,
 } as any)
 const SaasCaiDatRoute = SaasCaiDatRouteImport.update({
@@ -528,14 +393,14 @@ const OpsComplaintsRoute = OpsComplaintsRouteImport.update({
   path: '/complaints',
   getParentRoute: () => OpsRoute,
 } as any)
-const GuardScheduleRoute = GuardScheduleRouteImport.update({
-  id: '/schedule',
-  path: '/schedule',
+const GuardTasksRoute = GuardTasksRouteImport.update({
+  id: '/tasks',
+  path: '/tasks',
   getParentRoute: () => GuardRoute,
 } as any)
-const GuardRequestsRoute = GuardRequestsRouteImport.update({
-  id: '/requests',
-  path: '/requests',
+const GuardScanRoute = GuardScanRouteImport.update({
+  id: '/scan',
+  path: '/scan',
   getParentRoute: () => GuardRoute,
 } as any)
 const GuardPatrolRoute = GuardPatrolRouteImport.update({
@@ -543,99 +408,14 @@ const GuardPatrolRoute = GuardPatrolRouteImport.update({
   path: '/patrol',
   getParentRoute: () => GuardRoute,
 } as any)
-const GuardNotificationsRoute = GuardNotificationsRouteImport.update({
-  id: '/notifications',
-  path: '/notifications',
+const GuardMeRoute = GuardMeRouteImport.update({
+  id: '/me',
+  path: '/me',
   getParentRoute: () => GuardRoute,
-} as any)
-const GuardIncidentRoute = GuardIncidentRouteImport.update({
-  id: '/incident',
-  path: '/incident',
-  getParentRoute: () => GuardRoute,
-} as any)
-const GuardCheckOutRoute = GuardCheckOutRouteImport.update({
-  id: '/check-out',
-  path: '/check-out',
-  getParentRoute: () => GuardRoute,
-} as any)
-const GuardCheckInRoute = GuardCheckInRouteImport.update({
-  id: '/check-in',
-  path: '/check-in',
-  getParentRoute: () => GuardRoute,
-} as any)
-const GuardAccountRoute = GuardAccountRouteImport.update({
-  id: '/account',
-  path: '/account',
-  getParentRoute: () => GuardRoute,
-} as any)
-const GiaDinhThanhVienRoute = GiaDinhThanhVienRouteImport.update({
-  id: '/gia-dinh_/thanh-vien',
-  path: '/gia-dinh/thanh-vien',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const GiaDinhOnboardingRoute = GiaDinhOnboardingRouteImport.update({
-  id: '/gia-dinh_/onboarding',
-  path: '/gia-dinh/onboarding',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const GiaDinhNhapMaRoute = GiaDinhNhapMaRouteImport.update({
-  id: '/gia-dinh_/nhap-ma',
-  path: '/gia-dinh/nhap-ma',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const GiaDinhNhacChaMeRoute = GiaDinhNhacChaMeRouteImport.update({
-  id: '/gia-dinh_/nhac-cha-me',
-  path: '/gia-dinh/nhac-cha-me',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const GiaDinhInvitesRoute = GiaDinhInvitesRouteImport.update({
-  id: '/gia-dinh_/invites',
-  path: '/gia-dinh/invites',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ChiTieuThongBaoRoute = ChiTieuThongBaoRouteImport.update({
-  id: '/chi-tieu_/thong-bao',
-  path: '/chi-tieu/thong-bao',
-  getParentRoute: () => rootRouteImport,
 } as any)
 const ChiTieuScanRoute = ChiTieuScanRouteImport.update({
   id: '/chi-tieu_/scan',
   path: '/chi-tieu/scan',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ChiTieuQuyetToanRoute = ChiTieuQuyetToanRouteImport.update({
-  id: '/chi-tieu_/quyet-toan',
-  path: '/chi-tieu/quyet-toan',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ChiTieuPremiumRoute = ChiTieuPremiumRouteImport.update({
-  id: '/chi-tieu_/premium',
-  path: '/chi-tieu/premium',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ChiTieuNganSachRoute = ChiTieuNganSachRouteImport.update({
-  id: '/chi-tieu_/ngan-sach',
-  path: '/chi-tieu/ngan-sach',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ChiTieuInsightsRoute = ChiTieuInsightsRouteImport.update({
-  id: '/chi-tieu_/insights',
-  path: '/chi-tieu/insights',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ChiTieuDinhKyRoute = ChiTieuDinhKyRouteImport.update({
-  id: '/chi-tieu_/dinh-ky',
-  path: '/chi-tieu/dinh-ky',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ChiTieuChiaSeRoute = ChiTieuChiaSeRouteImport.update({
-  id: '/chi-tieu_/chia-se',
-  path: '/chi-tieu/chia-se',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ChiTieuBaoCaoRoute = ChiTieuBaoCaoRouteImport.update({
-  id: '/chi-tieu_/bao-cao',
-  path: '/chi-tieu/bao-cao',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ChamSocOngBaNhatKyRoute = ChamSocOngBaNhatKyRouteImport.update({
@@ -753,11 +533,6 @@ const AdminRolesRoute = AdminRolesRouteImport.update({
   path: '/admin/roles',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AdminProjectsRoute = AdminProjectsRouteImport.update({
-  id: '/admin/projects',
-  path: '/admin/projects',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AdminMemoriesRoute = AdminMemoriesRouteImport.update({
   id: '/admin/memories',
   path: '/admin/memories',
@@ -788,72 +563,18 @@ const AdminAuditRoute = AdminAuditRouteImport.update({
   path: '/admin/audit',
   getParentRoute: () => rootRouteImport,
 } as any)
-const GuardSosEventIdRoute = GuardSosEventIdRouteImport.update({
-  id: '/sos/$eventId',
-  path: '/sos/$eventId',
-  getParentRoute: () => GuardRoute,
-} as any)
-const GuardRequestsIdRoute = GuardRequestsIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
-  getParentRoute: () => GuardRequestsRoute,
-} as any)
-const GiaDinhInviteTokenRoute = GiaDinhInviteTokenRouteImport.update({
-  id: '/gia-dinh_/invite/$token',
-  path: '/gia-dinh/invite/$token',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ConsoleMetricsKeyRoute = ConsoleMetricsKeyRouteImport.update({
   id: '/metrics/$key',
   path: '/metrics/$key',
   getParentRoute: () => ConsoleRoute,
 } as any)
-const ApiPublicVitalsRoute = ApiPublicVitalsRouteImport.update({
-  id: '/api/public/vitals',
-  path: '/api/public/vitals',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPublicHooksOcrWorkerRoute = ApiPublicHooksOcrWorkerRouteImport.update({
-  id: '/api/public/hooks/ocr-worker',
-  path: '/api/public/hooks/ocr-worker',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPublicHooksDispatchSosRoute =
-  ApiPublicHooksDispatchSosRouteImport.update({
-    id: '/api/public/hooks/dispatch-sos',
-    path: '/api/public/hooks/dispatch-sos',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicHooksDispatchRemindersRoute =
-  ApiPublicHooksDispatchRemindersRouteImport.update({
-    id: '/api/public/hooks/dispatch-reminders',
-    path: '/api/public/hooks/dispatch-reminders',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicDownloadsGuardRoute = ApiPublicDownloadsGuardRouteImport.update({
-  id: '/api/public/downloads/guard',
-  path: '/api/public/downloads/guard',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPublicDownloadsFamilyRoute =
-  ApiPublicDownloadsFamilyRouteImport.update({
-    id: '/api/public/downloads/family',
-    path: '/api/public/downloads/family',
-    getParentRoute: () => rootRouteImport,
-  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/bao-an': typeof BaoAnRoute
-  '/bao-ve': typeof BaoVeRoute
-  '/bao-ve-theo-gio': typeof BaoVeTheoGioRoute
-  '/bao-ve-theo-nhu-cau-rieng': typeof BaoVeTheoNhuCauRiengRoute
-  '/bao-ve-xu-ly-ho': typeof BaoVeXuLyHoRoute
   '/bql': typeof BqlRouteWithChildren
   '/cham-soc-ong-ba': typeof ChamSocOngBaRouteWithChildren
-  '/cham-soc-tai-nha': typeof ChamSocTaiNhaRoute
   '/chi-tieu': typeof ChiTieuRoute
-  '/chuyen-hang-tu-xa': typeof ChuyenHangTuXaRoute
   '/con-cai': typeof ConCaiRoute
   '/cong-dong': typeof CongDongRoute
   '/console': typeof ConsoleRouteWithChildren
@@ -862,20 +583,15 @@ export interface FileRoutesByFullPath {
   '/demo-login': typeof DemoLoginRoute
   '/dich-vu': typeof DichVuRoute
   '/du-lich': typeof DuLichRoute
-  '/dua-don-can-ho': typeof DuaDonCanHoRoute
   '/family': typeof FamilyRouteWithChildren
   '/forgot-password': typeof ForgotPasswordRoute
   '/gia-dinh': typeof GiaDinhRoute
-  '/giao-tan-can-ho': typeof GiaoTanCanHoRoute
   '/guard': typeof GuardRouteWithChildren
-  '/gui-hang-di': typeof GuiHangDiRoute
   '/home': typeof HomeRoute
-  '/khoanh-khac': typeof KhoanhKhacRoute
   '/ky-niem-gia-dinh': typeof KyNiemGiaDinhRoute
   '/lich-gia-dinh': typeof LichGiaDinhRoute
   '/lien-he': typeof LienHeRoute
   '/login': typeof LoginRoute
-  '/nhan-hang-ho': typeof NhanHangHoRoute
   '/ops': typeof OpsRouteWithChildren
   '/portal': typeof PortalRoute
   '/qr-vao-ra': typeof QrVaoRaRoute
@@ -885,7 +601,6 @@ export interface FileRoutesByFullPath {
   '/security': typeof SecurityRouteWithChildren
   '/suc-khoe': typeof SucKhoeRouteWithChildren
   '/tai-khoan': typeof TaiKhoanRoute
-  '/thanh-hang-nguoi-ho-tro': typeof ThanhHangNguoiHoTroRoute
   '/thong-bao': typeof ThongBaoRoute
   '/thuc-pham': typeof ThucPhamRoute
   '/workspaces': typeof WorkspacesRoute
@@ -895,7 +610,6 @@ export interface FileRoutesByFullPath {
   '/admin/family': typeof AdminFamilyRoute
   '/admin/helpers': typeof AdminHelpersRoute
   '/admin/memories': typeof AdminMemoriesRoute
-  '/admin/projects': typeof AdminProjectsRoute
   '/admin/roles': typeof AdminRolesRoute
   '/admin/security': typeof AdminSecurityRoute
   '/admin/super': typeof AdminSuperRoute
@@ -919,28 +633,11 @@ export interface FileRoutesByFullPath {
   '/bql/yeu-cau': typeof BqlYeuCauRoute
   '/cai-dat/thong-bao': typeof CaiDatThongBaoRoute
   '/cham-soc-ong-ba/nhat-ky': typeof ChamSocOngBaNhatKyRoute
-  '/chi-tieu/bao-cao': typeof ChiTieuBaoCaoRoute
-  '/chi-tieu/chia-se': typeof ChiTieuChiaSeRoute
-  '/chi-tieu/dinh-ky': typeof ChiTieuDinhKyRoute
-  '/chi-tieu/insights': typeof ChiTieuInsightsRoute
-  '/chi-tieu/ngan-sach': typeof ChiTieuNganSachRoute
-  '/chi-tieu/premium': typeof ChiTieuPremiumRoute
-  '/chi-tieu/quyet-toan': typeof ChiTieuQuyetToanRoute
   '/chi-tieu/scan': typeof ChiTieuScanRoute
-  '/chi-tieu/thong-bao': typeof ChiTieuThongBaoRoute
-  '/gia-dinh/invites': typeof GiaDinhInvitesRoute
-  '/gia-dinh/nhac-cha-me': typeof GiaDinhNhacChaMeRoute
-  '/gia-dinh/nhap-ma': typeof GiaDinhNhapMaRoute
-  '/gia-dinh/onboarding': typeof GiaDinhOnboardingRoute
-  '/gia-dinh/thanh-vien': typeof GiaDinhThanhVienRoute
-  '/guard/account': typeof GuardAccountRoute
-  '/guard/check-in': typeof GuardCheckInRoute
-  '/guard/check-out': typeof GuardCheckOutRoute
-  '/guard/incident': typeof GuardIncidentRoute
-  '/guard/notifications': typeof GuardNotificationsRoute
+  '/guard/me': typeof GuardMeRoute
   '/guard/patrol': typeof GuardPatrolRoute
-  '/guard/requests': typeof GuardRequestsRouteWithChildren
-  '/guard/schedule': typeof GuardScheduleRoute
+  '/guard/scan': typeof GuardScanRoute
+  '/guard/tasks': typeof GuardTasksRoute
   '/ops/complaints': typeof OpsComplaintsRoute
   '/ops/fee': typeof OpsFeeRoute
   '/ops/occupancy': typeof OpsOccupancyRoute
@@ -949,20 +646,14 @@ export interface FileRoutesByFullPath {
   '/saas/audit': typeof SaasAuditRoute
   '/saas/billing': typeof SaasBillingRoute
   '/saas/cai-dat': typeof SaasCaiDatRoute
-  '/saas/families': typeof SaasFamiliesRoute
   '/saas/feature-flags': typeof SaasFeatureFlagsRoute
-  '/saas/guards': typeof SaasGuardsRoute
   '/saas/incidents': typeof SaasIncidentsRoute
   '/saas/leads': typeof SaasLeadsRoute
-  '/saas/observability': typeof SaasObservabilityRoute
   '/saas/plans': typeof SaasPlansRoute
   '/saas/projects': typeof SaasProjectsRoute
-  '/saas/security-ops': typeof SaasSecurityOpsRoute
   '/saas/tenants': typeof SaasTenantsRoute
   '/saas/users': typeof SaasUsersRoute
-  '/sos/$eventId': typeof SosEventIdRoute
   '/suc-khoe/quan-ly': typeof SucKhoeQuanLyRoute
-  '/suc-khoe/theo-doi': typeof SucKhoeTheoDoiRoute
   '/admin/': typeof AdminIndexRoute
   '/bql/': typeof BqlIndexRoute
   '/console/': typeof ConsoleIndexRoute
@@ -971,28 +662,13 @@ export interface FileRoutesByFullPath {
   '/ops/': typeof OpsIndexRoute
   '/saas/': typeof SaasIndexRoute
   '/security/': typeof SecurityIndexRoute
-  '/api/public/vitals': typeof ApiPublicVitalsRoute
   '/console/metrics/$key': typeof ConsoleMetricsKeyRoute
-  '/gia-dinh/invite/$token': typeof GiaDinhInviteTokenRoute
-  '/guard/requests/$id': typeof GuardRequestsIdRoute
-  '/guard/sos/$eventId': typeof GuardSosEventIdRoute
-  '/api/public/downloads/family': typeof ApiPublicDownloadsFamilyRoute
-  '/api/public/downloads/guard': typeof ApiPublicDownloadsGuardRoute
-  '/api/public/hooks/dispatch-reminders': typeof ApiPublicHooksDispatchRemindersRoute
-  '/api/public/hooks/dispatch-sos': typeof ApiPublicHooksDispatchSosRoute
-  '/api/public/hooks/ocr-worker': typeof ApiPublicHooksOcrWorkerRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/bao-an': typeof BaoAnRoute
-  '/bao-ve': typeof BaoVeRoute
-  '/bao-ve-theo-gio': typeof BaoVeTheoGioRoute
-  '/bao-ve-theo-nhu-cau-rieng': typeof BaoVeTheoNhuCauRiengRoute
-  '/bao-ve-xu-ly-ho': typeof BaoVeXuLyHoRoute
   '/cham-soc-ong-ba': typeof ChamSocOngBaRouteWithChildren
-  '/cham-soc-tai-nha': typeof ChamSocTaiNhaRoute
   '/chi-tieu': typeof ChiTieuRoute
-  '/chuyen-hang-tu-xa': typeof ChuyenHangTuXaRoute
   '/con-cai': typeof ConCaiRoute
   '/cong-dong': typeof CongDongRoute
   '/dashboard': typeof DashboardRoute
@@ -1000,25 +676,19 @@ export interface FileRoutesByTo {
   '/demo-login': typeof DemoLoginRoute
   '/dich-vu': typeof DichVuRoute
   '/du-lich': typeof DuLichRoute
-  '/dua-don-can-ho': typeof DuaDonCanHoRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/gia-dinh': typeof GiaDinhRoute
-  '/giao-tan-can-ho': typeof GiaoTanCanHoRoute
-  '/gui-hang-di': typeof GuiHangDiRoute
   '/home': typeof HomeRoute
-  '/khoanh-khac': typeof KhoanhKhacRoute
   '/ky-niem-gia-dinh': typeof KyNiemGiaDinhRoute
   '/lich-gia-dinh': typeof LichGiaDinhRoute
   '/lien-he': typeof LienHeRoute
   '/login': typeof LoginRoute
-  '/nhan-hang-ho': typeof NhanHangHoRoute
   '/portal': typeof PortalRoute
   '/qr-vao-ra': typeof QrVaoRaRoute
   '/quan-ly-giup-viec': typeof QuanLyGiupViecRoute
   '/reset-password': typeof ResetPasswordRoute
   '/suc-khoe': typeof SucKhoeRouteWithChildren
   '/tai-khoan': typeof TaiKhoanRoute
-  '/thanh-hang-nguoi-ho-tro': typeof ThanhHangNguoiHoTroRoute
   '/thong-bao': typeof ThongBaoRoute
   '/thuc-pham': typeof ThucPhamRoute
   '/workspaces': typeof WorkspacesRoute
@@ -1028,7 +698,6 @@ export interface FileRoutesByTo {
   '/admin/family': typeof AdminFamilyRoute
   '/admin/helpers': typeof AdminHelpersRoute
   '/admin/memories': typeof AdminMemoriesRoute
-  '/admin/projects': typeof AdminProjectsRoute
   '/admin/roles': typeof AdminRolesRoute
   '/admin/security': typeof AdminSecurityRoute
   '/admin/super': typeof AdminSuperRoute
@@ -1052,28 +721,11 @@ export interface FileRoutesByTo {
   '/bql/yeu-cau': typeof BqlYeuCauRoute
   '/cai-dat/thong-bao': typeof CaiDatThongBaoRoute
   '/cham-soc-ong-ba/nhat-ky': typeof ChamSocOngBaNhatKyRoute
-  '/chi-tieu/bao-cao': typeof ChiTieuBaoCaoRoute
-  '/chi-tieu/chia-se': typeof ChiTieuChiaSeRoute
-  '/chi-tieu/dinh-ky': typeof ChiTieuDinhKyRoute
-  '/chi-tieu/insights': typeof ChiTieuInsightsRoute
-  '/chi-tieu/ngan-sach': typeof ChiTieuNganSachRoute
-  '/chi-tieu/premium': typeof ChiTieuPremiumRoute
-  '/chi-tieu/quyet-toan': typeof ChiTieuQuyetToanRoute
   '/chi-tieu/scan': typeof ChiTieuScanRoute
-  '/chi-tieu/thong-bao': typeof ChiTieuThongBaoRoute
-  '/gia-dinh/invites': typeof GiaDinhInvitesRoute
-  '/gia-dinh/nhac-cha-me': typeof GiaDinhNhacChaMeRoute
-  '/gia-dinh/nhap-ma': typeof GiaDinhNhapMaRoute
-  '/gia-dinh/onboarding': typeof GiaDinhOnboardingRoute
-  '/gia-dinh/thanh-vien': typeof GiaDinhThanhVienRoute
-  '/guard/account': typeof GuardAccountRoute
-  '/guard/check-in': typeof GuardCheckInRoute
-  '/guard/check-out': typeof GuardCheckOutRoute
-  '/guard/incident': typeof GuardIncidentRoute
-  '/guard/notifications': typeof GuardNotificationsRoute
+  '/guard/me': typeof GuardMeRoute
   '/guard/patrol': typeof GuardPatrolRoute
-  '/guard/requests': typeof GuardRequestsRouteWithChildren
-  '/guard/schedule': typeof GuardScheduleRoute
+  '/guard/scan': typeof GuardScanRoute
+  '/guard/tasks': typeof GuardTasksRoute
   '/ops/complaints': typeof OpsComplaintsRoute
   '/ops/fee': typeof OpsFeeRoute
   '/ops/occupancy': typeof OpsOccupancyRoute
@@ -1082,20 +734,14 @@ export interface FileRoutesByTo {
   '/saas/audit': typeof SaasAuditRoute
   '/saas/billing': typeof SaasBillingRoute
   '/saas/cai-dat': typeof SaasCaiDatRoute
-  '/saas/families': typeof SaasFamiliesRoute
   '/saas/feature-flags': typeof SaasFeatureFlagsRoute
-  '/saas/guards': typeof SaasGuardsRoute
   '/saas/incidents': typeof SaasIncidentsRoute
   '/saas/leads': typeof SaasLeadsRoute
-  '/saas/observability': typeof SaasObservabilityRoute
   '/saas/plans': typeof SaasPlansRoute
   '/saas/projects': typeof SaasProjectsRoute
-  '/saas/security-ops': typeof SaasSecurityOpsRoute
   '/saas/tenants': typeof SaasTenantsRoute
   '/saas/users': typeof SaasUsersRoute
-  '/sos/$eventId': typeof SosEventIdRoute
   '/suc-khoe/quan-ly': typeof SucKhoeQuanLyRoute
-  '/suc-khoe/theo-doi': typeof SucKhoeTheoDoiRoute
   '/admin': typeof AdminIndexRoute
   '/bql': typeof BqlIndexRoute
   '/console': typeof ConsoleIndexRoute
@@ -1104,30 +750,15 @@ export interface FileRoutesByTo {
   '/ops': typeof OpsIndexRoute
   '/saas': typeof SaasIndexRoute
   '/security': typeof SecurityIndexRoute
-  '/api/public/vitals': typeof ApiPublicVitalsRoute
   '/console/metrics/$key': typeof ConsoleMetricsKeyRoute
-  '/gia-dinh/invite/$token': typeof GiaDinhInviteTokenRoute
-  '/guard/requests/$id': typeof GuardRequestsIdRoute
-  '/guard/sos/$eventId': typeof GuardSosEventIdRoute
-  '/api/public/downloads/family': typeof ApiPublicDownloadsFamilyRoute
-  '/api/public/downloads/guard': typeof ApiPublicDownloadsGuardRoute
-  '/api/public/hooks/dispatch-reminders': typeof ApiPublicHooksDispatchRemindersRoute
-  '/api/public/hooks/dispatch-sos': typeof ApiPublicHooksDispatchSosRoute
-  '/api/public/hooks/ocr-worker': typeof ApiPublicHooksOcrWorkerRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/bao-an': typeof BaoAnRoute
-  '/bao-ve': typeof BaoVeRoute
-  '/bao-ve-theo-gio': typeof BaoVeTheoGioRoute
-  '/bao-ve-theo-nhu-cau-rieng': typeof BaoVeTheoNhuCauRiengRoute
-  '/bao-ve-xu-ly-ho': typeof BaoVeXuLyHoRoute
   '/bql': typeof BqlRouteWithChildren
   '/cham-soc-ong-ba': typeof ChamSocOngBaRouteWithChildren
-  '/cham-soc-tai-nha': typeof ChamSocTaiNhaRoute
   '/chi-tieu': typeof ChiTieuRoute
-  '/chuyen-hang-tu-xa': typeof ChuyenHangTuXaRoute
   '/con-cai': typeof ConCaiRoute
   '/cong-dong': typeof CongDongRoute
   '/console': typeof ConsoleRouteWithChildren
@@ -1136,20 +767,15 @@ export interface FileRoutesById {
   '/demo-login': typeof DemoLoginRoute
   '/dich-vu': typeof DichVuRoute
   '/du-lich': typeof DuLichRoute
-  '/dua-don-can-ho': typeof DuaDonCanHoRoute
   '/family': typeof FamilyRouteWithChildren
   '/forgot-password': typeof ForgotPasswordRoute
   '/gia-dinh': typeof GiaDinhRoute
-  '/giao-tan-can-ho': typeof GiaoTanCanHoRoute
   '/guard': typeof GuardRouteWithChildren
-  '/gui-hang-di': typeof GuiHangDiRoute
   '/home': typeof HomeRoute
-  '/khoanh-khac': typeof KhoanhKhacRoute
   '/ky-niem-gia-dinh': typeof KyNiemGiaDinhRoute
   '/lich-gia-dinh': typeof LichGiaDinhRoute
   '/lien-he': typeof LienHeRoute
   '/login': typeof LoginRoute
-  '/nhan-hang-ho': typeof NhanHangHoRoute
   '/ops': typeof OpsRouteWithChildren
   '/portal': typeof PortalRoute
   '/qr-vao-ra': typeof QrVaoRaRoute
@@ -1159,7 +785,6 @@ export interface FileRoutesById {
   '/security': typeof SecurityRouteWithChildren
   '/suc-khoe': typeof SucKhoeRouteWithChildren
   '/tai-khoan': typeof TaiKhoanRoute
-  '/thanh-hang-nguoi-ho-tro': typeof ThanhHangNguoiHoTroRoute
   '/thong-bao': typeof ThongBaoRoute
   '/thuc-pham': typeof ThucPhamRoute
   '/workspaces': typeof WorkspacesRoute
@@ -1169,7 +794,6 @@ export interface FileRoutesById {
   '/admin/family': typeof AdminFamilyRoute
   '/admin/helpers': typeof AdminHelpersRoute
   '/admin/memories': typeof AdminMemoriesRoute
-  '/admin/projects': typeof AdminProjectsRoute
   '/admin/roles': typeof AdminRolesRoute
   '/admin/security': typeof AdminSecurityRoute
   '/admin/super': typeof AdminSuperRoute
@@ -1193,28 +817,11 @@ export interface FileRoutesById {
   '/bql/yeu-cau': typeof BqlYeuCauRoute
   '/cai-dat/thong-bao': typeof CaiDatThongBaoRoute
   '/cham-soc-ong-ba/nhat-ky': typeof ChamSocOngBaNhatKyRoute
-  '/chi-tieu_/bao-cao': typeof ChiTieuBaoCaoRoute
-  '/chi-tieu_/chia-se': typeof ChiTieuChiaSeRoute
-  '/chi-tieu_/dinh-ky': typeof ChiTieuDinhKyRoute
-  '/chi-tieu_/insights': typeof ChiTieuInsightsRoute
-  '/chi-tieu_/ngan-sach': typeof ChiTieuNganSachRoute
-  '/chi-tieu_/premium': typeof ChiTieuPremiumRoute
-  '/chi-tieu_/quyet-toan': typeof ChiTieuQuyetToanRoute
   '/chi-tieu_/scan': typeof ChiTieuScanRoute
-  '/chi-tieu_/thong-bao': typeof ChiTieuThongBaoRoute
-  '/gia-dinh_/invites': typeof GiaDinhInvitesRoute
-  '/gia-dinh_/nhac-cha-me': typeof GiaDinhNhacChaMeRoute
-  '/gia-dinh_/nhap-ma': typeof GiaDinhNhapMaRoute
-  '/gia-dinh_/onboarding': typeof GiaDinhOnboardingRoute
-  '/gia-dinh_/thanh-vien': typeof GiaDinhThanhVienRoute
-  '/guard/account': typeof GuardAccountRoute
-  '/guard/check-in': typeof GuardCheckInRoute
-  '/guard/check-out': typeof GuardCheckOutRoute
-  '/guard/incident': typeof GuardIncidentRoute
-  '/guard/notifications': typeof GuardNotificationsRoute
+  '/guard/me': typeof GuardMeRoute
   '/guard/patrol': typeof GuardPatrolRoute
-  '/guard/requests': typeof GuardRequestsRouteWithChildren
-  '/guard/schedule': typeof GuardScheduleRoute
+  '/guard/scan': typeof GuardScanRoute
+  '/guard/tasks': typeof GuardTasksRoute
   '/ops/complaints': typeof OpsComplaintsRoute
   '/ops/fee': typeof OpsFeeRoute
   '/ops/occupancy': typeof OpsOccupancyRoute
@@ -1223,20 +830,14 @@ export interface FileRoutesById {
   '/saas/audit': typeof SaasAuditRoute
   '/saas/billing': typeof SaasBillingRoute
   '/saas/cai-dat': typeof SaasCaiDatRoute
-  '/saas/families': typeof SaasFamiliesRoute
   '/saas/feature-flags': typeof SaasFeatureFlagsRoute
-  '/saas/guards': typeof SaasGuardsRoute
   '/saas/incidents': typeof SaasIncidentsRoute
   '/saas/leads': typeof SaasLeadsRoute
-  '/saas/observability': typeof SaasObservabilityRoute
   '/saas/plans': typeof SaasPlansRoute
   '/saas/projects': typeof SaasProjectsRoute
-  '/saas/security-ops': typeof SaasSecurityOpsRoute
   '/saas/tenants': typeof SaasTenantsRoute
   '/saas/users': typeof SaasUsersRoute
-  '/sos/$eventId': typeof SosEventIdRoute
   '/suc-khoe/quan-ly': typeof SucKhoeQuanLyRoute
-  '/suc-khoe/theo-doi': typeof SucKhoeTheoDoiRoute
   '/admin/': typeof AdminIndexRoute
   '/bql/': typeof BqlIndexRoute
   '/console/': typeof ConsoleIndexRoute
@@ -1245,31 +846,16 @@ export interface FileRoutesById {
   '/ops/': typeof OpsIndexRoute
   '/saas/': typeof SaasIndexRoute
   '/security/': typeof SecurityIndexRoute
-  '/api/public/vitals': typeof ApiPublicVitalsRoute
   '/console/metrics/$key': typeof ConsoleMetricsKeyRoute
-  '/gia-dinh_/invite/$token': typeof GiaDinhInviteTokenRoute
-  '/guard/requests/$id': typeof GuardRequestsIdRoute
-  '/guard/sos/$eventId': typeof GuardSosEventIdRoute
-  '/api/public/downloads/family': typeof ApiPublicDownloadsFamilyRoute
-  '/api/public/downloads/guard': typeof ApiPublicDownloadsGuardRoute
-  '/api/public/hooks/dispatch-reminders': typeof ApiPublicHooksDispatchRemindersRoute
-  '/api/public/hooks/dispatch-sos': typeof ApiPublicHooksDispatchSosRoute
-  '/api/public/hooks/ocr-worker': typeof ApiPublicHooksOcrWorkerRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/bao-an'
-    | '/bao-ve'
-    | '/bao-ve-theo-gio'
-    | '/bao-ve-theo-nhu-cau-rieng'
-    | '/bao-ve-xu-ly-ho'
     | '/bql'
     | '/cham-soc-ong-ba'
-    | '/cham-soc-tai-nha'
     | '/chi-tieu'
-    | '/chuyen-hang-tu-xa'
     | '/con-cai'
     | '/cong-dong'
     | '/console'
@@ -1278,20 +864,15 @@ export interface FileRouteTypes {
     | '/demo-login'
     | '/dich-vu'
     | '/du-lich'
-    | '/dua-don-can-ho'
     | '/family'
     | '/forgot-password'
     | '/gia-dinh'
-    | '/giao-tan-can-ho'
     | '/guard'
-    | '/gui-hang-di'
     | '/home'
-    | '/khoanh-khac'
     | '/ky-niem-gia-dinh'
     | '/lich-gia-dinh'
     | '/lien-he'
     | '/login'
-    | '/nhan-hang-ho'
     | '/ops'
     | '/portal'
     | '/qr-vao-ra'
@@ -1301,7 +882,6 @@ export interface FileRouteTypes {
     | '/security'
     | '/suc-khoe'
     | '/tai-khoan'
-    | '/thanh-hang-nguoi-ho-tro'
     | '/thong-bao'
     | '/thuc-pham'
     | '/workspaces'
@@ -1311,7 +891,6 @@ export interface FileRouteTypes {
     | '/admin/family'
     | '/admin/helpers'
     | '/admin/memories'
-    | '/admin/projects'
     | '/admin/roles'
     | '/admin/security'
     | '/admin/super'
@@ -1335,28 +914,11 @@ export interface FileRouteTypes {
     | '/bql/yeu-cau'
     | '/cai-dat/thong-bao'
     | '/cham-soc-ong-ba/nhat-ky'
-    | '/chi-tieu/bao-cao'
-    | '/chi-tieu/chia-se'
-    | '/chi-tieu/dinh-ky'
-    | '/chi-tieu/insights'
-    | '/chi-tieu/ngan-sach'
-    | '/chi-tieu/premium'
-    | '/chi-tieu/quyet-toan'
     | '/chi-tieu/scan'
-    | '/chi-tieu/thong-bao'
-    | '/gia-dinh/invites'
-    | '/gia-dinh/nhac-cha-me'
-    | '/gia-dinh/nhap-ma'
-    | '/gia-dinh/onboarding'
-    | '/gia-dinh/thanh-vien'
-    | '/guard/account'
-    | '/guard/check-in'
-    | '/guard/check-out'
-    | '/guard/incident'
-    | '/guard/notifications'
+    | '/guard/me'
     | '/guard/patrol'
-    | '/guard/requests'
-    | '/guard/schedule'
+    | '/guard/scan'
+    | '/guard/tasks'
     | '/ops/complaints'
     | '/ops/fee'
     | '/ops/occupancy'
@@ -1365,20 +927,14 @@ export interface FileRouteTypes {
     | '/saas/audit'
     | '/saas/billing'
     | '/saas/cai-dat'
-    | '/saas/families'
     | '/saas/feature-flags'
-    | '/saas/guards'
     | '/saas/incidents'
     | '/saas/leads'
-    | '/saas/observability'
     | '/saas/plans'
     | '/saas/projects'
-    | '/saas/security-ops'
     | '/saas/tenants'
     | '/saas/users'
-    | '/sos/$eventId'
     | '/suc-khoe/quan-ly'
-    | '/suc-khoe/theo-doi'
     | '/admin/'
     | '/bql/'
     | '/console/'
@@ -1387,28 +943,13 @@ export interface FileRouteTypes {
     | '/ops/'
     | '/saas/'
     | '/security/'
-    | '/api/public/vitals'
     | '/console/metrics/$key'
-    | '/gia-dinh/invite/$token'
-    | '/guard/requests/$id'
-    | '/guard/sos/$eventId'
-    | '/api/public/downloads/family'
-    | '/api/public/downloads/guard'
-    | '/api/public/hooks/dispatch-reminders'
-    | '/api/public/hooks/dispatch-sos'
-    | '/api/public/hooks/ocr-worker'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/bao-an'
-    | '/bao-ve'
-    | '/bao-ve-theo-gio'
-    | '/bao-ve-theo-nhu-cau-rieng'
-    | '/bao-ve-xu-ly-ho'
     | '/cham-soc-ong-ba'
-    | '/cham-soc-tai-nha'
     | '/chi-tieu'
-    | '/chuyen-hang-tu-xa'
     | '/con-cai'
     | '/cong-dong'
     | '/dashboard'
@@ -1416,25 +957,19 @@ export interface FileRouteTypes {
     | '/demo-login'
     | '/dich-vu'
     | '/du-lich'
-    | '/dua-don-can-ho'
     | '/forgot-password'
     | '/gia-dinh'
-    | '/giao-tan-can-ho'
-    | '/gui-hang-di'
     | '/home'
-    | '/khoanh-khac'
     | '/ky-niem-gia-dinh'
     | '/lich-gia-dinh'
     | '/lien-he'
     | '/login'
-    | '/nhan-hang-ho'
     | '/portal'
     | '/qr-vao-ra'
     | '/quan-ly-giup-viec'
     | '/reset-password'
     | '/suc-khoe'
     | '/tai-khoan'
-    | '/thanh-hang-nguoi-ho-tro'
     | '/thong-bao'
     | '/thuc-pham'
     | '/workspaces'
@@ -1444,7 +979,6 @@ export interface FileRouteTypes {
     | '/admin/family'
     | '/admin/helpers'
     | '/admin/memories'
-    | '/admin/projects'
     | '/admin/roles'
     | '/admin/security'
     | '/admin/super'
@@ -1468,28 +1002,11 @@ export interface FileRouteTypes {
     | '/bql/yeu-cau'
     | '/cai-dat/thong-bao'
     | '/cham-soc-ong-ba/nhat-ky'
-    | '/chi-tieu/bao-cao'
-    | '/chi-tieu/chia-se'
-    | '/chi-tieu/dinh-ky'
-    | '/chi-tieu/insights'
-    | '/chi-tieu/ngan-sach'
-    | '/chi-tieu/premium'
-    | '/chi-tieu/quyet-toan'
     | '/chi-tieu/scan'
-    | '/chi-tieu/thong-bao'
-    | '/gia-dinh/invites'
-    | '/gia-dinh/nhac-cha-me'
-    | '/gia-dinh/nhap-ma'
-    | '/gia-dinh/onboarding'
-    | '/gia-dinh/thanh-vien'
-    | '/guard/account'
-    | '/guard/check-in'
-    | '/guard/check-out'
-    | '/guard/incident'
-    | '/guard/notifications'
+    | '/guard/me'
     | '/guard/patrol'
-    | '/guard/requests'
-    | '/guard/schedule'
+    | '/guard/scan'
+    | '/guard/tasks'
     | '/ops/complaints'
     | '/ops/fee'
     | '/ops/occupancy'
@@ -1498,20 +1015,14 @@ export interface FileRouteTypes {
     | '/saas/audit'
     | '/saas/billing'
     | '/saas/cai-dat'
-    | '/saas/families'
     | '/saas/feature-flags'
-    | '/saas/guards'
     | '/saas/incidents'
     | '/saas/leads'
-    | '/saas/observability'
     | '/saas/plans'
     | '/saas/projects'
-    | '/saas/security-ops'
     | '/saas/tenants'
     | '/saas/users'
-    | '/sos/$eventId'
     | '/suc-khoe/quan-ly'
-    | '/suc-khoe/theo-doi'
     | '/admin'
     | '/bql'
     | '/console'
@@ -1520,29 +1031,14 @@ export interface FileRouteTypes {
     | '/ops'
     | '/saas'
     | '/security'
-    | '/api/public/vitals'
     | '/console/metrics/$key'
-    | '/gia-dinh/invite/$token'
-    | '/guard/requests/$id'
-    | '/guard/sos/$eventId'
-    | '/api/public/downloads/family'
-    | '/api/public/downloads/guard'
-    | '/api/public/hooks/dispatch-reminders'
-    | '/api/public/hooks/dispatch-sos'
-    | '/api/public/hooks/ocr-worker'
   id:
     | '__root__'
     | '/'
     | '/bao-an'
-    | '/bao-ve'
-    | '/bao-ve-theo-gio'
-    | '/bao-ve-theo-nhu-cau-rieng'
-    | '/bao-ve-xu-ly-ho'
     | '/bql'
     | '/cham-soc-ong-ba'
-    | '/cham-soc-tai-nha'
     | '/chi-tieu'
-    | '/chuyen-hang-tu-xa'
     | '/con-cai'
     | '/cong-dong'
     | '/console'
@@ -1551,20 +1047,15 @@ export interface FileRouteTypes {
     | '/demo-login'
     | '/dich-vu'
     | '/du-lich'
-    | '/dua-don-can-ho'
     | '/family'
     | '/forgot-password'
     | '/gia-dinh'
-    | '/giao-tan-can-ho'
     | '/guard'
-    | '/gui-hang-di'
     | '/home'
-    | '/khoanh-khac'
     | '/ky-niem-gia-dinh'
     | '/lich-gia-dinh'
     | '/lien-he'
     | '/login'
-    | '/nhan-hang-ho'
     | '/ops'
     | '/portal'
     | '/qr-vao-ra'
@@ -1574,7 +1065,6 @@ export interface FileRouteTypes {
     | '/security'
     | '/suc-khoe'
     | '/tai-khoan'
-    | '/thanh-hang-nguoi-ho-tro'
     | '/thong-bao'
     | '/thuc-pham'
     | '/workspaces'
@@ -1584,7 +1074,6 @@ export interface FileRouteTypes {
     | '/admin/family'
     | '/admin/helpers'
     | '/admin/memories'
-    | '/admin/projects'
     | '/admin/roles'
     | '/admin/security'
     | '/admin/super'
@@ -1608,28 +1097,11 @@ export interface FileRouteTypes {
     | '/bql/yeu-cau'
     | '/cai-dat/thong-bao'
     | '/cham-soc-ong-ba/nhat-ky'
-    | '/chi-tieu_/bao-cao'
-    | '/chi-tieu_/chia-se'
-    | '/chi-tieu_/dinh-ky'
-    | '/chi-tieu_/insights'
-    | '/chi-tieu_/ngan-sach'
-    | '/chi-tieu_/premium'
-    | '/chi-tieu_/quyet-toan'
     | '/chi-tieu_/scan'
-    | '/chi-tieu_/thong-bao'
-    | '/gia-dinh_/invites'
-    | '/gia-dinh_/nhac-cha-me'
-    | '/gia-dinh_/nhap-ma'
-    | '/gia-dinh_/onboarding'
-    | '/gia-dinh_/thanh-vien'
-    | '/guard/account'
-    | '/guard/check-in'
-    | '/guard/check-out'
-    | '/guard/incident'
-    | '/guard/notifications'
+    | '/guard/me'
     | '/guard/patrol'
-    | '/guard/requests'
-    | '/guard/schedule'
+    | '/guard/scan'
+    | '/guard/tasks'
     | '/ops/complaints'
     | '/ops/fee'
     | '/ops/occupancy'
@@ -1638,20 +1110,14 @@ export interface FileRouteTypes {
     | '/saas/audit'
     | '/saas/billing'
     | '/saas/cai-dat'
-    | '/saas/families'
     | '/saas/feature-flags'
-    | '/saas/guards'
     | '/saas/incidents'
     | '/saas/leads'
-    | '/saas/observability'
     | '/saas/plans'
     | '/saas/projects'
-    | '/saas/security-ops'
     | '/saas/tenants'
     | '/saas/users'
-    | '/sos/$eventId'
     | '/suc-khoe/quan-ly'
-    | '/suc-khoe/theo-doi'
     | '/admin/'
     | '/bql/'
     | '/console/'
@@ -1660,30 +1126,15 @@ export interface FileRouteTypes {
     | '/ops/'
     | '/saas/'
     | '/security/'
-    | '/api/public/vitals'
     | '/console/metrics/$key'
-    | '/gia-dinh_/invite/$token'
-    | '/guard/requests/$id'
-    | '/guard/sos/$eventId'
-    | '/api/public/downloads/family'
-    | '/api/public/downloads/guard'
-    | '/api/public/hooks/dispatch-reminders'
-    | '/api/public/hooks/dispatch-sos'
-    | '/api/public/hooks/ocr-worker'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   BaoAnRoute: typeof BaoAnRoute
-  BaoVeRoute: typeof BaoVeRoute
-  BaoVeTheoGioRoute: typeof BaoVeTheoGioRoute
-  BaoVeTheoNhuCauRiengRoute: typeof BaoVeTheoNhuCauRiengRoute
-  BaoVeXuLyHoRoute: typeof BaoVeXuLyHoRoute
   BqlRoute: typeof BqlRouteWithChildren
   ChamSocOngBaRoute: typeof ChamSocOngBaRouteWithChildren
-  ChamSocTaiNhaRoute: typeof ChamSocTaiNhaRoute
   ChiTieuRoute: typeof ChiTieuRoute
-  ChuyenHangTuXaRoute: typeof ChuyenHangTuXaRoute
   ConCaiRoute: typeof ConCaiRoute
   CongDongRoute: typeof CongDongRoute
   ConsoleRoute: typeof ConsoleRouteWithChildren
@@ -1692,20 +1143,15 @@ export interface RootRouteChildren {
   DemoLoginRoute: typeof DemoLoginRoute
   DichVuRoute: typeof DichVuRoute
   DuLichRoute: typeof DuLichRoute
-  DuaDonCanHoRoute: typeof DuaDonCanHoRoute
   FamilyRoute: typeof FamilyRouteWithChildren
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   GiaDinhRoute: typeof GiaDinhRoute
-  GiaoTanCanHoRoute: typeof GiaoTanCanHoRoute
   GuardRoute: typeof GuardRouteWithChildren
-  GuiHangDiRoute: typeof GuiHangDiRoute
   HomeRoute: typeof HomeRoute
-  KhoanhKhacRoute: typeof KhoanhKhacRoute
   KyNiemGiaDinhRoute: typeof KyNiemGiaDinhRoute
   LichGiaDinhRoute: typeof LichGiaDinhRoute
   LienHeRoute: typeof LienHeRoute
   LoginRoute: typeof LoginRoute
-  NhanHangHoRoute: typeof NhanHangHoRoute
   OpsRoute: typeof OpsRouteWithChildren
   PortalRoute: typeof PortalRoute
   QrVaoRaRoute: typeof QrVaoRaRoute
@@ -1715,7 +1161,6 @@ export interface RootRouteChildren {
   SecurityRoute: typeof SecurityRouteWithChildren
   SucKhoeRoute: typeof SucKhoeRouteWithChildren
   TaiKhoanRoute: typeof TaiKhoanRoute
-  ThanhHangNguoiHoTroRoute: typeof ThanhHangNguoiHoTroRoute
   ThongBaoRoute: typeof ThongBaoRoute
   ThucPhamRoute: typeof ThucPhamRoute
   WorkspacesRoute: typeof WorkspacesRoute
@@ -1725,35 +1170,13 @@ export interface RootRouteChildren {
   AdminFamilyRoute: typeof AdminFamilyRoute
   AdminHelpersRoute: typeof AdminHelpersRoute
   AdminMemoriesRoute: typeof AdminMemoriesRoute
-  AdminProjectsRoute: typeof AdminProjectsRoute
   AdminRolesRoute: typeof AdminRolesRoute
   AdminSecurityRoute: typeof AdminSecurityRoute
   AdminSuperRoute: typeof AdminSuperRoute
   AdminUsersRoute: typeof AdminUsersRoute
   CaiDatThongBaoRoute: typeof CaiDatThongBaoRoute
-  ChiTieuBaoCaoRoute: typeof ChiTieuBaoCaoRoute
-  ChiTieuChiaSeRoute: typeof ChiTieuChiaSeRoute
-  ChiTieuDinhKyRoute: typeof ChiTieuDinhKyRoute
-  ChiTieuInsightsRoute: typeof ChiTieuInsightsRoute
-  ChiTieuNganSachRoute: typeof ChiTieuNganSachRoute
-  ChiTieuPremiumRoute: typeof ChiTieuPremiumRoute
-  ChiTieuQuyetToanRoute: typeof ChiTieuQuyetToanRoute
   ChiTieuScanRoute: typeof ChiTieuScanRoute
-  ChiTieuThongBaoRoute: typeof ChiTieuThongBaoRoute
-  GiaDinhInvitesRoute: typeof GiaDinhInvitesRoute
-  GiaDinhNhacChaMeRoute: typeof GiaDinhNhacChaMeRoute
-  GiaDinhNhapMaRoute: typeof GiaDinhNhapMaRoute
-  GiaDinhOnboardingRoute: typeof GiaDinhOnboardingRoute
-  GiaDinhThanhVienRoute: typeof GiaDinhThanhVienRoute
-  SosEventIdRoute: typeof SosEventIdRoute
   AdminIndexRoute: typeof AdminIndexRoute
-  ApiPublicVitalsRoute: typeof ApiPublicVitalsRoute
-  GiaDinhInviteTokenRoute: typeof GiaDinhInviteTokenRoute
-  ApiPublicDownloadsFamilyRoute: typeof ApiPublicDownloadsFamilyRoute
-  ApiPublicDownloadsGuardRoute: typeof ApiPublicDownloadsGuardRoute
-  ApiPublicHooksDispatchRemindersRoute: typeof ApiPublicHooksDispatchRemindersRoute
-  ApiPublicHooksDispatchSosRoute: typeof ApiPublicHooksDispatchSosRoute
-  ApiPublicHooksOcrWorkerRoute: typeof ApiPublicHooksOcrWorkerRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -1777,13 +1200,6 @@ declare module '@tanstack/react-router' {
       path: '/thong-bao'
       fullPath: '/thong-bao'
       preLoaderRoute: typeof ThongBaoRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/thanh-hang-nguoi-ho-tro': {
-      id: '/thanh-hang-nguoi-ho-tro'
-      path: '/thanh-hang-nguoi-ho-tro'
-      fullPath: '/thanh-hang-nguoi-ho-tro'
-      preLoaderRoute: typeof ThanhHangNguoiHoTroRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/tai-khoan': {
@@ -1849,13 +1265,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OpsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/nhan-hang-ho': {
-      id: '/nhan-hang-ho'
-      path: '/nhan-hang-ho'
-      fullPath: '/nhan-hang-ho'
-      preLoaderRoute: typeof NhanHangHoRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/login': {
       id: '/login'
       path: '/login'
@@ -1884,13 +1293,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof KyNiemGiaDinhRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/khoanh-khac': {
-      id: '/khoanh-khac'
-      path: '/khoanh-khac'
-      fullPath: '/khoanh-khac'
-      preLoaderRoute: typeof KhoanhKhacRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/home': {
       id: '/home'
       path: '/home'
@@ -1898,25 +1300,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof HomeRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/gui-hang-di': {
-      id: '/gui-hang-di'
-      path: '/gui-hang-di'
-      fullPath: '/gui-hang-di'
-      preLoaderRoute: typeof GuiHangDiRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/guard': {
       id: '/guard'
       path: '/guard'
       fullPath: '/guard'
       preLoaderRoute: typeof GuardRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/giao-tan-can-ho': {
-      id: '/giao-tan-can-ho'
-      path: '/giao-tan-can-ho'
-      fullPath: '/giao-tan-can-ho'
-      preLoaderRoute: typeof GiaoTanCanHoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/gia-dinh': {
@@ -1938,13 +1326,6 @@ declare module '@tanstack/react-router' {
       path: '/family'
       fullPath: '/family'
       preLoaderRoute: typeof FamilyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/dua-don-can-ho': {
-      id: '/dua-don-can-ho'
-      path: '/dua-don-can-ho'
-      fullPath: '/dua-don-can-ho'
-      preLoaderRoute: typeof DuaDonCanHoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/du-lich': {
@@ -2003,25 +1384,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ConCaiRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/chuyen-hang-tu-xa': {
-      id: '/chuyen-hang-tu-xa'
-      path: '/chuyen-hang-tu-xa'
-      fullPath: '/chuyen-hang-tu-xa'
-      preLoaderRoute: typeof ChuyenHangTuXaRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/chi-tieu': {
       id: '/chi-tieu'
       path: '/chi-tieu'
       fullPath: '/chi-tieu'
       preLoaderRoute: typeof ChiTieuRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/cham-soc-tai-nha': {
-      id: '/cham-soc-tai-nha'
-      path: '/cham-soc-tai-nha'
-      fullPath: '/cham-soc-tai-nha'
-      preLoaderRoute: typeof ChamSocTaiNhaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/cham-soc-ong-ba': {
@@ -2036,34 +1403,6 @@ declare module '@tanstack/react-router' {
       path: '/bql'
       fullPath: '/bql'
       preLoaderRoute: typeof BqlRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/bao-ve-xu-ly-ho': {
-      id: '/bao-ve-xu-ly-ho'
-      path: '/bao-ve-xu-ly-ho'
-      fullPath: '/bao-ve-xu-ly-ho'
-      preLoaderRoute: typeof BaoVeXuLyHoRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/bao-ve-theo-nhu-cau-rieng': {
-      id: '/bao-ve-theo-nhu-cau-rieng'
-      path: '/bao-ve-theo-nhu-cau-rieng'
-      fullPath: '/bao-ve-theo-nhu-cau-rieng'
-      preLoaderRoute: typeof BaoVeTheoNhuCauRiengRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/bao-ve-theo-gio': {
-      id: '/bao-ve-theo-gio'
-      path: '/bao-ve-theo-gio'
-      fullPath: '/bao-ve-theo-gio'
-      preLoaderRoute: typeof BaoVeTheoGioRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/bao-ve': {
-      id: '/bao-ve'
-      path: '/bao-ve'
-      fullPath: '/bao-ve'
-      preLoaderRoute: typeof BaoVeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/bao-an': {
@@ -2136,26 +1475,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/suc-khoe/theo-doi': {
-      id: '/suc-khoe/theo-doi'
-      path: '/theo-doi'
-      fullPath: '/suc-khoe/theo-doi'
-      preLoaderRoute: typeof SucKhoeTheoDoiRouteImport
-      parentRoute: typeof SucKhoeRoute
-    }
     '/suc-khoe/quan-ly': {
       id: '/suc-khoe/quan-ly'
       path: '/quan-ly'
       fullPath: '/suc-khoe/quan-ly'
       preLoaderRoute: typeof SucKhoeQuanLyRouteImport
       parentRoute: typeof SucKhoeRoute
-    }
-    '/sos/$eventId': {
-      id: '/sos/$eventId'
-      path: '/sos/$eventId'
-      fullPath: '/sos/$eventId'
-      preLoaderRoute: typeof SosEventIdRouteImport
-      parentRoute: typeof rootRouteImport
     }
     '/saas/users': {
       id: '/saas/users'
@@ -2169,13 +1494,6 @@ declare module '@tanstack/react-router' {
       path: '/tenants'
       fullPath: '/saas/tenants'
       preLoaderRoute: typeof SaasTenantsRouteImport
-      parentRoute: typeof SaasRoute
-    }
-    '/saas/security-ops': {
-      id: '/saas/security-ops'
-      path: '/security-ops'
-      fullPath: '/saas/security-ops'
-      preLoaderRoute: typeof SaasSecurityOpsRouteImport
       parentRoute: typeof SaasRoute
     }
     '/saas/projects': {
@@ -2192,13 +1510,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SaasPlansRouteImport
       parentRoute: typeof SaasRoute
     }
-    '/saas/observability': {
-      id: '/saas/observability'
-      path: '/observability'
-      fullPath: '/saas/observability'
-      preLoaderRoute: typeof SaasObservabilityRouteImport
-      parentRoute: typeof SaasRoute
-    }
     '/saas/leads': {
       id: '/saas/leads'
       path: '/leads'
@@ -2213,25 +1524,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SaasIncidentsRouteImport
       parentRoute: typeof SaasRoute
     }
-    '/saas/guards': {
-      id: '/saas/guards'
-      path: '/guards'
-      fullPath: '/saas/guards'
-      preLoaderRoute: typeof SaasGuardsRouteImport
-      parentRoute: typeof SaasRoute
-    }
     '/saas/feature-flags': {
       id: '/saas/feature-flags'
       path: '/feature-flags'
       fullPath: '/saas/feature-flags'
       preLoaderRoute: typeof SaasFeatureFlagsRouteImport
-      parentRoute: typeof SaasRoute
-    }
-    '/saas/families': {
-      id: '/saas/families'
-      path: '/families'
-      fullPath: '/saas/families'
-      preLoaderRoute: typeof SaasFamiliesRouteImport
       parentRoute: typeof SaasRoute
     }
     '/saas/cai-dat': {
@@ -2290,18 +1587,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OpsComplaintsRouteImport
       parentRoute: typeof OpsRoute
     }
-    '/guard/schedule': {
-      id: '/guard/schedule'
-      path: '/schedule'
-      fullPath: '/guard/schedule'
-      preLoaderRoute: typeof GuardScheduleRouteImport
+    '/guard/tasks': {
+      id: '/guard/tasks'
+      path: '/tasks'
+      fullPath: '/guard/tasks'
+      preLoaderRoute: typeof GuardTasksRouteImport
       parentRoute: typeof GuardRoute
     }
-    '/guard/requests': {
-      id: '/guard/requests'
-      path: '/requests'
-      fullPath: '/guard/requests'
-      preLoaderRoute: typeof GuardRequestsRouteImport
+    '/guard/scan': {
+      id: '/guard/scan'
+      path: '/scan'
+      fullPath: '/guard/scan'
+      preLoaderRoute: typeof GuardScanRouteImport
       parentRoute: typeof GuardRoute
     }
     '/guard/patrol': {
@@ -2311,137 +1608,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GuardPatrolRouteImport
       parentRoute: typeof GuardRoute
     }
-    '/guard/notifications': {
-      id: '/guard/notifications'
-      path: '/notifications'
-      fullPath: '/guard/notifications'
-      preLoaderRoute: typeof GuardNotificationsRouteImport
+    '/guard/me': {
+      id: '/guard/me'
+      path: '/me'
+      fullPath: '/guard/me'
+      preLoaderRoute: typeof GuardMeRouteImport
       parentRoute: typeof GuardRoute
-    }
-    '/guard/incident': {
-      id: '/guard/incident'
-      path: '/incident'
-      fullPath: '/guard/incident'
-      preLoaderRoute: typeof GuardIncidentRouteImport
-      parentRoute: typeof GuardRoute
-    }
-    '/guard/check-out': {
-      id: '/guard/check-out'
-      path: '/check-out'
-      fullPath: '/guard/check-out'
-      preLoaderRoute: typeof GuardCheckOutRouteImport
-      parentRoute: typeof GuardRoute
-    }
-    '/guard/check-in': {
-      id: '/guard/check-in'
-      path: '/check-in'
-      fullPath: '/guard/check-in'
-      preLoaderRoute: typeof GuardCheckInRouteImport
-      parentRoute: typeof GuardRoute
-    }
-    '/guard/account': {
-      id: '/guard/account'
-      path: '/account'
-      fullPath: '/guard/account'
-      preLoaderRoute: typeof GuardAccountRouteImport
-      parentRoute: typeof GuardRoute
-    }
-    '/gia-dinh_/thanh-vien': {
-      id: '/gia-dinh_/thanh-vien'
-      path: '/gia-dinh/thanh-vien'
-      fullPath: '/gia-dinh/thanh-vien'
-      preLoaderRoute: typeof GiaDinhThanhVienRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/gia-dinh_/onboarding': {
-      id: '/gia-dinh_/onboarding'
-      path: '/gia-dinh/onboarding'
-      fullPath: '/gia-dinh/onboarding'
-      preLoaderRoute: typeof GiaDinhOnboardingRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/gia-dinh_/nhap-ma': {
-      id: '/gia-dinh_/nhap-ma'
-      path: '/gia-dinh/nhap-ma'
-      fullPath: '/gia-dinh/nhap-ma'
-      preLoaderRoute: typeof GiaDinhNhapMaRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/gia-dinh_/nhac-cha-me': {
-      id: '/gia-dinh_/nhac-cha-me'
-      path: '/gia-dinh/nhac-cha-me'
-      fullPath: '/gia-dinh/nhac-cha-me'
-      preLoaderRoute: typeof GiaDinhNhacChaMeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/gia-dinh_/invites': {
-      id: '/gia-dinh_/invites'
-      path: '/gia-dinh/invites'
-      fullPath: '/gia-dinh/invites'
-      preLoaderRoute: typeof GiaDinhInvitesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/chi-tieu_/thong-bao': {
-      id: '/chi-tieu_/thong-bao'
-      path: '/chi-tieu/thong-bao'
-      fullPath: '/chi-tieu/thong-bao'
-      preLoaderRoute: typeof ChiTieuThongBaoRouteImport
-      parentRoute: typeof rootRouteImport
     }
     '/chi-tieu_/scan': {
       id: '/chi-tieu_/scan'
       path: '/chi-tieu/scan'
       fullPath: '/chi-tieu/scan'
       preLoaderRoute: typeof ChiTieuScanRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/chi-tieu_/quyet-toan': {
-      id: '/chi-tieu_/quyet-toan'
-      path: '/chi-tieu/quyet-toan'
-      fullPath: '/chi-tieu/quyet-toan'
-      preLoaderRoute: typeof ChiTieuQuyetToanRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/chi-tieu_/premium': {
-      id: '/chi-tieu_/premium'
-      path: '/chi-tieu/premium'
-      fullPath: '/chi-tieu/premium'
-      preLoaderRoute: typeof ChiTieuPremiumRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/chi-tieu_/ngan-sach': {
-      id: '/chi-tieu_/ngan-sach'
-      path: '/chi-tieu/ngan-sach'
-      fullPath: '/chi-tieu/ngan-sach'
-      preLoaderRoute: typeof ChiTieuNganSachRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/chi-tieu_/insights': {
-      id: '/chi-tieu_/insights'
-      path: '/chi-tieu/insights'
-      fullPath: '/chi-tieu/insights'
-      preLoaderRoute: typeof ChiTieuInsightsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/chi-tieu_/dinh-ky': {
-      id: '/chi-tieu_/dinh-ky'
-      path: '/chi-tieu/dinh-ky'
-      fullPath: '/chi-tieu/dinh-ky'
-      preLoaderRoute: typeof ChiTieuDinhKyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/chi-tieu_/chia-se': {
-      id: '/chi-tieu_/chia-se'
-      path: '/chi-tieu/chia-se'
-      fullPath: '/chi-tieu/chia-se'
-      preLoaderRoute: typeof ChiTieuChiaSeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/chi-tieu_/bao-cao': {
-      id: '/chi-tieu_/bao-cao'
-      path: '/chi-tieu/bao-cao'
-      fullPath: '/chi-tieu/bao-cao'
-      preLoaderRoute: typeof ChiTieuBaoCaoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/cham-soc-ong-ba/nhat-ky': {
@@ -2605,13 +1783,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminRolesRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/admin/projects': {
-      id: '/admin/projects'
-      path: '/admin/projects'
-      fullPath: '/admin/projects'
-      preLoaderRoute: typeof AdminProjectsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/admin/memories': {
       id: '/admin/memories'
       path: '/admin/memories'
@@ -2654,75 +1825,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminAuditRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/guard/sos/$eventId': {
-      id: '/guard/sos/$eventId'
-      path: '/sos/$eventId'
-      fullPath: '/guard/sos/$eventId'
-      preLoaderRoute: typeof GuardSosEventIdRouteImport
-      parentRoute: typeof GuardRoute
-    }
-    '/guard/requests/$id': {
-      id: '/guard/requests/$id'
-      path: '/$id'
-      fullPath: '/guard/requests/$id'
-      preLoaderRoute: typeof GuardRequestsIdRouteImport
-      parentRoute: typeof GuardRequestsRoute
-    }
-    '/gia-dinh_/invite/$token': {
-      id: '/gia-dinh_/invite/$token'
-      path: '/gia-dinh/invite/$token'
-      fullPath: '/gia-dinh/invite/$token'
-      preLoaderRoute: typeof GiaDinhInviteTokenRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/console/metrics/$key': {
       id: '/console/metrics/$key'
       path: '/metrics/$key'
       fullPath: '/console/metrics/$key'
       preLoaderRoute: typeof ConsoleMetricsKeyRouteImport
       parentRoute: typeof ConsoleRoute
-    }
-    '/api/public/vitals': {
-      id: '/api/public/vitals'
-      path: '/api/public/vitals'
-      fullPath: '/api/public/vitals'
-      preLoaderRoute: typeof ApiPublicVitalsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/hooks/ocr-worker': {
-      id: '/api/public/hooks/ocr-worker'
-      path: '/api/public/hooks/ocr-worker'
-      fullPath: '/api/public/hooks/ocr-worker'
-      preLoaderRoute: typeof ApiPublicHooksOcrWorkerRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/hooks/dispatch-sos': {
-      id: '/api/public/hooks/dispatch-sos'
-      path: '/api/public/hooks/dispatch-sos'
-      fullPath: '/api/public/hooks/dispatch-sos'
-      preLoaderRoute: typeof ApiPublicHooksDispatchSosRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/hooks/dispatch-reminders': {
-      id: '/api/public/hooks/dispatch-reminders'
-      path: '/api/public/hooks/dispatch-reminders'
-      fullPath: '/api/public/hooks/dispatch-reminders'
-      preLoaderRoute: typeof ApiPublicHooksDispatchRemindersRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/downloads/guard': {
-      id: '/api/public/downloads/guard'
-      path: '/api/public/downloads/guard'
-      fullPath: '/api/public/downloads/guard'
-      preLoaderRoute: typeof ApiPublicDownloadsGuardRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/downloads/family': {
-      id: '/api/public/downloads/family'
-      path: '/api/public/downloads/family'
-      fullPath: '/api/public/downloads/family'
-      preLoaderRoute: typeof ApiPublicDownloadsFamilyRouteImport
-      parentRoute: typeof rootRouteImport
     }
   }
 }
@@ -2807,42 +1915,20 @@ const FamilyRouteChildren: FamilyRouteChildren = {
 const FamilyRouteWithChildren =
   FamilyRoute._addFileChildren(FamilyRouteChildren)
 
-interface GuardRequestsRouteChildren {
-  GuardRequestsIdRoute: typeof GuardRequestsIdRoute
-}
-
-const GuardRequestsRouteChildren: GuardRequestsRouteChildren = {
-  GuardRequestsIdRoute: GuardRequestsIdRoute,
-}
-
-const GuardRequestsRouteWithChildren = GuardRequestsRoute._addFileChildren(
-  GuardRequestsRouteChildren,
-)
-
 interface GuardRouteChildren {
-  GuardAccountRoute: typeof GuardAccountRoute
-  GuardCheckInRoute: typeof GuardCheckInRoute
-  GuardCheckOutRoute: typeof GuardCheckOutRoute
-  GuardIncidentRoute: typeof GuardIncidentRoute
-  GuardNotificationsRoute: typeof GuardNotificationsRoute
+  GuardMeRoute: typeof GuardMeRoute
   GuardPatrolRoute: typeof GuardPatrolRoute
-  GuardRequestsRoute: typeof GuardRequestsRouteWithChildren
-  GuardScheduleRoute: typeof GuardScheduleRoute
+  GuardScanRoute: typeof GuardScanRoute
+  GuardTasksRoute: typeof GuardTasksRoute
   GuardIndexRoute: typeof GuardIndexRoute
-  GuardSosEventIdRoute: typeof GuardSosEventIdRoute
 }
 
 const GuardRouteChildren: GuardRouteChildren = {
-  GuardAccountRoute: GuardAccountRoute,
-  GuardCheckInRoute: GuardCheckInRoute,
-  GuardCheckOutRoute: GuardCheckOutRoute,
-  GuardIncidentRoute: GuardIncidentRoute,
-  GuardNotificationsRoute: GuardNotificationsRoute,
+  GuardMeRoute: GuardMeRoute,
   GuardPatrolRoute: GuardPatrolRoute,
-  GuardRequestsRoute: GuardRequestsRouteWithChildren,
-  GuardScheduleRoute: GuardScheduleRoute,
+  GuardScanRoute: GuardScanRoute,
+  GuardTasksRoute: GuardTasksRoute,
   GuardIndexRoute: GuardIndexRoute,
-  GuardSosEventIdRoute: GuardSosEventIdRoute,
 }
 
 const GuardRouteWithChildren = GuardRoute._addFileChildren(GuardRouteChildren)
@@ -2871,15 +1957,11 @@ interface SaasRouteChildren {
   SaasAuditRoute: typeof SaasAuditRoute
   SaasBillingRoute: typeof SaasBillingRoute
   SaasCaiDatRoute: typeof SaasCaiDatRoute
-  SaasFamiliesRoute: typeof SaasFamiliesRoute
   SaasFeatureFlagsRoute: typeof SaasFeatureFlagsRoute
-  SaasGuardsRoute: typeof SaasGuardsRoute
   SaasIncidentsRoute: typeof SaasIncidentsRoute
   SaasLeadsRoute: typeof SaasLeadsRoute
-  SaasObservabilityRoute: typeof SaasObservabilityRoute
   SaasPlansRoute: typeof SaasPlansRoute
   SaasProjectsRoute: typeof SaasProjectsRoute
-  SaasSecurityOpsRoute: typeof SaasSecurityOpsRoute
   SaasTenantsRoute: typeof SaasTenantsRoute
   SaasUsersRoute: typeof SaasUsersRoute
   SaasIndexRoute: typeof SaasIndexRoute
@@ -2889,15 +1971,11 @@ const SaasRouteChildren: SaasRouteChildren = {
   SaasAuditRoute: SaasAuditRoute,
   SaasBillingRoute: SaasBillingRoute,
   SaasCaiDatRoute: SaasCaiDatRoute,
-  SaasFamiliesRoute: SaasFamiliesRoute,
   SaasFeatureFlagsRoute: SaasFeatureFlagsRoute,
-  SaasGuardsRoute: SaasGuardsRoute,
   SaasIncidentsRoute: SaasIncidentsRoute,
   SaasLeadsRoute: SaasLeadsRoute,
-  SaasObservabilityRoute: SaasObservabilityRoute,
   SaasPlansRoute: SaasPlansRoute,
   SaasProjectsRoute: SaasProjectsRoute,
-  SaasSecurityOpsRoute: SaasSecurityOpsRoute,
   SaasTenantsRoute: SaasTenantsRoute,
   SaasUsersRoute: SaasUsersRoute,
   SaasIndexRoute: SaasIndexRoute,
@@ -2919,12 +1997,10 @@ const SecurityRouteWithChildren = SecurityRoute._addFileChildren(
 
 interface SucKhoeRouteChildren {
   SucKhoeQuanLyRoute: typeof SucKhoeQuanLyRoute
-  SucKhoeTheoDoiRoute: typeof SucKhoeTheoDoiRoute
 }
 
 const SucKhoeRouteChildren: SucKhoeRouteChildren = {
   SucKhoeQuanLyRoute: SucKhoeQuanLyRoute,
-  SucKhoeTheoDoiRoute: SucKhoeTheoDoiRoute,
 }
 
 const SucKhoeRouteWithChildren =
@@ -2933,15 +2009,9 @@ const SucKhoeRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   BaoAnRoute: BaoAnRoute,
-  BaoVeRoute: BaoVeRoute,
-  BaoVeTheoGioRoute: BaoVeTheoGioRoute,
-  BaoVeTheoNhuCauRiengRoute: BaoVeTheoNhuCauRiengRoute,
-  BaoVeXuLyHoRoute: BaoVeXuLyHoRoute,
   BqlRoute: BqlRouteWithChildren,
   ChamSocOngBaRoute: ChamSocOngBaRouteWithChildren,
-  ChamSocTaiNhaRoute: ChamSocTaiNhaRoute,
   ChiTieuRoute: ChiTieuRoute,
-  ChuyenHangTuXaRoute: ChuyenHangTuXaRoute,
   ConCaiRoute: ConCaiRoute,
   CongDongRoute: CongDongRoute,
   ConsoleRoute: ConsoleRouteWithChildren,
@@ -2950,20 +2020,15 @@ const rootRouteChildren: RootRouteChildren = {
   DemoLoginRoute: DemoLoginRoute,
   DichVuRoute: DichVuRoute,
   DuLichRoute: DuLichRoute,
-  DuaDonCanHoRoute: DuaDonCanHoRoute,
   FamilyRoute: FamilyRouteWithChildren,
   ForgotPasswordRoute: ForgotPasswordRoute,
   GiaDinhRoute: GiaDinhRoute,
-  GiaoTanCanHoRoute: GiaoTanCanHoRoute,
   GuardRoute: GuardRouteWithChildren,
-  GuiHangDiRoute: GuiHangDiRoute,
   HomeRoute: HomeRoute,
-  KhoanhKhacRoute: KhoanhKhacRoute,
   KyNiemGiaDinhRoute: KyNiemGiaDinhRoute,
   LichGiaDinhRoute: LichGiaDinhRoute,
   LienHeRoute: LienHeRoute,
   LoginRoute: LoginRoute,
-  NhanHangHoRoute: NhanHangHoRoute,
   OpsRoute: OpsRouteWithChildren,
   PortalRoute: PortalRoute,
   QrVaoRaRoute: QrVaoRaRoute,
@@ -2973,7 +2038,6 @@ const rootRouteChildren: RootRouteChildren = {
   SecurityRoute: SecurityRouteWithChildren,
   SucKhoeRoute: SucKhoeRouteWithChildren,
   TaiKhoanRoute: TaiKhoanRoute,
-  ThanhHangNguoiHoTroRoute: ThanhHangNguoiHoTroRoute,
   ThongBaoRoute: ThongBaoRoute,
   ThucPhamRoute: ThucPhamRoute,
   WorkspacesRoute: WorkspacesRoute,
@@ -2983,35 +2047,13 @@ const rootRouteChildren: RootRouteChildren = {
   AdminFamilyRoute: AdminFamilyRoute,
   AdminHelpersRoute: AdminHelpersRoute,
   AdminMemoriesRoute: AdminMemoriesRoute,
-  AdminProjectsRoute: AdminProjectsRoute,
   AdminRolesRoute: AdminRolesRoute,
   AdminSecurityRoute: AdminSecurityRoute,
   AdminSuperRoute: AdminSuperRoute,
   AdminUsersRoute: AdminUsersRoute,
   CaiDatThongBaoRoute: CaiDatThongBaoRoute,
-  ChiTieuBaoCaoRoute: ChiTieuBaoCaoRoute,
-  ChiTieuChiaSeRoute: ChiTieuChiaSeRoute,
-  ChiTieuDinhKyRoute: ChiTieuDinhKyRoute,
-  ChiTieuInsightsRoute: ChiTieuInsightsRoute,
-  ChiTieuNganSachRoute: ChiTieuNganSachRoute,
-  ChiTieuPremiumRoute: ChiTieuPremiumRoute,
-  ChiTieuQuyetToanRoute: ChiTieuQuyetToanRoute,
   ChiTieuScanRoute: ChiTieuScanRoute,
-  ChiTieuThongBaoRoute: ChiTieuThongBaoRoute,
-  GiaDinhInvitesRoute: GiaDinhInvitesRoute,
-  GiaDinhNhacChaMeRoute: GiaDinhNhacChaMeRoute,
-  GiaDinhNhapMaRoute: GiaDinhNhapMaRoute,
-  GiaDinhOnboardingRoute: GiaDinhOnboardingRoute,
-  GiaDinhThanhVienRoute: GiaDinhThanhVienRoute,
-  SosEventIdRoute: SosEventIdRoute,
   AdminIndexRoute: AdminIndexRoute,
-  ApiPublicVitalsRoute: ApiPublicVitalsRoute,
-  GiaDinhInviteTokenRoute: GiaDinhInviteTokenRoute,
-  ApiPublicDownloadsFamilyRoute: ApiPublicDownloadsFamilyRoute,
-  ApiPublicDownloadsGuardRoute: ApiPublicDownloadsGuardRoute,
-  ApiPublicHooksDispatchRemindersRoute: ApiPublicHooksDispatchRemindersRoute,
-  ApiPublicHooksDispatchSosRoute: ApiPublicHooksDispatchSosRoute,
-  ApiPublicHooksOcrWorkerRoute: ApiPublicHooksOcrWorkerRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

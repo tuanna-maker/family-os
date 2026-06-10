@@ -1,5 +1,4 @@
 import { createServerFn } from "@tanstack/react-start";
-import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 export type AppRole =
@@ -14,7 +13,7 @@ export type MyContext = {
   email: string | null;
   profile: { id: string; full_name: string | null; avatar_url: string | null } | null;
   roles: AppRole[];
-  family: { id: string; name: string; apartment: string | null; owner_id: string; avatar_url: string | null } | null;
+  family: { id: string; name: string; apartment: string | null; owner_id: string } | null;
   isAdmin: boolean;
   isSuperAdmin: boolean;
   isSecurity: boolean;
@@ -39,7 +38,7 @@ export const getMyContext = createServerFn({ method: "GET" })
     // Find an owned family or any family the user belongs to
     let { data: family } = await supabase
       .from("families")
-      .select("id, name, apartment, owner_id, avatar_url")
+      .select("id, name, apartment, owner_id")
       .eq("owner_id", userId)
       .maybeSingle();
 
@@ -48,7 +47,7 @@ export const getMyContext = createServerFn({ method: "GET" })
       if (memberRole?.family_id) {
         const res = await supabase
           .from("families")
-          .select("id, name, apartment, owner_id, avatar_url")
+          .select("id, name, apartment, owner_id")
           .eq("id", memberRole.family_id)
           .maybeSingle();
         family = res.data ?? null;
@@ -64,7 +63,7 @@ export const getMyContext = createServerFn({ method: "GET" })
           name: profile?.full_name ? `Gia đình ${profile.full_name}` : "Gia đình của tôi",
           owner_id: userId,
         })
-        .select("id, name, apartment, owner_id, avatar_url")
+        .select("id, name, apartment, owner_id")
         .single();
       if (error) throw new Error(error.message);
       family = created;
@@ -130,66 +129,4 @@ export const claimSuperAdmin = createServerFn({ method: "POST" })
       _metadata: {},
     });
     return { ok: true as const };
-  });
-
-/**
- * Update the caller's owned family (name/apartment). Used by onboarding wizard.
- */
-export const updateMyFamily = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((input) =>
-    z.object({
-      familyId: z.string().uuid(),
-      name: z.string().min(1).max(120).optional(),
-      apartment: z.string().min(1).max(120).nullable().optional(),
-    }).parse(input),
-  )
-  .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-    const { data: fam, error: famErr } = await supabase
-      .from("families")
-      .select("id, owner_id")
-      .eq("id", data.familyId)
-      .maybeSingle();
-    if (famErr) throw new Error(famErr.message);
-    if (!fam || fam.owner_id !== userId) {
-      throw new Error("Forbidden: only the family owner can update");
-    }
-    const patch: { name?: string; apartment?: string | null } = {};
-    if (data.name !== undefined) patch.name = data.name;
-    if (data.apartment !== undefined) patch.apartment = data.apartment;
-    if (Object.keys(patch).length === 0) return { ok: true as const };
-    const { error } = await supabase.from("families").update(patch).eq("id", data.familyId);
-    if (error) throw new Error(error.message);
-    return { ok: true as const };
-  });
-
-/**
- * Update the avatar URL of the caller's owned family.
- */
-export const updateFamilyAvatar = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((input) =>
-    z.object({
-      familyId: z.string().uuid(),
-      avatarUrl: z.string().url().max(2048).nullable(),
-    }).parse(input),
-  )
-  .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-    const { data: fam, error: famErr } = await supabase
-      .from("families")
-      .select("id, owner_id")
-      .eq("id", data.familyId)
-      .maybeSingle();
-    if (famErr) throw new Error(famErr.message);
-    if (!fam || fam.owner_id !== userId) {
-      throw new Error("Forbidden: only the family owner can update");
-    }
-    const { error } = await supabase
-      .from("families")
-      .update({ avatar_url: data.avatarUrl })
-      .eq("id", data.familyId);
-    if (error) throw new Error(error.message);
-    return { ok: true as const, avatarUrl: data.avatarUrl };
   });

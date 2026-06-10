@@ -12,7 +12,6 @@ import { SosDispatchButton } from "@/features/security-ops/dashboard/SosDispatch
 import { PatrolScheduleCard } from "@/features/security-ops/dashboard/PatrolScheduleCard";
 import { DispatchAssignmentsCard } from "@/features/security-ops/dashboard/DispatchAssignmentsCard";
 import { OpenSosCard } from "@/features/security-ops/dashboard/OpenSosCard";
-import { SlaReportCard } from "@/features/security-ops/dashboard/OpsKpiReportCard";
 
 export const Route = createFileRoute("/security/")({
   head: () => ({ meta: [{ title: "Security Operations Center — STOS Life" }] }),
@@ -32,13 +31,8 @@ function SecurityDashboard() {
       <SecurityKpiStrip />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        <SlaReportCard />
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         <OpenSosCard />
       </div>
-
 
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">

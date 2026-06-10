@@ -32,8 +32,6 @@ export type AppointmentRow = {
   scheduled_at: string;
   status: string;
   notes: string | null;
-  remind_hours_before: number | null;
-  reminded_at: string | null;
 };
 export type HealthRecordRow = {
   id: string;
@@ -51,54 +49,18 @@ export const listHealth = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => Fam.parse(d))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
-    const todayStart = new Date();
-    todayStart.setHours(0, 0, 0, 0);
-    const [profiles, meds, appts, recs, logs] = await Promise.all([
-      supabase.rpc("get_health_profiles", { _family_id: data.family_id }),
+    const [profiles, meds, appts, recs] = await Promise.all([
+      supabase.from("health_profiles").select("*").eq("family_id", data.family_id).order("created_at"),
       supabase.from("medicine_reminders").select("*").eq("family_id", data.family_id).order("created_at", { ascending: false }),
       supabase.from("medical_appointments").select("*").eq("family_id", data.family_id).order("scheduled_at"),
       supabase.from("health_records").select("*").eq("family_id", data.family_id).order("recorded_at", { ascending: false }).limit(50),
-      supabase.from("medicine_logs").select("id,reminder_id,taken_at").eq("family_id", data.family_id).gte("taken_at", todayStart.toISOString()),
     ]);
-    if (profiles.error) throw new Error(profiles.error.message);
     return {
       profiles: (profiles.data ?? []) as HealthProfileRow[],
       meds: (meds.data ?? []) as MedicineRow[],
       appts: (appts.data ?? []) as AppointmentRow[],
       records: (recs.data ?? []) as HealthRecordRow[],
-      todayLogs: (logs.data ?? []) as { id: string; reminder_id: string; taken_at: string }[],
     };
-  });
-
-// ============ MEDICINE LOG ============
-export const markMedicineTaken = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) =>
-    z.object({
-      family_id: z.string().uuid(),
-      reminder_id: z.string().uuid(),
-      note: z.string().max(200).nullable().optional(),
-    }).parse(d),
-  )
-  .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-    const { error } = await supabase.from("medicine_logs").insert({
-      family_id: data.family_id,
-      reminder_id: data.reminder_id,
-      taken_by: userId,
-      note: data.note || null,
-    });
-    if (error) throw new Error(error.message);
-    return { ok: true };
-  });
-
-export const undoMedicineTaken = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ log_id: z.string().uuid() }).parse(d))
-  .handler(async ({ data, context }) => {
-    const { error } = await context.supabase.from("medicine_logs").delete().eq("id", data.log_id);
-    if (error) throw new Error(error.message);
-    return { ok: true };
   });
 
 // ============ PROFILES ============
@@ -117,18 +79,24 @@ export const upsertHealthProfile = createServerFn({ method: "POST" })
     }).parse(d),
   )
   .handler(async ({ data, context }) => {
-    const { supabase } = context;
-    const { error } = await supabase.rpc("upsert_health_profile_enc", {
-      _id: data.id ?? null,
-      _family_id: data.family_id,
-      _name: data.name,
-      _dob: data.dob || null,
-      _blood_type: data.blood_type ?? null,
-      _allergies: data.allergies ?? null,
-      _conditions: data.conditions ?? null,
-      _notes: data.notes ?? null,
-    } as never);
-    if (error) throw new Error(error.message);
+    const { supabase, userId } = context;
+    const payload = {
+      family_id: data.family_id,
+      name: data.name,
+      dob: data.dob || null,
+      blood_type: data.blood_type || null,
+      allergies: data.allergies || null,
+      conditions: data.conditions || null,
+      notes: data.notes || null,
+      updated_at: new Date().toISOString(),
+    };
+    if (data.id) {
+      const { error } = await supabase.from("health_profiles").update(payload).eq("id", data.id);
+      if (error) throw new Error(error.message);
+    } else {
+      const { error } = await supabase.from("health_profiles").insert({ ...payload, created_by: userId });
+      if (error) throw new Error(error.message);
+    }
     return { ok: true };
   });
 
@@ -183,7 +151,6 @@ export const upsertAppointment = createServerFn({ method: "POST" })
       scheduled_at: z.string(),
       status: z.enum(["planned", "done", "cancelled"]).default("planned"),
       notes: z.string().max(300).nullable().optional(),
-      remind_hours_before: z.number().int().min(0).max(720).nullable().optional(),
     }).parse(d),
   )
   .handler(async ({ data, context }) => {
@@ -196,14 +163,9 @@ export const upsertAppointment = createServerFn({ method: "POST" })
       scheduled_at: data.scheduled_at,
       status: data.status,
       notes: data.notes || null,
-      remind_hours_before: data.remind_hours_before ?? 24,
     };
     if (data.id) {
-      // Khi cập nhật thời gian/giờ nhắc, reset reminded_at để cron có thể nhắc lại
-      const { error } = await supabase
-        .from("medical_appointments")
-        .update({ ...payload, reminded_at: null })
-        .eq("id", data.id);
+      const { error } = await supabase.from("medical_appointments").update(payload).eq("id", data.id);
       if (error) throw new Error(error.message);
     } else {
       const { error } = await supabase.from("medical_appointments").insert({ ...payload, created_by: userId });
@@ -261,15 +223,4 @@ export const deleteHealthRow = createServerFn({ method: "POST" })
     const { error } = await context.supabase.from(data.table).delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
-  });
-
-// ============ EMERGENCY READ (security/super_admin during active SOS) ============
-export const getEmergencyHealth = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ family_id: z.string().uuid() }).parse(d))
-  .handler(async ({ data, context }) => {
-    const { supabase } = context;
-    const { data: profiles, error } = await supabase.rpc("get_health_profiles", { _family_id: data.family_id });
-    if (error) throw new Error(error.message);
-    return { profiles: (profiles ?? []) as Array<HealthProfileRow & { emergency_unlocked: boolean }> };
   });

@@ -59,8 +59,21 @@ const SCOPES: { id: "all" | EventScope; label: string }[] = [
   { id: "travel", label: "Du lịch" },
 ];
 
-// ============ Helpers ============
+// ============ Mock fallback (khi backend rỗng) ============
+const todayISO = new Date().toISOString().slice(0, 10);
+const at = (h: number, m = 0) => {
+  const d = new Date();
+  d.setHours(h, m, 0, 0);
+  return d.toISOString();
+};
+const MOCK_EVENTS: FamilyEventRow[] = [
+  { id: "m1", family_id: "mock", title: "Ông Nội uống thuốc huyết áp", notes: null, category: "medication", member_scope: "elderly", member_name: "Ông Nội", starts_at: at(7), ends_at: null, all_day: false, location: null, remind_minutes_before: 10, status: "planned" },
+  { id: "m2", family_id: "mock", title: "Bé Minh đi học", notes: null, category: "school", member_scope: "children", member_name: "Bé Minh", starts_at: at(8), ends_at: null, all_day: false, location: "Trường Tiểu học Nguyễn Du", remind_minutes_before: 15, status: "planned" },
+  { id: "m3", family_id: "mock", title: "Bé An học Piano", notes: null, category: "school", member_scope: "children", member_name: "Bé An", starts_at: at(17, 30), ends_at: null, all_day: false, location: "Lớp Piano cô Hà", remind_minutes_before: 30, status: "planned" },
+  { id: "m4", family_id: "mock", title: "Thanh toán hóa đơn điện", notes: "Tháng 5/2026", category: "payment", member_scope: "all", member_name: null, starts_at: at(20), ends_at: null, all_day: false, location: null, remind_minutes_before: 60, status: "planned" },
+];
 
+// ============ Helpers ============
 const fmtTime = (iso: string) =>
   new Date(iso).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
 const fmtDayLabel = (d: Date) =>
@@ -95,16 +108,15 @@ function CalendarPage() {
     enabled: !!familyId,
   });
 
-  const events: FamilyEventRow[] = q.data ?? [];
+  const events: FamilyEventRow[] = q.data && q.data.length > 0 ? q.data : MOCK_EVENTS;
+  const isMock = !q.data || q.data.length === 0;
 
   const filteredEvents = useMemo(
     () =>
       scope === "all"
         ? events
         : events.filter(
-            (e) =>
-              e.member_scope === scope ||
-              (scope === "health" && (e.category === "medical" || e.category === "medication")),
+            (e) => e.member_scope === scope || (scope === "health" && e.category === "medical"),
           ),
     [events, scope],
   );
@@ -156,7 +168,7 @@ function CalendarPage() {
         right={
           <button
             onClick={() => setDlg({})}
-            disabled={!familyId}
+            disabled={isMock}
             className="h-10 w-10 rounded-2xl bg-brand text-white grid place-items-center shadow-[var(--shadow-soft)] disabled:opacity-40"
             aria-label="Thêm sự kiện"
           >
@@ -176,13 +188,7 @@ function CalendarPage() {
               Trợ lý AI · Tóm tắt hôm nay
             </p>
             <p className="text-sm font-medium leading-snug mt-1">
-              {dayEvents.length === 0
-                ? "Hôm nay chưa có sự kiện nào. Hãy thêm lịch để cả nhà cùng theo dõi."
-                : (() => {
-                    const first = dayEvents[0];
-                    const time = fmtTime(first.starts_at);
-                    return `Hôm nay có ${dayEvents.length} sự kiện. Sớm nhất: ${first.title} lúc ${time}.`;
-                  })()}
+              Hôm nay có <b>{dayEvents.length}</b> sự kiện. Đừng quên nhắc Ông Nội uống thuốc lúc 7:00 và thanh toán hoá đơn điện trước 20:00.
             </p>
           </div>
         </RoundedCard>
@@ -260,7 +266,7 @@ function CalendarPage() {
             title="Chưa có sự kiện"
             description="Thêm sự kiện đầu tiên cho ngày này"
             action={
-              <Button onClick={() => setDlg({})} disabled={!familyId} size="sm">
+              <Button onClick={() => setDlg({})} disabled={isMock} size="sm">
                 <Plus className="h-4 w-4 mr-1" /> Thêm sự kiện
               </Button>
             }
@@ -305,7 +311,7 @@ function CalendarPage() {
                           </p>
                         )}
                       </div>
-                      {familyId && (
+                      {!isMock && (
                         <div className="flex gap-1 shrink-0">
                           <button
                             onClick={() => setDlg({ row: e })}
@@ -333,9 +339,9 @@ function CalendarPage() {
           </RoundedCard>
         )}
 
-        {!familyId && !famLoading && (
+        {isMock && (
           <p className="text-[11px] text-muted-foreground text-center mt-3">
-            Khởi tạo hộ gia đình để bắt đầu thêm sự kiện.
+            Đang xem dữ liệu mẫu — thêm sự kiện thật khi gia đình của bạn được khởi tạo.
           </p>
         )}
       </section>

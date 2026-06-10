@@ -1,7 +1,16 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-export type WorkspaceKind = "resident" | "bql" | "tenant_admin" | "saas_admin" | "platform" | "ops" | "security" | "family_gov" | "guard";
+export type WorkspaceKind =
+  | "resident"
+  | "bql"
+  | "tenant_admin"
+  | "saas_admin"
+  | "platform"
+  | "ops"
+  | "security"
+  | "family_gov"
+  | "guard";
 
 export type WorkspaceItem = {
   kind: WorkspaceKind;
@@ -93,38 +102,8 @@ export const listMyWorkspaces = createServerFn({ method: "GET" })
           role: "super_admin",
           to: "/family",
         },
-        {
-          kind: "guard",
-          id: "guard",
-          name: "App Bảo vệ",
-          subtitle: "Mobile app cho nhân viên bảo vệ",
-          role: "super_admin",
-          to: "/guard",
-        },
-        {
-          kind: "resident",
-          id: "family-app",
-          name: "App Gia đình",
-          subtitle: "Mobile app cho hộ gia đình",
-          role: "super_admin",
-          to: "/home",
-        },
       );
     }
-
-    // Security staff (guard) — mobile app
-    const hasGuard = rs.some((r) => r.role === "security_staff" || r.role === "security_admin");
-    if (hasGuard && !hasSaasAdmin) {
-      items.push({
-        kind: "guard",
-        id: "guard",
-        name: "App Bảo vệ",
-        subtitle: "Vào ca · Tuần tra · Báo sự cố",
-        role: rs.find((r) => r.role === "security_staff")?.role ?? "security_staff",
-        to: "/guard",
-      });
-    }
-
 
     // Tenant admin workspaces
     const tenantIds = Array.from(
@@ -215,10 +194,24 @@ export const listMyWorkspaces = createServerFn({ method: "GET" })
       items.push({
         kind: "resident",
         id: f.id,
-        name: "App Gia đình",
-        subtitle: f.apartment ? `${f.name} · ${f.apartment}` : f.name,
+        name: f.name,
+        subtitle: f.apartment ? `Cư dân · ${f.apartment}` : "Cư dân",
         role: f.role,
-        to: "/home",
+        to: "/portal",
+      });
+    }
+
+    const hasGuardRole = rs.some((r) =>
+      ["security_admin", "security_staff"].includes(r.role),
+    );
+    if (hasGuardRole || hasSaasAdmin) {
+      items.push({
+        kind: "guard",
+        id: "guard-mobile",
+        name: "STOS Guard",
+        subtitle: "Ca trực · tuần tra · quét QR",
+        role: hasSaasAdmin ? "super_admin" : "security_staff",
+        to: "/guard",
       });
     }
 

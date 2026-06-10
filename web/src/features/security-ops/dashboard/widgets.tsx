@@ -19,9 +19,33 @@ const TONE = {
   info: "text-sky-400",
 } as const;
 
-// KPI strip now uses real data — re-exported from OpsKpiReportCard.
-export { SecurityKpiStrip } from "./OpsKpiReportCard";
+// ---------- KPIs ----------
+const KPIS = [
+  { label: "Bảo vệ online", value: "32 / 38", sub: "84% lực lượng", icon: ShieldCheck, accent: TONE.ok },
+  { label: "Sự cố đang mở", value: "4", sub: "1 P1 · 2 P2 · 1 P3", icon: Siren, accent: TONE.crit },
+  { label: "Quét QR / giờ", value: "186", sub: "↑ 12% vs hôm qua", icon: ScanLine, accent: TONE.info },
+  { label: "Checkpoint hoàn thành", value: "94%", sub: "118 / 125 điểm", icon: MapPin, accent: TONE.warn },
+];
 
+export function SecurityKpiStrip() {
+  return (
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      {KPIS.map((k) => (
+        <div key={k.label} className={card}>
+          <div className="flex items-center justify-between">
+            <div className="h-9 w-9 rounded-lg bg-white/10 grid place-items-center">
+              <k.icon className={`h-4 w-4 ${k.accent}`} />
+            </div>
+            <span className={`text-[10px] ${k.accent}`}>● Live</span>
+          </div>
+          <p className={`${subtle} mt-3`}>{k.label}</p>
+          <p className={value}>{k.value}</p>
+          <p className="text-[11px] text-white/50 mt-1">{k.sub}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 // ---------- Guards on duty ----------
 const GUARDS = [

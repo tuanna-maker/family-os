@@ -76,7 +76,7 @@ const securityToneStyles: Record<SecurityTone, { chip: string; text: string; dot
 const services = [
   { id: "sos", label: "SOS", sub: "khẩn cấp", Icon: ShieldCheck, color: "text-emergency", bg: "bg-tint-red", to: "/bao-an" },
   { id: "fire", label: "Báo cháy", sub: "", Icon: Flame, color: "text-warning", bg: "bg-tint-orange", to: "/bao-an" },
-  { id: "package", label: "Nhận hàng", sub: "giúp", Icon: Package, color: "text-brand", bg: "bg-tint-blue", to: "/nhan-hang-ho" },
+  { id: "package", label: "Nhận hàng", sub: "giúp", Icon: Package, color: "text-brand", bg: "bg-tint-blue", to: "/bao-an" },
   { id: "stranger", label: "Báo người", sub: "lạ", Icon: UserX, color: "text-pink", bg: "bg-tint-purple", to: "/bao-an" },
   { id: "tech", label: "Hỗ trợ", sub: "kỹ thuật", Icon: Wrench, color: "text-brand", bg: "bg-tint-blue", to: "/bao-an" },
   { id: "more", label: "Xem thêm", sub: "", Icon: MoreHorizontal, color: "text-muted-foreground", bg: "bg-muted", to: "/bao-an" },

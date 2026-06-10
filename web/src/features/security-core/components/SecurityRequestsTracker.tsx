@@ -1,13 +1,9 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { Loader2, ShieldCheck, Clock, Activity, X } from "lucide-react";
-import { toast } from "sonner";
 import { listSecurityRequests, type SecurityRequest } from "@/lib/security.functions";
-import { cancelMySecurityRequest } from "@/lib/security-cancel.functions";
 import { useAuth } from "@/hooks/use-auth";
-import { useSecurityRequestNotifications } from "@/hooks/use-security-request-notifications";
-
 
 const TYPE_LABEL: Record<string, string> = {
   sos: "SOS khẩn cấp",
@@ -54,14 +50,12 @@ function fmtElapsed(iso: string) {
 export function SecurityRequestsTracker() {
   const { session } = useAuth();
   const fetchList = useServerFn(listSecurityRequests);
-  useSecurityRequestNotifications();
 
   const q = useQuery({
     queryKey: ["security-requests", session?.user?.id ?? "anon"],
     queryFn: () => fetchList(),
     enabled: !!session,
-    staleTime: 15_000,
-    refetchInterval: 30_000,
+    refetchInterval: 10_000,
   });
 
   const items = useMemo<SecurityRequest[]>(() => {
@@ -80,7 +74,7 @@ export function SecurityRequestsTracker() {
         <div>
           <h2 className="text-[17px] font-semibold tracking-tight">Trạng thái điều phối</h2>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Yêu cầu của bạn — cập nhật mỗi 30 giây
+            Yêu cầu của bạn — cập nhật mỗi 10 giây
           </p>
         </div>
         {q.isFetching && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
@@ -114,10 +108,6 @@ export function SecurityRequestsTracker() {
 }
 
 function RequestRow({ req }: { req: SecurityRequest }) {
-  const cancelFn = useServerFn(cancelMySecurityRequest);
-  const qc = useQueryClient();
-  const [cancelling, setCancelling] = useState(false);
-  const canCancel = req.status === "open" || req.status === "in_progress";
   const Icon =
     req.status === "resolved"
       ? ShieldCheck
@@ -126,28 +116,13 @@ function RequestRow({ req }: { req: SecurityRequest }) {
         : req.status === "in_progress"
           ? Activity
           : Clock;
-
-  async function handleCancel() {
-    if (!window.confirm("Huỷ yêu cầu này?")) return;
-    setCancelling(true);
-    try {
-      await cancelFn({ data: { id: req.id } });
-      await qc.invalidateQueries({ queryKey: ["security-requests"] });
-      toast.success("Đã huỷ yêu cầu");
-    } catch (e) {
-      toast.error("Không huỷ được", { description: (e as Error).message });
-    } finally {
-      setCancelling(false);
-    }
-  }
-
   return (
     <div className="rounded-3xl bg-card border border-border p-4 flex items-center gap-3">
       <div className="h-11 w-11 rounded-2xl bg-tint-red grid place-items-center text-2xl shrink-0">
         {TYPE_EMOJI[req.request_type] ?? "📞"}
       </div>
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-2">
           <p className="text-sm font-semibold truncate">
             {TYPE_LABEL[req.request_type] ?? req.request_type}
           </p>
@@ -159,34 +134,10 @@ function RequestRow({ req }: { req: SecurityRequest }) {
           </span>
         </div>
         <p className="text-[11px] text-muted-foreground mt-0.5">
-          {req.ticket_code && <span className="font-mono">{req.ticket_code} · </span>}
-          {req.priority && (
-            <span className="font-semibold text-foreground">{req.priority} · </span>
-          )}
-          {(req.building || req.apartment) && (
-            <>{[req.building, req.apartment].filter(Boolean).join(" · ")} · </>
-          )}
           Gửi {fmtElapsed(req.created_at)}
           {req.resolved_at && ` · xong ${fmtElapsed(req.resolved_at)}`}
         </p>
-        {(req.assigned_name || req.team_name) && req.status !== "cancelled" && (
-          <p className="text-[11px] text-brand mt-0.5">
-            👮 {req.assigned_name || req.team_name}
-          </p>
-        )}
       </div>
-      {canCancel && (
-        <button
-          onClick={handleCancel}
-          disabled={cancelling}
-          className="h-9 w-9 rounded-xl grid place-items-center text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-50 transition shrink-0"
-          aria-label="Huỷ yêu cầu"
-          title="Huỷ yêu cầu"
-        >
-          {cancelling ? <Loader2 className="h-4 w-4 animate-spin" /> : <X className="h-4 w-4" />}
-        </button>
-      )}
     </div>
   );
 }
-

@@ -1,19 +1,14 @@
-import { useEffect, useState } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/react-start";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Phone, RotateCcw, Check, Loader2 } from "lucide-react";
+import { useMemo, useState } from "react";
+import { createFileRoute } from "@tanstack/react-router";
+import { Phone, RotateCcw, Check, ChevronDown } from "lucide-react";
 import { MobileShell } from "@/components/mobile/MobileShell";
 import { PageHeader } from "@/components/common/PageHeader";
 import { RoundedCard, SectionHeader } from "@/components/common/RoundedCard";
-import { useFamilyContext } from "@/hooks/use-family-context";
 import {
-  listFamilyContacts,
-  upsertFamilyContact,
-  resetFamilyContacts,
-  DEFAULT_CONTACTS,
-  type FamilyContactRow,
-} from "@/lib/family-contacts.functions";
+  familyOptions,
+  useFamilyContacts,
+  type ContactSlot,
+} from "@/features/family-core/contacts";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -24,7 +19,7 @@ export const Route = createFileRoute("/lien-he")({
       {
         name: "description",
         content:
-          "Đặt số điện thoại cho Gọi ông/bà, Gọi người thân, Gọi bảo an của gia đình.",
+          "Đặt số điện thoại cho Gọi ông/bà, Gọi người thân, Gọi bảo an theo từng gia đình.",
       },
     ],
   }),
@@ -32,89 +27,26 @@ export const Route = createFileRoute("/lien-he")({
 });
 
 function ContactsPage() {
-  const { familyId, family, isLoading } = useFamilyContext();
+  const [familyId, setFamilyId] = useState(familyOptions[0].id);
+  const family = useMemo(
+    () => familyOptions.find((f) => f.id === familyId) ?? familyOptions[0],
+    [familyId],
+  );
+  const { contacts, update, reset } = useFamilyContacts(familyId);
 
-  if (isLoading) {
-    return (
-      <MobileShell>
-        <PageHeader eyebrow="Family Core" back="/gia-dinh" title="Người liên hệ" emoji="📇" />
-        <div className="px-4 py-10 text-center text-sm text-muted-foreground">
-          <Loader2 className="h-5 w-5 animate-spin mx-auto mb-2" /> Đang tải…
-        </div>
-      </MobileShell>
-    );
-  }
-
-  if (!familyId) {
-    return (
-      <MobileShell>
-        <PageHeader eyebrow="Family Core" back="/gia-dinh" title="Người liên hệ" emoji="📇" />
-        <section className="px-4 mt-2">
-          <RoundedCard className="text-center space-y-3 py-6">
-            <p className="text-sm text-muted-foreground">
-              Bạn cần tham gia một gia đình để sử dụng danh bạ.
-            </p>
-            <Link
-              to="/gia-dinh"
-              className="inline-block px-4 py-2 rounded-2xl bg-brand text-white text-sm font-semibold"
-            >
-              Tới Gia đình
-            </Link>
-          </RoundedCard>
-        </section>
-      </MobileShell>
-    );
-  }
-
-  return <ContactsLoaded familyId={familyId} familyName={family?.name ?? ""} />;
-}
-
-function ContactsLoaded({ familyId, familyName }: { familyId: string; familyName: string }) {
-  const listFn = useServerFn(listFamilyContacts);
-  const upsertFn = useServerFn(upsertFamilyContact);
-  const resetFn = useServerFn(resetFamilyContacts);
-  const qc = useQueryClient();
-
-  const q = useQuery({
-    queryKey: ["family-contacts", familyId],
-    queryFn: () => listFn({ data: { familyId } }),
-  });
-
-  const upsertM = useMutation({
-    mutationFn: (c: FamilyContactRow) =>
-      upsertFn({ data: { familyId, ...c } }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["family-contacts", familyId] }),
-  });
-
-  const resetM = useMutation({
-    mutationFn: () => resetFn({ data: { familyId } }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["family-contacts", familyId] });
-      toast.success("Đã khôi phục số mặc định");
-    },
-  });
-
-  const contacts = q.data ?? DEFAULT_CONTACTS;
-
-  function handleSave(c: FamilyContactRow, name: string, phone: string) {
-    const cleaned = phone.replace(/[^\d+\s().-]/g, "").trim();
+  function handleSave(c: ContactSlot, name: string, phone: string) {
+    const cleaned = phone.replace(/[^\d+]/g, "");
     if (!cleaned) {
       toast.error("Vui lòng nhập số điện thoại");
       return;
     }
-    upsertM.mutate(
-      { ...c, name: name.trim() || c.name, phone: cleaned },
-      {
-        onSuccess: () =>
-          toast.success(`Đã lưu ${c.label}`, { description: `${name} · ${cleaned}` }),
-        onError: (e) => toast.error("Không lưu được", { description: (e as Error).message }),
-      },
-    );
+    update(c.id, { name: name.trim() || c.name, phone: cleaned });
+    toast.success(`Đã lưu ${c.label}`, { description: `${name} · ${cleaned}` });
   }
 
-  function handleCall(c: FamilyContactRow) {
+  function handleCall(c: ContactSlot) {
     if (!c.phone) return;
-    if (typeof window !== "undefined") window.location.href = `tel:${c.phone.replace(/\s/g, "")}`;
+    if (typeof window !== "undefined") window.location.href = `tel:${c.phone}`;
   }
 
   return (
@@ -123,42 +55,65 @@ function ContactsLoaded({ familyId, familyName }: { familyId: string; familyName
         eyebrow="Family Core"
         back="/gia-dinh"
         title="Người liên hệ"
-        subtitle={familyName || "Số gọi nhanh của gia đình"}
+        subtitle="Đặt số gọi nhanh cho gia đình"
         emoji="📇"
       />
 
+      {/* Chọn gia đình */}
+      <section className="px-4 mt-2">
+        <RoundedCard className="p-3">
+          <label className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
+            Gia đình
+          </label>
+          <div className="relative mt-1">
+            <select
+              value={familyId}
+              onChange={(e) => setFamilyId(e.target.value)}
+              className="w-full appearance-none bg-card border border-border rounded-2xl pl-3 pr-9 py-2.5 text-sm font-semibold"
+            >
+              {familyOptions.map((f) => (
+                <option key={f.id} value={f.id}>
+                  {f.name} — {f.apartment}
+                </option>
+              ))}
+            </select>
+            <ChevronDown className="h-4 w-4 absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+          </div>
+          <p className="text-[11px] text-muted-foreground mt-2">
+            Mỗi gia đình có danh bạ riêng. Số này được dùng cho nút Gọi nhanh ở trang
+            Chăm sóc ông bà.
+          </p>
+        </RoundedCard>
+      </section>
+
+      {/* Danh sách slot */}
       <section className="px-4 mt-5">
         <SectionHeader
           title="Số gọi nhanh"
           subtitle="3 số quan trọng nhất, ai trong nhà cũng gọi được"
         />
-        {q.isLoading ? (
-          <div className="py-8 text-center text-sm text-muted-foreground">
-            <Loader2 className="h-4 w-4 animate-spin mx-auto" />
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {contacts.map((c) => (
-              <ContactCard
-                key={`${familyId}-${c.slot_id}`}
-                contact={c}
-                saving={upsertM.isPending}
-                onSave={handleSave}
-                onCall={handleCall}
-              />
-            ))}
-          </div>
-        )}
+        <div className="space-y-3">
+          {contacts.map((c) => (
+            <ContactCard
+              key={`${familyId}-${c.id}`}
+              contact={c}
+              onSave={handleSave}
+              onCall={handleCall}
+            />
+          ))}
+        </div>
       </section>
 
       <section className="px-4 mt-6 mb-8">
         <button
-          onClick={() => resetM.mutate()}
-          disabled={resetM.isPending}
-          className="w-full flex items-center justify-center gap-2 text-sm font-semibold text-muted-foreground py-3 rounded-2xl border border-border bg-card disabled:opacity-60"
+          onClick={() => {
+            reset();
+            toast.success("Đã khôi phục số mặc định");
+          }}
+          className="w-full flex items-center justify-center gap-2 text-sm font-semibold text-muted-foreground py-3 rounded-2xl border border-border bg-card"
         >
           <RotateCcw className="h-4 w-4" />
-          Khôi phục mặc định
+          Khôi phục mặc định cho {family.name}
         </button>
       </section>
     </MobileShell>
@@ -167,24 +122,15 @@ function ContactsLoaded({ familyId, familyName }: { familyId: string; familyName
 
 function ContactCard({
   contact,
-  saving,
   onSave,
   onCall,
 }: {
-  contact: FamilyContactRow;
-  saving: boolean;
-  onSave: (c: FamilyContactRow, name: string, phone: string) => void;
-  onCall: (c: FamilyContactRow) => void;
+  contact: ContactSlot;
+  onSave: (c: ContactSlot, name: string, phone: string) => void;
+  onCall: (c: ContactSlot) => void;
 }) {
   const [name, setName] = useState(contact.name);
   const [phone, setPhone] = useState(contact.phone);
-
-  // Sync khi server data refresh
-  useEffect(() => {
-    setName(contact.name);
-    setPhone(contact.phone);
-  }, [contact.name, contact.phone]);
-
   const dirty = name !== contact.name || phone !== contact.phone;
 
   return (
@@ -195,14 +141,11 @@ function ContactCard({
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-base font-bold leading-tight">{contact.label}</p>
-          <p className="text-[11px] text-muted-foreground">
-            {contact.phone ? contact.phone : "Chưa có số"}
-          </p>
+          <p className="text-[11px] text-muted-foreground">{contact.description}</p>
         </div>
         <button
           onClick={() => onCall(contact)}
-          disabled={!contact.phone}
-          className="h-10 w-10 rounded-2xl bg-tint-green text-success grid place-items-center shrink-0 disabled:opacity-40"
+          className="h-10 w-10 rounded-2xl bg-tint-green text-success grid place-items-center shrink-0"
           aria-label={`Gọi ${contact.label}`}
         >
           <Phone className="h-4 w-4" />
@@ -210,7 +153,12 @@ function ContactCard({
       </div>
 
       <div className="space-y-2">
-        <Field label="Tên hiển thị" value={name} onChange={setName} placeholder="VD: Bà Hoa" />
+        <Field
+          label="Tên hiển thị"
+          value={name}
+          onChange={setName}
+          placeholder="VD: Bà Hoa"
+        />
         <Field
           label="Số điện thoại"
           value={phone}
@@ -221,14 +169,16 @@ function ContactCard({
       </div>
 
       <button
-        disabled={!dirty || saving}
+        disabled={!dirty}
         onClick={() => onSave(contact, name, phone)}
         className={cn(
           "w-full flex items-center justify-center gap-2 rounded-2xl py-2.5 text-sm font-bold transition",
-          dirty && !saving ? "bg-brand text-white" : "bg-muted text-muted-foreground",
+          dirty
+            ? "bg-brand text-white"
+            : "bg-muted text-muted-foreground",
         )}
       >
-        {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+        <Check className="h-4 w-4" />
         {dirty ? "Lưu thay đổi" : "Đã lưu"}
       </button>
     </RoundedCard>

@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
  * and relies on client-side session hydration.
  */
 export async function requireAuth(opts?: { location?: { pathname: string } }) {
-  if (typeof window === "undefined") return null;
+  if (typeof window === "undefined") return;
   const { data } = await supabase.auth.getSession();
   if (!data.session) {
     throw redirect({
@@ -17,5 +17,4 @@ export async function requireAuth(opts?: { location?: { pathname: string } }) {
         : undefined,
     });
   }
-  return data.session;
 }
