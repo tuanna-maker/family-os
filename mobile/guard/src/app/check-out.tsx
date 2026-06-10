@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, Alert } from "react-native";
+import { View, Text } from "react-native";
+import { showAppAlert } from "@mobile/components/AppAlert";
 import { useRouter } from "expo-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@mobile/components/ui/Button";
@@ -36,26 +37,30 @@ export default function CheckOutScreen() {
   useEffect(() => {
     if (shiftLoading) return;
     if (!onDuty) {
-      Alert.alert("Chưa vào ca", "Bạn chưa check-in ca trực nên không thể kết thúc ca.", [
-        { text: "OK", onPress: () => router.back() },
-      ]);
+      showAppAlert({
+        title: "Chưa vào ca",
+        message: "Bạn chưa check-in ca trực nên không thể kết thúc ca.",
+        buttons: [{ text: "OK", onPress: () => router.back() }],
+      });
     }
   }, [shiftLoading, onDuty, router]);
 
   const handleCheckOut = async () => {
     if (!onDuty) {
-      Alert.alert("Chưa vào ca", "Bạn chưa check-in ca trực.");
+      showAppAlert({ title: "Chưa vào ca", message: "Bạn chưa check-in ca trực." });
       return;
     }
     setCheckingOut(true);
     try {
       await checkOutShift({ location: coords ?? undefined });
       invalidateShiftQueries(qc);
-      Alert.alert("Thành công", "Đã kết thúc ca trực!", [
-        { text: "OK", onPress: () => router.replace("/(tabs)") },
-      ]);
+      showAppAlert({
+        title: "Thành công",
+        message: "Đã kết thúc ca trực!",
+        buttons: [{ text: "OK", onPress: () => router.replace("/(tabs)") }],
+      });
     } catch (e) {
-      Alert.alert("Lỗi", (e as Error).message || "Không kết thúc ca được");
+      showAppAlert({ title: "Lỗi", message: (e as Error).message || "Không kết thúc ca được" });
     } finally {
       setCheckingOut(false);
     }

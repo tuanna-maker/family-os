@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { View, Text, StyleSheet, Alert } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
+import { showAppAlert } from "@mobile/components/AppAlert";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import { useRouter } from "expo-router";
 import * as Location from "expo-location";
@@ -45,15 +46,23 @@ export default function QRScannerScreen() {
         scan_method: "qr",
         location,
       });
-      Alert.alert("Quét thành công", `Đã ghi nhận điểm: ${data}`, [
-        { text: "Quét tiếp", onPress: () => setScanned(false) },
-        { text: "Đóng", onPress: () => router.back() },
-      ]);
+      showAppAlert({
+        title: "Quét thành công",
+        message: `Đã ghi nhận điểm: ${data}`,
+        buttons: [
+          { text: "Quét tiếp", onPress: () => setScanned(false) },
+          { text: "Đóng", onPress: () => router.back() },
+        ],
+      });
     } catch (e) {
-      Alert.alert("Lỗi", (e as Error).message || "Không ghi nhận được", [
-        { text: "Thử lại", onPress: () => setScanned(false) },
-        { text: "Đóng", onPress: () => router.back() },
-      ]);
+      showAppAlert({
+        title: "Lỗi",
+        message: (e as Error).message || "Không ghi nhận được",
+        buttons: [
+          { text: "Thử lại", onPress: () => setScanned(false) },
+          { text: "Đóng", onPress: () => router.back() },
+        ],
+      });
     } finally {
       setSubmitting(false);
     }

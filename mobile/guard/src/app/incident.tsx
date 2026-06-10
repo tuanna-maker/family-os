@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { View, Text, ScrollView, TouchableOpacity, Alert } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity } from "react-native";
+import { showAppAlert } from "@mobile/components/AppAlert";
 import { useRouter } from "expo-router";
 import {
   AlertTriangle,
@@ -33,7 +34,7 @@ export default function IncidentReportScreen() {
 
   const handleSubmit = async () => {
     if (!selected || !detail.trim()) {
-      Alert.alert("Lỗi", "Vui lòng chọn loại sự cố và mô tả chi tiết.");
+      showAppAlert({ title: "Lỗi", message: "Vui lòng chọn loại sự cố và mô tả chi tiết." });
       return;
     }
     setLoading(true);
@@ -44,11 +45,13 @@ export default function IncidentReportScreen() {
         apartment: null,
         payload: { incident_category: selected.label, description: detail.trim() },
       });
-      Alert.alert("Thành công", "Đã gửi báo cáo sự cố!", [
-        { text: "OK", onPress: () => router.back() },
-      ]);
+      showAppAlert({
+        title: "Thành công",
+        message: "Đã gửi báo cáo sự cố!",
+        buttons: [{ text: "OK", onPress: () => router.back() }],
+      });
     } catch (e) {
-      Alert.alert("Lỗi", (e as Error).message || "Không gửi được báo cáo");
+      showAppAlert({ title: "Lỗi", message: (e as Error).message || "Không gửi được báo cáo" });
     } finally {
       setLoading(false);
     }

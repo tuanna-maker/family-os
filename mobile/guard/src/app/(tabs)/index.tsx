@@ -1,5 +1,6 @@
 import React, { useCallback } from "react";
-import { View, Text, ScrollView, TouchableOpacity, Alert } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity } from "react-native";
+import { showAppAlert } from "@mobile/components/AppAlert";
 import { Shield, LogIn, LogOut, MapPin, AlertTriangle, Users, Siren } from "lucide-react-native";
 import { Link, useFocusEffect, useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
@@ -12,31 +13,27 @@ import { getActiveShift } from "@guard/api/guard-shifts";
 import { initialsFromName, shiftLabel, shiftTimeRange } from "@mobile/utils/guardFormat";
 import { useTabScrollPadding } from "@mobile/hooks/useTabScrollPadding";
 import { GuardHeaderActions } from "@mobile/components/GuardHeaderActions";
-import { usePushNotifications } from "@mobile/hooks/usePushNotifications";
-
 export default function DashboardScreen() {
-  usePushNotifications();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const tabPad = useTabScrollPadding();
   const qc = useQueryClient();
   const { user } = useAuth();
-  const { unread } = useGuardNotifications();
+  const { badgeCount } = useGuardNotifications();
   const { data: openRequests = [] } = useQuery({
     queryKey: ["guard-open-requests"],
     queryFn: () => listOpenResidentRequests(),
-    refetchInterval: 60_000,
+    staleTime: 45_000,
   });
   const { data: activeShift } = useQuery({
     queryKey: ["guard-active-shift"],
     queryFn: () => getActiveShift(),
-    refetchInterval: 30_000,
+    staleTime: 45_000,
   });
 
   useFocusEffect(
     useCallback(() => {
       void qc.invalidateQueries({ queryKey: ["guard-active-shift"] });
-      void qc.invalidateQueries({ queryKey: ["guard-open-requests"] });
     }, [qc]),
   );
 
@@ -58,13 +55,16 @@ export default function DashboardScreen() {
       return;
     }
     if (onDuty) {
-      Alert.alert("Đã vào ca", "Bạn đang trong ca trực, không cần check-in lại.");
+      showAppAlert({
+        title: "Đã vào ca",
+        message: "Bạn đang trong ca trực, không cần check-in lại.",
+      });
       return;
     }
-    Alert.alert(
-      "Không có ca trực",
-      "Hôm nay bạn không có ca trực được phân công. Vui lòng liên hệ quản lý an ninh.",
-    );
+    showAppAlert({
+      title: "Không có ca trực",
+      message: "Hôm nay bạn không có ca trực được phân công. Vui lòng liên hệ quản lý an ninh.",
+    });
   };
 
   const handleCheckOutPress = () => {
@@ -72,7 +72,10 @@ export default function DashboardScreen() {
       router.push("/check-out");
       return;
     }
-    Alert.alert("Chưa vào ca", "Bạn cần check-in ca trực trước khi kết thúc ca.");
+    showAppAlert({
+      title: "Chưa vào ca",
+      message: "Bạn cần check-in ca trực trước khi kết thúc ca.",
+    });
   };
 
   return (
@@ -103,7 +106,7 @@ export default function DashboardScreen() {
             </Text>
           </View>
         </View>
-        <GuardHeaderActions unread={unread} />
+        <GuardHeaderActions unread={badgeCount} />
       </View>
 
       <View className="px-5 mt-4 mb-4">

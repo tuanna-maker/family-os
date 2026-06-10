@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, Alert } from "react-native";
+import { View, Text } from "react-native";
+import { showAppAlert } from "@mobile/components/AppAlert";
 import { useRouter } from "expo-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@mobile/components/ui/Button";
@@ -38,39 +39,41 @@ export default function CheckInScreen() {
   useEffect(() => {
     if (shiftLoading) return;
     if (onDuty) {
-      Alert.alert("Đã vào ca", "Bạn đang trong ca trực, không cần check-in lại.", [
-        { text: "OK", onPress: () => router.replace("/(tabs)") },
-      ]);
+      showAppAlert({
+        title: "Đã vào ca",
+        message: "Bạn đang trong ca trực, không cần check-in lại.",
+        buttons: [{ text: "OK", onPress: () => router.replace("/(tabs)") }],
+      });
     } else if (noShiftToday) {
-      Alert.alert(
-        "Không có ca trực",
-        "Hôm nay bạn không có ca trực được phân công. Vui lòng liên hệ quản lý an ninh.",
-        [{ text: "OK", onPress: () => router.back() }],
-      );
+      showAppAlert({
+        title: "Không có ca trực",
+        message: "Hôm nay bạn không có ca trực được phân công. Vui lòng liên hệ quản lý an ninh.",
+        buttons: [{ text: "OK", onPress: () => router.back() }],
+      });
     }
   }, [shiftLoading, onDuty, noShiftToday, router]);
 
   const handleCheckIn = async () => {
     if (!canCheckIn) {
-      Alert.alert(
-        "Không thể vào ca",
-        noShiftToday
+      showAppAlert({
+        title: "Không thể vào ca",
+        message: noShiftToday
           ? "Hôm nay bạn không có ca trực được phân công."
           : "Bạn đang trong ca hoặc đã kết thúc ca hôm nay.",
-      );
+      });
       return;
     }
     setCheckingIn(true);
     try {
       const res = await checkInShift({ location: coords ?? undefined });
       invalidateShiftQueries(qc);
-      Alert.alert(
-        "Thành công",
-        res.reused ? "Đã có ca đang mở" : "Đã check-in ca trực!",
-        [{ text: "OK", onPress: () => router.replace("/(tabs)") }],
-      );
+      showAppAlert({
+        title: "Thành công",
+        message: res.reused ? "Đã có ca đang mở" : "Đã check-in ca trực!",
+        buttons: [{ text: "OK", onPress: () => router.replace("/(tabs)") }],
+      });
     } catch (e) {
-      Alert.alert("Lỗi", (e as Error).message || "Không vào ca được");
+      showAppAlert({ title: "Lỗi", message: (e as Error).message || "Không vào ca được" });
     } finally {
       setCheckingIn(false);
     }

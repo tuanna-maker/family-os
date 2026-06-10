@@ -1,13 +1,25 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, StyleSheet } from "react-native";
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  ActivityIndicator,
+  StyleSheet,
+  Pressable,
+  type ViewStyle,
+  type TextStyle,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Clock, Siren, RefreshCw, AlertTriangle } from "lucide-react-native";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Clock, Siren, RefreshCw, AlertTriangle, CheckSquare, Square } from "lucide-react-native";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getSupabase } from "@shared/supabase/get-client";
+import { showAppAlert } from "@mobile/components/AppAlert";
 import { SubHeader } from "@mobile/components/SubHeader";
 import { Button } from "@mobile/components/ui/Button";
 import { SosTicketDrawer } from "@mobile/components/SosTicketDrawer";
 import {
+  batchUpdateSecurityRequests,
   listOpenResidentRequests,
   updateSecurityRequest,
   type OpenSosRow,
@@ -26,10 +38,23 @@ const TONE: Record<string, { bg: string; text: string }> = {
 };
 
 type FilterKey = "all" | "sos" | "other";
+type ActionStatus = "in_progress" | "resolved";
 
 function unitLabel(r: SecurityRequest) {
   const parts = [r.apartment, r.building].filter(Boolean);
   return parts.length ? parts.join(" · ") : "Cư dân";
+}
+
+function actionKey(id: string, status: ActionStatus) {
+  return `${id}:${status}`;
+}
+
+function canClaim(r: SecurityRequest) {
+  return r.request_type !== "sos" && r.status === "open";
+}
+
+function canResolve(r: SecurityRequest) {
+  return r.request_type !== "sos" && (r.status === "open" || r.status === "in_progress");
 }
 
 function toOpenSosRow(r: SecurityRequest): OpenSosRow {
@@ -59,6 +84,28 @@ function sortRequests(rows: SecurityRequest[]) {
   });
 }
 
+function statusAlertMessage(status: ActionStatus, ok: number, fail: number) {
+  const action =
+    status === "in_progress"
+      ? { verb: "tiếp nhận", family: "Bảo vệ đã tiếp nhận yêu cầu của bạn." }
+      : { verb: "hoàn thành", family: "Bảo vệ đã hoàn tất xử lý yêu cầu của bạn." };
+
+  if (fail === 0) {
+    return {
+      title: status === "in_progress" ? "Đã tiếp nhận" : "Đã hoàn thành",
+      message:
+        ok === 1
+          ? `Đã ${action.verb} yêu cầu. Cư dân sẽ nhận thông báo: "${action.family}"`
+          : `Đã ${action.verb} ${ok} yêu cầu. Cư dân sẽ nhận thông báo trên app Family.`,
+    };
+  }
+
+  return {
+    title: "Hoàn tất một phần",
+    message: `Thành công ${ok}, thất bại ${fail}. Vui lòng thử lại các yêu cầu còn lại.`,
+  };
+}
+
 export default function RequestsScreen() {
   const qc = useQueryClient();
   const insets = useSafeAreaInsets();
@@ -67,11 +114,14 @@ export default function RequestsScreen() {
   const { data, isLoading, refetch, isFetching } = useQuery({
     queryKey: ["guard-open-requests"],
     queryFn: () => listOpenResidentRequests(),
-    refetchInterval: 60_000,
+    staleTime: 45_000,
   });
   const [selectedSos, setSelectedSos] = useState<OpenSosRow | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [filter, setFilter] = useState<FilterKey>("all");
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [loadingKeys, setLoadingKeys] = useState<Set<string>>(new Set());
+  const [bulkLoading, setBulkLoading] = useState<ActionStatus | null>(null);
 
   useEffect(() => {
     const supabase = getSupabase();
@@ -80,7 +130,18 @@ export default function RequestsScreen() {
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "security_requests" },
-        () => qc.invalidateQueries({ queryKey: ["guard-open-requests"] }),
+        (payload) => {
+          const row = (payload.new ?? payload.old) as SecurityRequest | undefined;
+          if (!row?.id) return;
+          qc.setQueryData<SecurityRequest[]>(["guard-open-requests"], (old) => {
+            const prev = old ?? [];
+            const without = prev.filter((r) => r.id !== row.id);
+            if (payload.eventType === "DELETE") return without;
+            const open = row.status === "open" || row.status === "in_progress";
+            if (!open) return without;
+            return sortRequests([row, ...without]);
+          });
+        },
       )
       .subscribe();
     return () => {
@@ -96,16 +157,129 @@ export default function RequestsScreen() {
     return allRows;
   }, [allRows, filter, sosRows]);
 
+  const selectableRows = useMemo(() => rows.filter((r) => r.request_type !== "sos"), [rows]);
+  const allSelected =
+    selectableRows.length > 0 && selectableRows.every((r) => selectedIds.has(r.id));
+
+  const selectedRows = useMemo(
+    () => selectableRows.filter((r) => selectedIds.has(r.id)),
+    [selectableRows, selectedIds],
+  );
+  const selectedClaimable = selectedRows.filter(canClaim);
+  const selectedResolvable = selectedRows.filter(canResolve);
+
+  const patchCacheMany = (ids: string[], status: ActionStatus) => {
+    const idSet = new Set(ids);
+    qc.setQueryData<SecurityRequest[]>(["guard-open-requests"], (old) => {
+      if (!old) return old;
+      if (status === "resolved") return old.filter((r) => !idSet.has(r.id));
+      return old.map((r) => (idSet.has(r.id) ? { ...r, status } : r));
+    });
+  };
+
+  const runStatusUpdate = async (ids: string[], status: ActionStatus) => {
+    const eligible = ids.filter((id) => {
+      const row = allRows.find((r) => r.id === id);
+      if (!row) return false;
+      return status === "in_progress" ? canClaim(row) : canResolve(row);
+    });
+
+    if (eligible.length === 0) {
+      showAppAlert({
+        title: "Không thể thực hiện",
+        message:
+          status === "in_progress"
+            ? "Chỉ tiếp nhận được yêu cầu đang ở trạng thái Chờ xử lý."
+            : "Không có yêu cầu phù hợp để hoàn thành.",
+      });
+      return;
+    }
+
+    const isBulk = eligible.length > 1;
+    const keys = eligible.map((id) => actionKey(id, status));
+    if (isBulk) setBulkLoading(status);
+    else setLoadingKeys((prev) => new Set([...prev, ...keys]));
+
+    try {
+      const results = isBulk
+        ? await batchUpdateSecurityRequests({ ids: eligible, status })
+        : await (async () => {
+            const id = eligible[0];
+            try {
+              await updateSecurityRequest({ id, status });
+              return [{ id, ok: true as const }];
+            } catch (e) {
+              return [
+                {
+                  id,
+                  ok: false as const,
+                  error: e instanceof Error ? e.message : "Không cập nhật được trạng thái",
+                },
+              ];
+            }
+          })();
+
+      const succeeded = results.filter((r) => r.ok).map((r) => r.id);
+      const fail = results.length - succeeded.length;
+
+      if (succeeded.length > 0) {
+        patchCacheMany(succeeded, status);
+        const alert = statusAlertMessage(status, succeeded.length, fail);
+        showAppAlert({ title: alert.title, message: alert.message });
+      } else {
+        const firstErr = results.find((r) => !r.ok);
+        showAppAlert({
+          title: "Lỗi",
+          message:
+            firstErr && !firstErr.ok
+              ? firstErr.error
+              : "Không cập nhật được trạng thái",
+        });
+      }
+
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        succeeded.forEach((id) => next.delete(id));
+        return next;
+      });
+    } finally {
+      if (!isBulk) {
+        setLoadingKeys((prev) => {
+          const next = new Set(prev);
+          keys.forEach((k) => next.delete(k));
+          return next;
+        });
+      }
+      setBulkLoading(null);
+      void qc.invalidateQueries({ queryKey: ["guard-open-requests"] });
+      void qc.invalidateQueries({ queryKey: ["guard-notifications"] });
+    }
+  };
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (allSelected) {
+      setSelectedIds(new Set());
+      return;
+    }
+    setSelectedIds(new Set(selectableRows.map((r) => r.id)));
+  };
+
   const openSos = (r: SecurityRequest) => {
     setSelectedSos(toOpenSosRow(r));
     setDrawerOpen(true);
   };
 
-  const statusMut = useMutation({
-    mutationFn: (vars: { id: string; status: "in_progress" | "resolved" }) =>
-      updateSecurityRequest(vars),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["guard-open-requests"] }),
-  });
+  const isLoadingAction = (id: string, status: ActionStatus) =>
+    loadingKeys.has(actionKey(id, status)) || bulkLoading === status;
 
   const filters: { key: FilterKey; label: string; count?: number }[] = [
     { key: "all", label: "Tất cả", count: allRows.length },
@@ -113,20 +287,31 @@ export default function RequestsScreen() {
     { key: "other", label: "Yêu cầu khác", count: allRows.length - sosRows.length },
   ];
 
+  const bottomPad = Math.max(insets.bottom, 16) + (selectedIds.size > 0 ? 72 : 8);
+
   return (
     <View className="flex-1 bg-background">
       <SubHeader
         title="YÊU CẦU CƯ DÂN"
         right={
-          <TouchableOpacity onPress={() => refetch()} disabled={isFetching} className="p-2">
-            <RefreshCw size={20} color={colors.muted} />
-          </TouchableOpacity>
+          <View className="flex-row items-center gap-1">
+            {selectableRows.length > 0 ? (
+              <TouchableOpacity onPress={toggleSelectAll} className="px-2 py-1">
+                <Text className="text-xs font-semibold text-primary">
+                  {allSelected ? "Bỏ chọn" : "Chọn tất cả"}
+                </Text>
+              </TouchableOpacity>
+            ) : null}
+            <TouchableOpacity onPress={() => refetch()} disabled={isFetching} className="p-2">
+              <RefreshCw size={20} color={colors.muted} />
+            </TouchableOpacity>
+          </View>
         }
       />
 
       <ScrollView
         className="flex-1 p-4"
-        contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 16) + 8 }}
+        contentContainerStyle={{ paddingBottom: bottomPad }}
       >
         {sosRows.length > 0 ? (
           <TouchableOpacity
@@ -205,15 +390,35 @@ export default function RequestsScreen() {
             const p = (r.payload ?? {}) as Record<string, unknown>;
             const ticketCode =
               (p.ticket_code as string) ?? (isSos ? `SOS-${r.id.slice(0, 6).toUpperCase()}` : null);
+            const checked = selectedIds.has(r.id);
+            const claimLoading = isLoadingAction(r.id, "in_progress");
+            const resolveLoading = isLoadingAction(r.id, "resolved");
 
             return (
               <View
                 key={r.id}
                 className={`rounded-2xl p-4 mb-3 border shadow-sm ${
-                  isSos ? "bg-red-500/8 border-red-400/60" : "bg-card border-border"
+                  checked
+                    ? "border-primary bg-primary/5"
+                    : isSos
+                      ? "bg-red-500/8 border-red-400/60"
+                      : "bg-card border-border"
                 }`}
               >
-                <View className="flex-row justify-between items-start">
+                <View className="flex-row justify-between items-start gap-2">
+                  {!isSos ? (
+                    <Pressable
+                      onPress={() => toggleSelect(r.id)}
+                      hitSlop={8}
+                      className="pt-0.5 pr-2"
+                    >
+                      {checked ? (
+                        <CheckSquare size={22} color={colors.brand} />
+                      ) : (
+                        <Square size={22} color={colors.muted} />
+                      )}
+                    </Pressable>
+                  ) : null}
                   <View className="flex-1">
                     <View className="flex-row items-center gap-2">
                       {isSos ? <Siren size={18} color="#ef4444" /> : null}
@@ -258,26 +463,27 @@ export default function RequestsScreen() {
                   ) : (
                     <>
                       {r.status === "open" && (
-                        <Button
-                          size="sm"
-                          className="h-8"
-                          disabled={statusMut.isPending}
-                          onPress={() =>
-                            statusMut.mutate({ id: r.id, status: "in_progress" })
-                          }
-                        >
-                          Tiếp nhận
-                        </Button>
+                        <BulkActionButton
+                          label="Tiếp nhận"
+                          variant="primary"
+                          compact
+                          loading={claimLoading}
+                          disabled={claimLoading || resolveLoading || bulkLoading !== null}
+                          brandColor={colors.brand}
+                          isDark={isDark}
+                          onPress={() => void runStatusUpdate([r.id], "in_progress")}
+                        />
                       )}
-                      <Button
+                      <BulkActionButton
+                        label="Hoàn thành"
                         variant="outline"
-                        size="sm"
-                        className="h-8"
-                        disabled={statusMut.isPending}
-                        onPress={() => statusMut.mutate({ id: r.id, status: "resolved" })}
-                      >
-                        Hoàn thành
-                      </Button>
+                        compact
+                        loading={resolveLoading}
+                        disabled={claimLoading || resolveLoading || bulkLoading !== null}
+                        brandColor={colors.brand}
+                        isDark={isDark}
+                        onPress={() => void runStatusUpdate([r.id], "resolved")}
+                      />
                     </>
                   )}
                 </View>
@@ -287,12 +493,117 @@ export default function RequestsScreen() {
         )}
       </ScrollView>
 
+      {selectedIds.size > 0 ? (
+        <View
+          style={[
+            bulkStyles.bar,
+            {
+              paddingBottom: Math.max(insets.bottom, 12),
+              backgroundColor: isDark ? colors.card : "#FFFFFF",
+              borderTopColor: isDark ? colors.cardBorder : "rgba(15, 23, 42, 0.1)",
+            },
+          ]}
+        >
+          <Text style={[bulkStyles.count, { color: colors.muted }]}>
+            Đã chọn {selectedIds.size}
+          </Text>
+          <View style={bulkStyles.actions}>
+            {selectedClaimable.length > 0 ? (
+              <BulkActionButton
+                label={`Tiếp nhận (${selectedClaimable.length})`}
+                variant="primary"
+                loading={bulkLoading === "in_progress"}
+                disabled={bulkLoading !== null}
+                brandColor={colors.brand}
+                isDark={isDark}
+                onPress={() =>
+                  void runStatusUpdate(
+                    selectedClaimable.map((r) => r.id),
+                    "in_progress",
+                  )
+                }
+              />
+            ) : null}
+            {selectedResolvable.length > 0 ? (
+              <BulkActionButton
+                label={`Hoàn thành (${selectedResolvable.length})`}
+                variant="outline"
+                loading={bulkLoading === "resolved"}
+                disabled={bulkLoading !== null}
+                brandColor={colors.brand}
+                isDark={isDark}
+                onPress={() =>
+                  void runStatusUpdate(
+                    selectedResolvable.map((r) => r.id),
+                    "resolved",
+                  )
+                }
+              />
+            ) : null}
+          </View>
+        </View>
+      ) : null}
+
       <SosTicketDrawer
         row={selectedSos}
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
       />
     </View>
+  );
+}
+
+function BulkActionButton({
+  label,
+  variant,
+  loading,
+  disabled,
+  brandColor,
+  isDark,
+  onPress,
+  compact,
+}: {
+  label: string;
+  variant: "primary" | "outline";
+  loading: boolean;
+  disabled: boolean;
+  brandColor: string;
+  isDark: boolean;
+  onPress: () => void;
+  compact?: boolean;
+}) {
+  const primary = variant === "primary";
+  return (
+    <Pressable
+      onPress={onPress}
+      disabled={disabled || loading}
+      style={[
+        bulkStyles.actionBtn,
+        compact && bulkStyles.actionBtnCompact,
+        primary
+          ? { backgroundColor: brandColor }
+          : {
+              backgroundColor: isDark ? "rgba(255,255,255,0.06)" : "#FFFFFF",
+              borderWidth: 1.5,
+              borderColor: brandColor,
+            },
+        (disabled || loading) && { opacity: 0.55 },
+      ]}
+    >
+      {loading ? (
+        <ActivityIndicator color={primary ? "#FFFFFF" : brandColor} size="small" />
+      ) : (
+        <Text
+          style={[
+            bulkStyles.actionText,
+            { color: primary ? "#FFFFFF" : isDark ? "#FFFFFF" : brandColor },
+          ]}
+          numberOfLines={1}
+        >
+          {label}
+        </Text>
+      )}
+    </Pressable>
   );
 }
 
@@ -312,5 +623,43 @@ const filterStyles = StyleSheet.create({
   chipText: {
     fontSize: 12,
     fontWeight: "600",
+  },
+});
+
+const bulkStyles = StyleSheet.create({
+  bar: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: 16,
+    paddingTop: 10,
+    gap: 8,
+  },
+  count: {
+    fontSize: 12,
+    fontWeight: "600",
+    textAlign: "center",
+  },
+  actions: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  actionBtn: {
+    flex: 1,
+    minHeight: 40,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 10,
+  },
+  actionBtnCompact: {
+    minHeight: 32,
+    borderRadius: 8,
+  },
+  actionText: {
+    fontSize: 13,
+    fontWeight: "700",
   },
 });

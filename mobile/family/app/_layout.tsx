@@ -4,8 +4,11 @@ import { ActivityIndicator, View } from "react-native";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
 import { useRouter, useSegments } from "expo-router";
+import * as SplashScreen from "expo-splash-screen";
+
+SplashScreen.preventAutoHideAsync().catch(() => {});
 import { AuthProvider, useAuth } from "@mobile/hooks/useAuth";
 import { AppPrefsProvider } from "@mobile/hooks/useAppPrefs";
 import { usePushNotifications } from "@mobile/hooks/usePushNotifications";
@@ -15,9 +18,14 @@ import { AppAlertProvider } from "@mobile/components/AppAlert";
 
 const queryClient = new QueryClient({
   defaultOptions: {
-    queries: { retry: 1, staleTime: 30_000 },
+    queries: { retry: 1, staleTime: 15_000, gcTime: 300_000 },
   },
 });
+
+function PushBootstrap() {
+  usePushNotifications();
+  return null;
+}
 
 function AuthGate() {
   const { session, loading } = useAuth();
@@ -25,7 +33,13 @@ function AuthGate() {
   const router = useRouter();
   const { colors, theme } = useTheme();
 
-  usePushNotifications();
+  const onLayoutReady = useCallback(() => {
+    if (!loading) void SplashScreen.hideAsync();
+  }, [loading]);
+
+  useEffect(() => {
+    if (!loading) void SplashScreen.hideAsync();
+  }, [loading]);
 
   useEffect(() => {
     if (loading) return;
@@ -47,7 +61,10 @@ function AuthGate() {
 
   if (loading) {
     return (
-      <View style={{ flex: 1, backgroundColor: colors.background, alignItems: "center", justifyContent: "center" }}>
+      <View
+        onLayout={onLayoutReady}
+        style={{ flex: 1, backgroundColor: colors.background, alignItems: "center", justifyContent: "center" }}
+      >
         <ActivityIndicator size="large" color={colors.brand} />
       </View>
     );
@@ -74,6 +91,7 @@ export default function RootLayout() {
             <AppPrefsProvider>
               <ThemeBridge>
                 <AppAlertProvider>
+                  <PushBootstrap />
                   <AuthGate />
                 </AppAlertProvider>
               </ThemeBridge>

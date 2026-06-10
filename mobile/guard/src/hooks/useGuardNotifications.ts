@@ -1,44 +1,371 @@
-import { useQuery } from "@tanstack/react-query";
+import { useCallback, useEffect, useMemo } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { getSupabase } from "@shared/supabase/get-client";
 import {
   listPlatformNotifications,
-  unreadPlatformCount,
+  markPlatformRead,
+  markAllPlatformRead,
+  deleteReadPlatformNotifications,
+  deletePlatformNotifications,
+  type PlatformNotification,
 } from "@guard/api/notifications";
-import { useGuardPrefs } from "@mobile/hooks/useGuardPrefs";
+import { listOpenResidentRequests, type SecurityRequest } from "@guard/api/security";
+import { RESIDENT_NOTIFICATION_TOPICS } from "@mobile/constants/notifications";
+import { REQUEST_TYPE_LABEL } from "@mobile/utils/guardFormat";
+
+export type GuardResidentInboxItem = {
+  kind: "platform" | "request";
+  id: string;
+  title: string;
+  body: string | null;
+  created_at: string;
+  read: boolean;
+  isAlert: boolean;
+  requestId?: string;
+  notificationId: string;
+};
+
+function platformToResidentItem(n: PlatformNotification): GuardResidentInboxItem {
+  const requestId =
+    typeof n.data?.request_id === "string" ? n.data.request_id : undefined;
+  return {
+    kind: "platform",
+    id: n.id,
+    notificationId: n.id,
+    title: n.title,
+    body: n.body,
+    created_at: n.created_at,
+    read: !!n.read_at,
+    isAlert: n.topic.startsWith("sos."),
+    requestId,
+  };
+}
+
+function requestToResidentItem(
+  r: SecurityRequest,
+  ackedIds: Set<string>,
+): GuardResidentInboxItem {
+  const typeLabel = REQUEST_TYPE_LABEL[r.request_type] ?? r.request_type;
+  const unit = [r.apartment, r.building].filter(Boolean).join(" · ");
+  return {
+    kind: "request",
+    id: `req-${r.id}`,
+    notificationId: `req-${r.id}`,
+    title: `Yêu cầu: ${typeLabel}`,
+    body: unit || "Chờ xử lý",
+    created_at: r.created_at,
+    read: ackedIds.has(r.id),
+    isAlert: r.request_type === "sos" || r.request_type === "fire",
+    requestId: r.id,
+  };
+}
+
+function isResidentTopic(topic: string) {
+  return RESIDENT_NOTIFICATION_TOPICS.includes(
+    topic as (typeof RESIDENT_NOTIFICATION_TOPICS)[number],
+  );
+}
+
+/** Platform notifications + open requests chưa có thông báo platform tương ứng. */
+export function buildResidentInbox(
+  notifications: PlatformNotification[],
+  openRequests: SecurityRequest[],
+  ackedRequestIds: Set<string>,
+): GuardResidentInboxItem[] {
+  const platformItems = notifications
+    .filter((n) => isResidentTopic(n.topic))
+    .map(platformToResidentItem);
+
+  const coveredRequestIds = new Set(
+    platformItems.map((n) => n.requestId).filter((id): id is string => !!id),
+  );
+
+  const requestItems = openRequests
+    .filter((r) => !coveredRequestIds.has(r.id))
+    .map((r) => requestToResidentItem(r, ackedRequestIds));
+
+  return [...platformItems, ...requestItems].sort(
+    (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+  );
+}
+
+function patchNotificationRead(items: PlatformNotification[] | undefined, id: string) {
+  if (!items) return items;
+  const now = new Date().toISOString();
+  return items.map((n) =>
+    n.id === id ? { ...n, read_at: now, status: "read" } : n,
+  );
+}
+
+function countInboxUnread(
+  platformItems: PlatformNotification[],
+  residentItems: GuardResidentInboxItem[],
+) {
+  const company = platformItems.filter((n) => !isResidentTopic(n.topic));
+  return (
+    residentItems.filter((n) => !n.read).length +
+    company.filter((n) => !n.read_at).length
+  );
+}
 
 export function useGuardNotifications() {
-  const { ready, notificationsEnabled } = useGuardPrefs();
-  const enabled = ready && notificationsEnabled;
-
-  const unreadQ = useQuery({
-    queryKey: ["guard-notifications-unread"],
-    queryFn: () => unreadPlatformCount(),
-    refetchInterval: enabled ? 60_000 : false,
-    enabled,
-  });
+  const qc = useQueryClient();
 
   const listQ = useQuery({
     queryKey: ["guard-notifications"],
     queryFn: () => listPlatformNotifications(),
-    refetchInterval: enabled ? 60_000 : false,
-    enabled,
+    staleTime: 30_000,
   });
 
+  const openQ = useQuery({
+    queryKey: ["guard-open-requests"],
+    queryFn: () => listOpenResidentRequests(),
+    staleTime: 30_000,
+  });
+
+  const ackedQ = useQuery({
+    queryKey: ["guard-inbox-acked-request-ids"],
+    queryFn: async () => [] as string[],
+    staleTime: Infinity,
+    initialData: [] as string[],
+  });
+  const ackedIds = useMemo(() => new Set(ackedQ.data ?? []), [ackedQ.data]);
+
+  useEffect(() => {
+    const supabase = getSupabase();
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+
+    void supabase.auth.getUser().then(({ data }) => {
+      const userId = data.user?.id;
+      if (!userId) return;
+
+      channel = supabase
+        .channel(`guard-inbox-${userId}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "platform",
+            table: "notification",
+            filter: `user_id=eq.${userId}`,
+          },
+          (payload) => {
+            const row = (payload.new ?? payload.old) as PlatformNotification | undefined;
+            if (!row?.id) return;
+            qc.setQueryData<PlatformNotification[]>(["guard-notifications"], (old) => {
+              const prev = old ?? [];
+              const without = prev.filter((n) => n.id !== row.id);
+              if (payload.eventType === "DELETE") return without;
+              return [row, ...without];
+            });
+          },
+        )
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "security_requests" },
+          (payload) => {
+            const row = (payload.new ?? payload.old) as SecurityRequest | undefined;
+            if (!row?.id) return;
+            qc.setQueryData<SecurityRequest[]>(["guard-open-requests"], (old) => {
+              const prev = old ?? [];
+              const without = prev.filter((r) => r.id !== row.id);
+              if (payload.eventType === "DELETE") return without;
+              const open = row.status === "open" || row.status === "in_progress";
+              if (!open) return without;
+              return [row, ...without];
+            });
+          },
+        )
+        .subscribe();
+    });
+
+    return () => {
+      if (channel) void supabase.removeChannel(channel);
+    };
+  }, [qc]);
+
+  const platformItems = listQ.data ?? [];
+  const openRequests = openQ.data ?? [];
+
+  const residentItems = useMemo(
+    () => buildResidentInbox(platformItems, openRequests, ackedIds),
+    [platformItems, openRequests, ackedIds],
+  );
+
+  const companyItems = useMemo(
+    () => platformItems.filter((n) => !isResidentTopic(n.topic)),
+    [platformItems],
+  );
+
+  const residentUnread = residentItems.filter((n) => !n.read).length;
+  const companyUnread = companyItems.filter((n) => !n.read_at).length;
+  const residentReadCount = residentItems.filter((n) => n.read).length;
+  const companyReadCount = companyItems.filter((n) => n.read_at).length;
+  const badgeCount = residentUnread + companyUnread;
+  const openRequestCount = openRequests.length;
+
+  useEffect(() => {
+    qc.setQueryData(["guard-notifications-unread"], { count: badgeCount });
+  }, [badgeCount, qc]);
+
+  const syncBadgeQuery = useCallback(
+    (items: PlatformNotification[], resident: GuardResidentInboxItem[]) => {
+      qc.setQueryData(["guard-notifications-unread"], {
+        count: countInboxUnread(items, resident),
+      });
+    },
+    [qc],
+  );
+
+  const ackRequest = useCallback(
+    (requestId: string) => {
+      qc.setQueryData<string[]>(["guard-inbox-acked-request-ids"], (old) => {
+        const prev = old ?? [];
+        if (prev.includes(requestId)) return prev;
+        return [...prev, requestId];
+      });
+    },
+    [qc],
+  );
+
+  const markRead = useCallback(
+    async (id: string) => {
+      if (id.startsWith("req-")) {
+        const requestId = id.slice(4);
+        ackRequest(requestId);
+        const nextResident = buildResidentInbox(
+          platformItems,
+          openRequests,
+          new Set([...ackedIds, requestId]),
+        );
+        syncBadgeQuery(platformItems, nextResident);
+        return;
+      }
+
+      qc.setQueryData<PlatformNotification[]>(["guard-notifications"], (old) => {
+        const next = patchNotificationRead(old, id);
+        if (next) {
+          const resident = buildResidentInbox(next, openRequests, ackedIds);
+          syncBadgeQuery(next, resident);
+        }
+        return next;
+      });
+
+      try {
+        await markPlatformRead({ id });
+      } catch {
+        void qc.invalidateQueries({ queryKey: ["guard-notifications"] });
+      }
+    },
+    [ackRequest, ackedIds, openRequests, platformItems, qc, syncBadgeQuery],
+  );
+
+  const markAllRead = useCallback(
+    async (tab: "resident" | "company" | "all") => {
+      const now = new Date().toISOString();
+
+      if (tab === "resident" || tab === "all") {
+        const toAck = openRequests
+          .filter((r) => !ackedIds.has(r.id))
+          .map((r) => r.id);
+        if (toAck.length > 0) {
+          qc.setQueryData<string[]>(["guard-inbox-acked-request-ids"], (old) => [
+            ...new Set([...(old ?? []), ...toAck]),
+          ]);
+        }
+      }
+
+      qc.setQueryData<PlatformNotification[]>(["guard-notifications"], (old) => {
+        if (!old) return old;
+        const next = old.map((n) => {
+          const isRes = isResidentTopic(n.topic);
+          const shouldMark =
+            tab === "all" ||
+            (tab === "resident" && isRes) ||
+            (tab === "company" && !isRes);
+          return shouldMark && !n.read_at ? { ...n, read_at: now, status: "read" } : n;
+        });
+        const resident = buildResidentInbox(
+          next,
+          openRequests,
+          tab === "resident" || tab === "all"
+            ? new Set([...ackedIds, ...openRequests.map((r) => r.id)])
+            : ackedIds,
+        );
+        syncBadgeQuery(next, resident);
+        return next;
+      });
+
+      try {
+        if (tab === "all") {
+          await markAllPlatformRead();
+        } else if (tab === "company") {
+          const toMark = platformItems.filter((n) => !n.read_at && !isResidentTopic(n.topic));
+          await Promise.all(toMark.map((n) => markPlatformRead({ id: n.id })));
+        } else {
+          const toMark = platformItems.filter((n) => !n.read_at && isResidentTopic(n.topic));
+          await Promise.all(toMark.map((n) => markPlatformRead({ id: n.id })));
+        }
+      } catch {
+        void qc.invalidateQueries({ queryKey: ["guard-notifications"] });
+      }
+    },
+    [ackedIds, openRequests, platformItems, qc, syncBadgeQuery],
+  );
+
+  const deleteRead = useCallback(
+    async (tab: "resident" | "company" | "all") => {
+      const idsToDelete: string[] = [];
+
+      qc.setQueryData<PlatformNotification[]>(["guard-notifications"], (old) => {
+        if (!old) return old;
+        const next = old.filter((n) => {
+          if (!n.read_at) return true;
+          const isRes = isResidentTopic(n.topic);
+          const shouldRemove =
+            tab === "all" ||
+            (tab === "resident" && isRes) ||
+            (tab === "company" && !isRes);
+          if (shouldRemove) idsToDelete.push(n.id);
+          return !shouldRemove;
+        });
+        const resident = buildResidentInbox(next, openRequests, ackedIds);
+        syncBadgeQuery(next, resident);
+        return next;
+      });
+
+      try {
+        if (tab === "all") {
+          await deleteReadPlatformNotifications();
+        } else {
+          await deletePlatformNotifications(idsToDelete);
+        }
+      } catch {
+        void qc.invalidateQueries({ queryKey: ["guard-notifications"] });
+      }
+    },
+    [ackedIds, openRequests, qc, syncBadgeQuery],
+  );
+
   return {
-    notificationsEnabled: enabled,
-    unread: enabled ? (unreadQ.data?.count ?? 0) : 0,
-    items: enabled ? (listQ.data ?? []) : [],
-    isLoading: enabled && listQ.isLoading,
-    refetch: listQ.refetch,
-    markRead: async (id: string) => {
-      const { markPlatformRead } = await import("@guard/api/notifications");
-      await markPlatformRead({ id });
-      await Promise.all([unreadQ.refetch(), listQ.refetch()]);
+    badgeCount,
+    residentUnread,
+    companyUnread,
+    residentReadCount,
+    companyReadCount,
+    openRequestCount,
+    items: platformItems,
+    residentItems,
+    companyItems,
+    isLoading:
+      (listQ.isLoading && listQ.data === undefined) ||
+      (openQ.isLoading && openQ.data === undefined),
+    isFetching: listQ.isFetching || openQ.isFetching,
+    refetch: async () => {
+      await Promise.all([listQ.refetch(), openQ.refetch()]);
     },
-    markAllRead: async () => {
-      const unread = (listQ.data ?? []).filter((n) => !n.read_at);
-      const { markPlatformRead } = await import("@guard/api/notifications");
-      await Promise.all(unread.map((n) => markPlatformRead({ id: n.id })));
-      await Promise.all([unreadQ.refetch(), listQ.refetch()]);
-    },
+    markRead,
+    markAllRead,
+    deleteRead,
   };
 }

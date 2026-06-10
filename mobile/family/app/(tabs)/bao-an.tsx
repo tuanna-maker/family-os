@@ -145,10 +145,7 @@ export default function BaoAnScreen() {
     setPending(type);
     setSendingLabel(c.sendingRequest);
     try {
-      await Promise.all([
-        createSecurityRequest({ request_type: type }),
-        new Promise((resolve) => setTimeout(resolve, 900)),
-      ]);
+      await createSecurityRequest({ request_type: type });
       void qc.invalidateQueries({ queryKey: ["security-requests"] });
       setSendingLabel(null);
       toast.success(sec.requestSent(label, securityMeta.responseTimeMinutes));
@@ -208,6 +205,10 @@ export default function BaoAnScreen() {
 
         <View style={{ paddingHorizontal: 16 }}>
           <SecurityRequestsTracker />
+
+          <View style={{ marginTop: 8 }}>
+            <SectionHeader title={sec.sendRequestTitle} />
+          </View>
 
           <View style={styles.grid}>
             {securityServiceGrid.map((item) => {

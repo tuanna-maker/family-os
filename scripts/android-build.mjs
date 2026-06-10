@@ -108,6 +108,15 @@ function ensureLocalProperties(dir) {
 
 function clearApkOutputDir(dir) {
   if (!fs.existsSync(dir)) return;
+  // Windows: chỉ xóa file bên trong, giữ thư mục — tránh lỗi "Unable to delete directory" khi bị khóa.
+  try {
+    for (const name of fs.readdirSync(dir)) {
+      fs.rmSync(path.join(dir, name), { recursive: true, force: true });
+    }
+    return;
+  } catch {
+    // fallback: đổi tên cả thư mục
+  }
   const stale = `${dir}.old.${Date.now()}`;
   try {
     fs.renameSync(dir, stale);
@@ -121,14 +130,18 @@ function clearApkOutputDir(dir) {
   }
 }
 
-function ensureGuardNodeLinks(guardRoot) {
-  const guardNm = path.join(guardRoot, "node_modules");
+function ensureWorkspaceNodeLinks(appRoot, packages, label) {
+  const appNm = path.join(appRoot, "node_modules");
+  const guardNm = path.join(ROOT, "mobile", "guard", "node_modules");
   const rootNm = path.join(ROOT, "node_modules");
-  for (const pkg of ["react-native", "nativewind", "tailwindcss", "react-native-css-interop"]) {
-    const local = path.join(guardNm, pkg);
-    const src = path.join(rootNm, pkg);
+  fs.mkdirSync(appNm, { recursive: true });
+  for (const pkg of packages) {
+    const local = path.join(appNm, pkg);
+    const src = fs.existsSync(path.join(guardNm, pkg))
+      ? path.join(guardNm, pkg)
+      : path.join(rootNm, pkg);
     if (fs.existsSync(local) || !fs.existsSync(src)) continue;
-    console.log(`Linking ${pkg} → mobile/guard/node_modules …`);
+    console.log(`Linking ${pkg} → ${label}/node_modules …`);
     if (process.platform === "win32") {
       spawnSync("cmd", ["/c", "mklink", "/J", local, src], { shell: true, stdio: "inherit" });
     } else {
@@ -137,8 +150,17 @@ function ensureGuardNodeLinks(guardRoot) {
   }
 }
 
+function ensureGuardNodeLinks(guardRoot) {
+  ensureWorkspaceNodeLinks(
+    guardRoot,
+    ["react-native", "nativewind", "tailwindcss", "react-native-css-interop"],
+    "mobile/guard",
+  );
+}
+
 ensureLocalProperties(androidDir);
 if (app === "mobile-guard") ensureGuardNodeLinks(mobileGuardRoot);
+// Family resolves native deps from monorepo root node_modules — junctions break Metro SHA-1 on Windows.
 
 const gradle = process.platform === "win32" ? "gradlew.bat" : "./gradlew";
 spawnSync(gradle, ["--stop"], { cwd: androidDir, shell: true, stdio: "ignore" });
@@ -161,8 +183,8 @@ if (result.status === 0 && (task === "assembleRelease" || task === "assembleDebu
   const androidRoot = androidDirFromRoot(ROOT);
   const variant = task === "assembleRelease" ? "release" : "debug";
   const apkCandidates = [
-    path.join(androidRoot, "..", "release", "gradle-app-build", "outputs", "apk", variant),
     path.join(androidRoot, "app", "build", "outputs", "apk", variant),
+    path.join(androidRoot, "..", "release", "gradle-app-build", "outputs", "apk", variant),
   ];
   const apkDir = apkCandidates.find((d) => fs.existsSync(path.join(d, `app-${variant}.apk`)) || fs.existsSync(path.join(d, `app-${variant}-unsigned.apk`))) ?? apkCandidates[0];
   const signed = path.join(apkDir, `app-${variant}.apk`);

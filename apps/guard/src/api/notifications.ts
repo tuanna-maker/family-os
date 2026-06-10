@@ -48,3 +48,41 @@ export async function markPlatformRead(data: { id: string }) {
   if (error) throw new Error(error.message);
   return { ok: true as const };
 }
+
+export async function markAllPlatformRead() {
+  const { supabase, userId } = await requireUser();
+  const { error } = await supabase
+    .schema("platform")
+    .from("notification")
+    .update({ read_at: new Date().toISOString(), status: "read" })
+    .eq("user_id", userId)
+    .is("read_at", null);
+  if (error) throw new Error(error.message);
+  return { ok: true as const };
+}
+
+/** Xóa thông báo platform đã đọc (giữ lại chưa đọc). */
+export async function deleteReadPlatformNotifications() {
+  const { supabase, userId } = await requireUser();
+  const { error } = await supabase
+    .schema("platform")
+    .from("notification")
+    .delete()
+    .eq("user_id", userId)
+    .not("read_at", "is", null);
+  if (error) throw new Error(error.message);
+  return { ok: true as const };
+}
+
+export async function deletePlatformNotifications(ids: string[]) {
+  if (ids.length === 0) return { ok: true as const };
+  const { supabase, userId } = await requireUser();
+  const { error } = await supabase
+    .schema("platform")
+    .from("notification")
+    .delete()
+    .eq("user_id", userId)
+    .in("id", ids);
+  if (error) throw new Error(error.message);
+  return { ok: true as const };
+}

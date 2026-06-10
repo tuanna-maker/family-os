@@ -10,6 +10,7 @@ type AppPrefs = {
   locale: AppLocale;
   hideProfileEmail: boolean;
   shareAnalytics: boolean;
+  pushEnabled: boolean;
 };
 
 const KEY = "stos:app-prefs";
@@ -19,6 +20,7 @@ const DEFAULTS: AppPrefs = {
   locale: "vi",
   hideProfileEmail: false,
   shareAnalytics: true,
+  pushEnabled: true,
 };
 
 type Ctx = AppPrefs & {
@@ -27,6 +29,7 @@ type Ctx = AppPrefs & {
   setLocale: (l: AppLocale) => void;
   setHideProfileEmail: (v: boolean) => void;
   setShareAnalytics: (v: boolean) => void;
+  setPushEnabled: (v: boolean) => void;
   ready: boolean;
 };
 
@@ -98,6 +101,15 @@ export function AppPrefsProvider({ children }: { children: ReactNode }) {
     [],
   );
 
+  const setPushEnabled = useCallback(
+    (pushEnabled: boolean) => setPrefs((p) => {
+      const next = { ...p, pushEnabled };
+      AsyncStorage.setItem(KEY, JSON.stringify(next));
+      return next;
+    }),
+    [],
+  );
+
   return (
     <AppPrefsContext.Provider
       value={{
@@ -107,6 +119,7 @@ export function AppPrefsProvider({ children }: { children: ReactNode }) {
         setLocale,
         setHideProfileEmail,
         setShareAnalytics,
+        setPushEnabled,
         ready,
       }}
     >

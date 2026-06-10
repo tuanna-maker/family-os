@@ -142,25 +142,105 @@ export async function listOpenResidentRequests() {
   return rows.filter((r) => r.status === "open" || r.status === "in_progress");
 }
 
-export async function updateSecurityRequest(data: any) {
+export type SecurityRequestStatusUpdate = {
+  id: string;
+  status: "in_progress" | "resolved";
+  note?: string;
+};
+
+export type SecurityRequestStatusResult = {
+  ok: true;
+  id: string;
+  status: "in_progress" | "resolved";
+  request_type: string;
+  unit_label: string;
+};
+
+export async function updateSecurityRequest(
+  data: SecurityRequestStatusUpdate,
+  opts?: { skipPush?: boolean },
+): Promise<SecurityRequestStatusResult> {
   const { supabase, userId } = await requireUser();
-    const { error } = await supabase
-      .from("security_requests")
-      .update({
-        status: data.status,
-        assigned_to: userId,
-        resolved_at: data.status === "resolved" ? new Date().toISOString() : null,
-      })
-      .eq("id", data.id);
-    if (error) throw new Error(error.message);
-    await supabase.rpc("log_audit", {
+
+  const { data: prev, error: prevErr } = await supabase
+    .from("security_requests")
+    .select("id, status, request_type, apartment, building")
+    .eq("id", data.id)
+    .single();
+  if (prevErr) throw new Error(prevErr.message);
+
+  const { error } = await supabase
+    .from("security_requests")
+    .update({
+      status: data.status,
+      assigned_to: userId,
+      resolved_at: data.status === "resolved" ? new Date().toISOString() : null,
+    })
+    .eq("id", data.id);
+  if (error) throw new Error(error.message);
+
+  const eventType = data.status === "in_progress" ? "claimed" : "resolved";
+  const eventNote =
+    data.status === "in_progress"
+      ? "Bảo vệ đã tiếp nhận"
+      : (data.note ?? "Đã hoàn tất");
+
+  await Promise.all([
+    supabase.from("sos_events").insert({
+      request_id: data.id,
+      actor_id: userId,
+      event_type: eventType,
+      to_status: data.status,
+      note: eventNote,
+    }),
+    supabase.rpc("log_audit", {
       _action: `security_request.${data.status}`,
       _target_table: "security_requests",
       _target_id: data.id,
       _metadata: {},
-    });
-    firePushDispatch();
-    return { ok: true };
+    }),
+  ]);
+
+  if (!opts?.skipPush) firePushDispatch();
+
+  const unitParts = [prev.apartment, prev.building].filter(Boolean);
+  return {
+    ok: true,
+    id: data.id,
+    status: data.status,
+    request_type: prev.request_type as string,
+    unit_label: unitParts.length ? unitParts.join(" · ") : "Cư dân",
+  };
+}
+
+export async function batchUpdateSecurityRequests(input: {
+  ids: string[];
+  status: "in_progress" | "resolved";
+  note?: string;
+}) {
+  const settled = await Promise.allSettled(
+    input.ids.map((id) =>
+      updateSecurityRequest(
+        { id, status: input.status, note: input.note },
+        { skipPush: true },
+      ),
+    ),
+  );
+
+  if (input.ids.length > 0) firePushDispatch();
+
+  return settled.map((entry, index) => {
+    const id = input.ids[index];
+    if (entry.status === "fulfilled") {
+      return { id, ok: true as const, result: entry.value };
+    }
+    const reason = entry.reason;
+    return {
+      id,
+      ok: false as const,
+      error: reason instanceof Error ? reason.message : "Lỗi không xác định",
+    };
+  });
 }
 
 export type OpenSosRow = {

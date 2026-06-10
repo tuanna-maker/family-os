@@ -18,7 +18,7 @@ import { useGuardNotifications } from "@mobile/hooks/useGuardNotifications";
 export function GuardTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
   const { colors, theme } = useTheme();
-  const { unread, notificationsEnabled } = useGuardNotifications();
+  const { badgeCount } = useGuardNotifications();
   const isDark = theme === "dark";
   const bottomPad = Math.max(insets.bottom, TAB_BAR_FLOAT_MARGIN) + TAB_BAR_BOTTOM_OFFSET;
   const { overlay, androidSolid, border: borderColor } = tabBarGlassColors(isDark);
@@ -63,7 +63,7 @@ export function GuardTabBar({ state, descriptors, navigation }: BottomTabBarProp
                 : (options.title ?? route.name);
             const isFocused = state.index === index;
             const isNotifications = route.name === "notifications";
-            const showBadge = isNotifications && notificationsEnabled && unread > 0;
+            const showBadge = isNotifications && badgeCount > 0;
 
             const onPress = () => {
               const event = navigation.emit({
@@ -98,7 +98,7 @@ export function GuardTabBar({ state, descriptors, navigation }: BottomTabBarProp
                   <View style={styles.iconWrap}>{icon}</View>
                   {showBadge ? (
                     <View style={[styles.badge, { backgroundColor: colors.emergency }]}>
-                      <Text style={styles.badgeText}>{unread > 9 ? "9+" : unread}</Text>
+                      <Text style={styles.badgeText}>{badgeCount > 9 ? "9+" : badgeCount}</Text>
                     </View>
                   ) : null}
                 </View>

@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import {
   View,
   Text,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -20,6 +19,7 @@ import { Eye, EyeOff } from "lucide-react-native";
 import { Input } from "@mobile/components/ui/Input";
 import { GuardHeaderActions } from "@mobile/components/GuardHeaderActions";
 import { useTheme } from "@mobile/theme/themeStore";
+import { showAppAlert } from "@mobile/components/AppAlert";
 
 const GENERIC_AUTH_ERROR = "Tên đăng nhập/email hoặc mật khẩu không đúng.";
 
@@ -35,7 +35,7 @@ export default function LoginScreen() {
 
   async function signIn() {
     if (!identifier.trim() || !password) {
-      Alert.alert("Lỗi", "Vui lòng nhập tên đăng nhập và mật khẩu");
+      showAppAlert({ title: "Lỗi", message: "Vui lòng nhập tên đăng nhập và mật khẩu" });
       return;
     }
 
@@ -62,7 +62,10 @@ export default function LoginScreen() {
       }
       router.replace("/(tabs)");
     } catch (e) {
-      Alert.alert("Đăng nhập thất bại", (e as Error).message || GENERIC_AUTH_ERROR);
+      showAppAlert({
+        title: "Đăng nhập thất bại",
+        message: (e as Error).message || GENERIC_AUTH_ERROR,
+      });
     } finally {
       setLoading(false);
     }

@@ -7,8 +7,8 @@ import {
   TouchableOpacity,
   TextInput,
   ActivityIndicator,
-  Alert,
 } from "react-native";
+import { showAppAlert } from "@mobile/components/AppAlert";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Clock, Siren, X } from "lucide-react-native";
 import { getSupabase } from "@shared/supabase/get-client";
@@ -56,7 +56,6 @@ export function SosTicketDrawer({
     queryKey: ["sos-events", row?.id],
     queryFn: () => listSosEvents({ id: row!.id }),
     enabled: !!row && open,
-    refetchInterval: open ? 30_000 : false,
   });
 
   useEffect(() => {
@@ -89,10 +88,14 @@ export function SosTicketDrawer({
     mutationFn: (vars: { status: SosStatus; note?: string }) =>
       updateSosStatus({ id: row!.id, status: vars.status, note: vars.note }),
     onSuccess: (_d, vars) => {
-      Alert.alert("Thành công", `Đã chuyển sang "${STATUS_LABEL[vars.status]}"`);
+      showAppAlert({
+        title: "Thành công",
+        message: `Đã chuyển sang "${STATUS_LABEL[vars.status]}"`,
+      });
       invalidate();
     },
-    onError: (e) => Alert.alert("Lỗi", e instanceof Error ? e.message : "Lỗi"),
+    onError: (e) =>
+      showAppAlert({ title: "Lỗi", message: e instanceof Error ? e.message : "Lỗi" }),
   });
 
   const noteMut = useMutation({
@@ -101,7 +104,8 @@ export function SosTicketDrawer({
       setNote("");
       invalidate();
     },
-    onError: (e) => Alert.alert("Lỗi", e instanceof Error ? e.message : "Lỗi"),
+    onError: (e) =>
+      showAppAlert({ title: "Lỗi", message: e instanceof Error ? e.message : "Lỗi" }),
   });
 
   if (!row) return null;

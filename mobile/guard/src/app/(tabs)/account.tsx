@@ -1,5 +1,6 @@
-import React from "react";
-import { View, Text, ScrollView, TouchableOpacity, Alert, ActivityIndicator, Switch } from "react-native";
+import React, { useState } from "react";
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Switch } from "react-native";
+import { showAppAlert } from "@mobile/components/AppAlert";
 import {
   LogOut,
   User,
@@ -20,6 +21,15 @@ import { useTabScrollPadding } from "@mobile/hooks/useTabScrollPadding";
 import { useTheme } from "@mobile/theme/themeStore";
 import { GuardHeaderActions } from "@mobile/components/GuardHeaderActions";
 import { useGuardPrefs } from "@mobile/hooks/useGuardPrefs";
+import { usePushPermissionResync } from "@mobile/hooks/usePushPermissionResync";
+import {
+  getPushPermissionStatus,
+  registerNativePushToken,
+  requestPushPermission,
+  unregisterNativePushToken,
+} from "@mobile/lib/push-native";
+import { markOsPushPermissionRequested } from "@mobile/lib/push-permission-state";
+import { stopNativeBackgroundMonitor } from "@mobile/lib/stos-monitor-native";
 
 type MenuItem = {
   icon: typeof User;
@@ -36,7 +46,10 @@ export default function AccountScreen() {
   const tabPad = useTabScrollPadding();
   const { colors, theme, toggleTheme } = useTheme();
   const { notificationsEnabled, setNotificationsEnabled } = useGuardPrefs();
-  const { user, signOut } = useAuth();
+  const { user, session, signOut } = useAuth();
+  const [pushBusy, setPushBusy] = useState(false);
+
+  usePushPermissionResync(notificationsEnabled, setNotificationsEnabled);
   const { data: ctx, isLoading } = useQuery({
     queryKey: ["guard-my-context"],
     queryFn: () => getMyContext(),
@@ -51,18 +64,55 @@ export default function AccountScreen() {
     ? "Quản lý an ninh"
     : "Đội an ninh STOS";
 
+  const onToggleNotifications = async (enabled: boolean) => {
+    if (pushBusy) return;
+    setPushBusy(true);
+    try {
+      if (enabled) {
+        let status = await getPushPermissionStatus();
+        if (status !== "granted") {
+          status = await requestPushPermission();
+          if (status !== "unsupported") await markOsPushPermissionRequested();
+        }
+        if (status !== "granted") {
+          setNotificationsEnabled(false);
+          showAppAlert({
+            title: "Lỗi",
+            message:
+              status === "unsupported"
+                ? "Thiết bị không hỗ trợ thông báo. Thử cài APK trên điện thoại thật."
+                : "Cần cấp quyền thông báo trên điện thoại để nhận cảnh báo.",
+          });
+          return;
+        }
+        setNotificationsEnabled(true);
+        await registerNativePushToken("guard", { requestPermission: false });
+        return;
+      }
+      setNotificationsEnabled(false);
+      stopNativeBackgroundMonitor();
+      await unregisterNativePushToken("guard");
+    } finally {
+      setPushBusy(false);
+    }
+  };
+
   const handleLogout = () => {
-    Alert.alert("Đăng xuất", "Bạn có chắc chắn muốn đăng xuất?", [
-      { text: "Hủy", style: "cancel" },
-      {
-        text: "Đăng xuất",
-        style: "destructive",
-        onPress: async () => {
-          await signOut();
-          router.replace("/login");
+    showAppAlert({
+      title: "Đăng xuất",
+      message: "Bạn có chắc chắn muốn đăng xuất?",
+      buttons: [
+        { text: "Hủy", style: "cancel" },
+        {
+          text: "Đăng xuất",
+          style: "destructive",
+          onPress: async () => {
+            await signOut();
+            router.replace("/login");
+          },
         },
-      },
-    ]);
+      ],
+    });
   };
 
   const menuSections: { title: string; items: MenuItem[] }[] = [
@@ -91,7 +141,8 @@ export default function AccountScreen() {
           trailing: (
             <Switch
               value={notificationsEnabled}
-              onValueChange={setNotificationsEnabled}
+              disabled={pushBusy}
+              onValueChange={(v) => void onToggleNotifications(v)}
               trackColor={{ false: colors.muted, true: colors.brand }}
               thumbColor="#fff"
             />
@@ -114,10 +165,11 @@ export default function AccountScreen() {
           icon: HelpCircle,
           label: "Hỗ trợ & hướng dẫn",
           onPress: () =>
-            Alert.alert(
-              "Hỗ trợ",
-              "Liên hệ quản lý an ninh STOS Residence qua bảng điều khiển hoặc hotline nội bộ.",
-            ),
+            showAppAlert({
+              title: "Hỗ trợ",
+              message:
+                "Liên hệ quản lý an ninh STOS Residence qua bảng điều khiển hoặc hotline nội bộ.",
+            }),
         },
       ],
     },

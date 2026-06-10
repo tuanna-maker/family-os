@@ -6,8 +6,8 @@ import {
   TextInput,
   TouchableOpacity,
   ActivityIndicator,
-  Alert,
 } from "react-native";
+import { showAppAlert } from "@mobile/components/AppAlert";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertCircle, Check, QrCode, Keyboard } from "lucide-react-native";
 import { useRouter } from "expo-router";
@@ -37,7 +37,7 @@ export default function PatrolScreen() {
   const logsQ = useQuery({
     queryKey: ["patrol-logs", "today"],
     queryFn: () => listPatrolLogs({ scope: "today" }),
-    refetchInterval: 15_000,
+    staleTime: 30_000,
   });
 
   useEffect(() => {
@@ -58,12 +58,13 @@ export default function PatrolScreen() {
       });
     },
     onSuccess: () => {
-      Alert.alert("Thành công", `Đã ghi nhận điểm ${code.trim()}`);
+      showAppAlert({ title: "Thành công", message: `Đã ghi nhận điểm ${code.trim()}` });
       setCode("");
       setRouteCode("");
       qc.invalidateQueries({ queryKey: ["patrol-logs"] });
     },
-    onError: (e: Error) => Alert.alert("Lỗi", e.message || "Không ghi nhận được"),
+    onError: (e: Error) =>
+      showAppAlert({ title: "Lỗi", message: e.message || "Không ghi nhận được" }),
   });
 
   const switchMethod = (next: ScanMethod) => {

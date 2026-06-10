@@ -24,5 +24,15 @@ export declare function createSecurityRequest(data: {
   elderly_id?: string | null;
   apartment?: string | null;
 }): Promise<unknown>;
-export declare function listSecurityRequests(): Promise<SecurityRequest[]>;
+export type SecurityRequestList = {
+  rows: SecurityRequest[];
+  total: number;
+  limit: number;
+  offset: number;
+};
+
+export declare function listSecurityRequests(data?: {
+  limit?: number;
+  offset?: number;
+}): Promise<SecurityRequestList>;
 export declare function getSecurityStatus(data: { family_id: string }): Promise<SecurityStatus>;

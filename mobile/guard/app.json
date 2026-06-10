@@ -10,7 +10,10 @@
     "ios": {
       "icon": "./assets/images/icon.png",
       "infoPlist": {
-        "UIBackgroundModes": ["remote-notification"]
+        "UIBackgroundModes": [
+          "remote-notification",
+          "fetch"
+        ]
       }
     },
     "android": {
@@ -19,7 +22,11 @@
         "backgroundColor": "#FFFFFF",
         "foregroundImage": "./assets/images/icon.png"
       },
-      "permissions": ["RECEIVE_BOOT_COMPLETED", "VIBRATE", "POST_NOTIFICATIONS"],
+      "permissions": [
+        "RECEIVE_BOOT_COMPLETED",
+        "VIBRATE",
+        "POST_NOTIFICATIONS"
+      ],
       "predictiveBackGestureEnabled": false
     },
     "web": {
@@ -48,7 +55,13 @@
           "cameraPermission": "Cần quyền camera để quét mã tuần tra."
         }
       ],
-      "expo-notifications"
+      [
+        "expo-notifications",
+        {
+          "defaultChannel": "default",
+          "enableBackgroundRemoteNotifications": true
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
@@ -56,7 +69,14 @@
     "extra": {
       "supabaseUrl": "https://bigarvjahnxiuovepaxm.supabase.co",
       "supabaseAnonKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJpZ2FydmphaG54aXVvdmVwYXhtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNjc0MjUsImV4cCI6MjA5NDc0MzQyNX0.t6PAcFIUs1PS77MymF4nmMbIaN-YCiADzOhk5R9_0u4",
-      "pilotPrefill": true
-    }
+      "pilotPrefill": true,
+      "router": {
+        "root": "./src/app"
+      },
+      "eas": {
+        "projectId": "6ff19f5b-0477-4283-ab7d-106e71e6b7f9"
+      }
+    },
+    "owner": "tuanna-unicom"
   }
 }

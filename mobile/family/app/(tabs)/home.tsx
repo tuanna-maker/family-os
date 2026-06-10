@@ -308,7 +308,7 @@ export default function HomeScreen() {
   const unreadQ = useQuery({
     queryKey: ["notifications-unread"],
     queryFn: unreadCount,
-    refetchInterval: 60_000,
+    staleTime: 45_000,
   });
   const unread = unreadQ.data?.count ?? 0;
 
@@ -327,7 +327,7 @@ export default function HomeScreen() {
     queryKey: ["security-status", familyId],
     queryFn: () => getSecurityStatus({ family_id: familyId! }),
     enabled: !!familyId,
-    refetchInterval: 30_000,
+    staleTime: 45_000,
   });
 
   const activities = activitiesQ.data?.rows ?? [];

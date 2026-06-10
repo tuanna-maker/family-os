@@ -12,7 +12,11 @@ process.env.EXPO_ROUTER_IMPORT_MODE =
 const config = getDefaultConfig(projectRoot);
 
 config.projectRoot = projectRoot;
-config.watchFolders = [monorepoRoot, path.resolve(monorepoRoot, "apps/family/src")];
+config.watchFolders = [
+  monorepoRoot,
+  path.resolve(monorepoRoot, "node_modules"),
+  path.resolve(monorepoRoot, "apps/family/src"),
+];
 config.resolver.disableHierarchicalLookup = true;
 config.resolver.nodeModulesPaths = [
   path.resolve(projectRoot, "node_modules"),

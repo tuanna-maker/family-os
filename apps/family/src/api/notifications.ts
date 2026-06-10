@@ -20,6 +20,7 @@ export async function listNotifications(data: any) {
       .from("notifications")
       .select("id, type, ref_id, title, body, due_at, read_at, created_at", { count: "exact" })
       .eq("user_id", userId)
+      .is("dismissed_at", null)
       .order("created_at", { ascending: false })
       .range(offset, offset + limit - 1);
     if (data.only_unread) q = q.is("read_at", null);
@@ -34,6 +35,7 @@ export async function unreadCount() {
       .from("notifications")
       .select("id", { count: "exact", head: true })
       .eq("user_id", userId)
+      .is("dismissed_at", null)
       .is("read_at", null);
     if (error) throw new Error(error.message);
     return { count: count ?? 0 };
@@ -56,19 +58,22 @@ export async function markAllRead() {
       .from("notifications")
       .update({ read_at: new Date().toISOString() })
       .eq("user_id", userId)
+      .is("dismissed_at", null)
       .is("read_at", null);
     if (error) throw new Error(error.message);
     return { ok: true };
 }
 
-/** Xóa các thông báo đã đọc (giữ lại chưa đọc). */
+/** Ẩn vĩnh viễn các thông báo đã đọc (soft-delete — không hiện lại sau cài app). */
 export async function deleteReadNotifications() {
   const { supabase, userId } = await requireUser();
+  const now = new Date().toISOString();
   const { error } = await supabase
     .from("notifications")
-    .delete()
+    .update({ dismissed_at: now })
     .eq("user_id", userId)
-    .not("read_at", "is", null);
+    .not("read_at", "is", null)
+    .is("dismissed_at", null);
   if (error) throw new Error(error.message);
   return { ok: true };
 }

@@ -3,7 +3,6 @@ import { Pressable, Switch, Text, View } from "react-native";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter, type Href } from "expo-router";
 import {
-  Bell,
   ChevronRight,
   Globe,
   HelpCircle,
@@ -17,7 +16,6 @@ import { Screen } from "@mobile/components/Screen";
 import { Card, PageHeader } from "@mobile/components/ui";
 import { AvatarUploadButton } from "@mobile/components/AvatarUploadButton";
 import { useAuth } from "@mobile/hooks/useAuth";
-import { useUnreadNotifications } from "@mobile/hooks/useUnreadNotifications";
 import { useFamilyContext } from "@mobile/hooks/useFamilyContext";
 import { useAppPrefs } from "@mobile/hooks/useAppPrefs";
 import { useI18n } from "@mobile/i18n/useI18n";
@@ -49,7 +47,6 @@ export default function TaiKhoanScreen() {
   const styles = useAccountStyles();
   const [signingOut, setSigningOut] = useState(false);
 
-  const { unread: unreadNotifications } = useUnreadNotifications();
   const ctxQ = useQuery({ queryKey: ["my-context"], queryFn: () => getMyContext() });
   const isOwner = !!ctxQ.data?.userId && family?.owner_id === ctxQ.data.userId;
 
@@ -69,14 +66,6 @@ export default function TaiKhoanScreen() {
   };
 
   const links: LinkItem[] = [
-    {
-      icon: Bell,
-      label:
-        unreadNotifications > 0
-          ? `${s.screens.notifications.title} (${unreadNotifications})`
-          : s.screens.notifications.title,
-      onPress: () => router.push("/thong-bao"),
-    },
     {
       icon: Settings,
       label: `${s.settings.notifications.eyebrow} · ${s.settings.notifications.title}`,

@@ -1,9 +1,9 @@
-/** Kiểu kính mờ Telegram — trong suốt, thấy nội dung phía sau. */
+/** Kính mờ tab bar — đủ đục để chữ phía sau không chồng lên icon. */
 export function tabBarGlassColors(isDark: boolean) {
   return {
-    overlay: isDark ? "rgba(22, 27, 34, 0.55)" : "rgba(255, 255, 255, 0.28)",
-    /** Android: mờ trong suốt — không dùng elevation (gây vạch sáng). */
-    androidSolid: isDark ? "rgba(22, 27, 34, 0.62)" : "rgba(255, 255, 255, 0.38)",
-    border: isDark ? "rgba(255, 255, 255, 0.1)" : "rgba(255, 255, 255, 0.45)",
+    /** Lớp trên thanh pill */
+    shellOverlay: isDark ? "rgba(16, 20, 28, 0.92)" : "rgba(255, 255, 255, 0.94)",
+    frostOverlay: isDark ? "rgba(8, 11, 18, 0.35)" : "rgba(255, 255, 255, 0.3)",
+    border: isDark ? "rgba(255, 255, 255, 0.12)" : "rgba(0, 0, 0, 0.06)",
   };
 }

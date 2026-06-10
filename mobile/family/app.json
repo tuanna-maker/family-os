@@ -17,7 +17,7 @@
       "supportsTablet": true,
       "bundleIdentifier": "vn.unicom.stos.familyrn",
       "infoPlist": {
-        "UIBackgroundModes": ["remote-notification"]
+        "UIBackgroundModes": ["remote-notification", "fetch"]
       }
     },
     "android": {
@@ -26,13 +26,38 @@
         "backgroundColor": "#071A3D"
       },
       "package": "vn.unicom.stos.familyrn",
-      "permissions": ["RECEIVE_BOOT_COMPLETED", "VIBRATE"]
+      "permissions": [
+        "RECEIVE_BOOT_COMPLETED",
+        "VIBRATE",
+        "POST_NOTIFICATIONS",
+        "FOREGROUND_SERVICE",
+        "FOREGROUND_SERVICE_DATA_SYNC"
+      ]
     },
     "plugins": [
-      "expo-router",
+      [
+        "expo-router",
+        {
+          "root": "./app"
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#071A3D",
+          "image": "./assets/icon.webp",
+          "imageWidth": 200
+        }
+      ],
       "expo-secure-store",
       "expo-image-picker",
-      "expo-notifications"
+      [
+        "expo-notifications",
+        {
+          "defaultChannel": "default",
+          "enableBackgroundRemoteNotifications": true
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
@@ -42,7 +67,7 @@
       "supabaseAnonKey": "",
       "pilotPrefill": true,
       "eas": {
-        "projectId": "REPLACE_WITH_EAS_PROJECT_ID"
+        "projectId": "29b5786e-10b8-41e9-88dd-dddbe1af9e56"
       }
     }
   }

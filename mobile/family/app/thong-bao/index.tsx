@@ -1,7 +1,7 @@
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Screen } from "@mobile/components/Screen";
-import { Card, PageHeader, PrimaryButton } from "@mobile/components/ui";
+import { Card, PageHeader, PrimaryButton, SecondaryButton } from "@mobile/components/ui";
 import {
   deleteReadNotifications,
   listNotifications,
@@ -30,22 +30,19 @@ export default function ThongBaoScreen() {
     body: { color: c.muted, marginTop: 4, fontSize: 13 },
     time: { color: c.muted, fontSize: 11, marginTop: 6 },
     dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: c.brand, marginTop: 6 },
-    actions: { flexDirection: "row" as const, flexWrap: "wrap" as const, gap: 8, marginBottom: 8 },
-    secondaryBtn: {
-      paddingHorizontal: 14,
-      paddingVertical: 10,
-      borderRadius: 12,
-      borderWidth: 1,
-      borderColor: c.cardBorder,
-      backgroundColor: c.card,
+    actions: {
+      flexDirection: "row" as const,
+      flexWrap: "wrap" as const,
+      alignItems: "center" as const,
+      gap: 8,
+      marginBottom: 8,
     },
-    secondaryText: { fontSize: 13, fontWeight: "600" as const, color: c.foreground },
   }));
 
   const q = useQuery({
     queryKey: ["notifications-all"],
     queryFn: () => listNotifications({ limit: 50, offset: 0 }),
-    refetchInterval: 30_000,
+    staleTime: 30_000,
   });
 
   const rows = q.data?.rows ?? [];
@@ -96,6 +93,7 @@ export default function ThongBaoScreen() {
         title={unread > 0 ? n.titleUnread(unread) : n.title}
         back="/(tabs)/tai-khoan"
       />
+
       <View style={styles.actions}>
         {unread > 0 ? (
           <PrimaryButton
@@ -105,13 +103,11 @@ export default function ThongBaoScreen() {
           />
         ) : null}
         {readCount > 0 ? (
-          <Pressable
-            style={styles.secondaryBtn}
+          <SecondaryButton
+            label={n.deleteRead}
             onPress={() => deleteRead.mutate()}
-            disabled={deleteRead.isPending}
-          >
-            <Text style={styles.secondaryText}>{n.deleteRead}</Text>
-          </Pressable>
+            loading={deleteRead.isPending}
+          />
         ) : null}
       </View>
       {rows.length === 0 ? (

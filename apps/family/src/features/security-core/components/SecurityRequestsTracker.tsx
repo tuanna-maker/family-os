@@ -61,11 +61,8 @@ export function SecurityRequestsTracker() {
   });
 
   const items = useMemo<SecurityRequest[]>(() => {
-    const all = q.data ?? [];
-    // Lọc riêng yêu cầu của chính mình (RLS đã giới hạn, đây chỉ là cẩn thận với staff)
-    return session
-      ? all.filter((r) => r.requester_id === session.user.id).slice(0, 5)
-      : [];
+    const all = q.data?.rows ?? [];
+    return session ? all.slice(0, 5) : [];
   }, [q.data, session]);
 
   if (!session) return null;

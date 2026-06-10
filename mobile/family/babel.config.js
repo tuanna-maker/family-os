@@ -15,27 +15,7 @@ module.exports = function (api) {
           extensions: [".tsx", ".ts", ".js", ".json"],
         },
       ],
-      function expoRouterEnvInline() {
-        return {
-          visitor: {
-            MemberExpression(path, state) {
-              const t = require("@babel/types");
-              if (!path.get("object").matchesPattern("process.env")) return;
-              const key = path.toComputedKey();
-              if (!t.isStringLiteral(key)) return;
-              if (key.value === "EXPO_ROUTER_APP_ROOT") {
-                const filename = state.filename || "";
-                const appRoot = filename.includes("node_modules")
-                  ? "../../app"
-                  : "./app";
-                path.replaceWith(t.stringLiteral(appRoot));
-              } else if (key.value === "EXPO_ROUTER_IMPORT_MODE") {
-                path.replaceWith(t.stringLiteral("lazy"));
-              }
-            },
-          },
-        };
-      },
+      "react-native-reanimated/plugin",
     ],
   };
 };

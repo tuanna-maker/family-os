@@ -159,16 +159,21 @@ export async function cancelSecurityRequest(data: { id: string }) {
   return updateSosStatus({ id, status: "cancelled", note: "Cư dân hủy" });
 }
 
-export async function listSecurityRequests() {
+export async function listSecurityRequests(data?: { limit?: number; offset?: number }) {
   const { supabase, userId } = await requireUser();
+  const limit = data?.limit ?? 50;
+  const offset = data?.offset ?? 0;
 
-        const { data, error } = await supabase
-      .from("security_requests")
-      .select("id, request_type, status, building, apartment, requester_id, created_at, resolved_at")
-      .order("created_at", { ascending: false })
-      .limit(50);
-    if (error) throw new Error(error.message);
-    return data ?? [];
+  const { data: rows, error, count } = await supabase
+    .from("security_requests")
+    .select("id, request_type, status, building, apartment, requester_id, created_at, resolved_at", {
+      count: "exact",
+    })
+    .eq("requester_id", userId)
+    .order("created_at", { ascending: false })
+    .range(offset, offset + limit - 1);
+  if (error) throw new Error(error.message);
+  return { rows: rows ?? [], total: count ?? 0, limit, offset };
 }
 
 export async function updateSecurityRequest(data: any) {

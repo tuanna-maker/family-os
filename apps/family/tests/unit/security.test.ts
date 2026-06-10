@@ -49,7 +49,7 @@ describe("security API — bao-an", () => {
       }),
     });
     vi.mocked(requireUser).mockResolvedValue(mockRequireUser(mock) as never);
-    const rows = await listSecurityRequests();
+    const { rows } = await listSecurityRequests();
     expect(rows).toHaveLength(1);
     expect(rows[0].request_type).toBe("sos");
   });

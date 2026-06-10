@@ -28,11 +28,17 @@ function isExpoPushToken(token: string) {
   return token.startsWith("ExponentPushToken[") || token.startsWith("ExpoPushToken");
 }
 
+function pushChannelId(eventType: string) {
+  if (eventType.startsWith("sos.") || eventType.startsWith("security.")) return "security";
+  return "default";
+}
+
 async function sendExpoPush(
   tokens: string[],
   title: string,
   body: string,
   data: Record<string, unknown>,
+  channelId = "default",
 ) {
   if (tokens.length === 0) return { success: 0, failure: 0, invalidTokens: [] as string[] };
   const messages = tokens.map((to) => ({
@@ -42,7 +48,7 @@ async function sendExpoPush(
     body,
     data,
     priority: "high" as const,
-    channelId: "default",
+    channelId,
   }));
   const res = await fetch("https://exp.host/--/api/v2/push/send", {
     method: "POST",
@@ -123,6 +129,7 @@ async function sendToDevices(
   title: string,
   body: string,
   data: Record<string, unknown>,
+  channelId = "default",
 ) {
   const expoTokens = tokens.filter(isExpoPushToken);
   const fcmTokens = tokens.filter((t) => !isExpoPushToken(t));
@@ -131,7 +138,7 @@ async function sendToDevices(
   const invalidTokens: string[] = [];
 
   if (expoTokens.length) {
-    const expo = await sendExpoPush(expoTokens, title, body, data);
+    const expo = await sendExpoPush(expoTokens, title, body, data, channelId);
     success += expo.success;
     failure += expo.failure;
     invalidTokens.push(...expo.invalidTokens);
@@ -229,6 +236,7 @@ async function dispatchBatch(
           n.title,
           n.body ?? "",
           n.data ?? {},
+          pushChannelId(ev.event_type),
         );
         totalSent += result.success;
         totalFailed += result.failure;
@@ -303,15 +311,20 @@ Deno.serve(async (req) => {
 
   const admin = createClient(supabaseUrl, serviceKey);
 
-  const userClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
-    global: { headers: { Authorization: authHeader } },
-  });
-  const { data: userData, error: userErr } = await userClient.auth.getUser();
-  if (userErr || !userData.user) {
-    return new Response(JSON.stringify({ ok: false, error: "Unauthorized" }), {
-      status: 401,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+  const bearer = authHeader.replace(/^Bearer\s+/i, "");
+  const isServiceCall = bearer === serviceKey;
+
+  if (!isServiceCall) {
+    const userClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
+      global: { headers: { Authorization: authHeader } },
     });
+    const { data: userData, error: userErr } = await userClient.auth.getUser();
+    if (userErr || !userData.user) {
+      return new Response(JSON.stringify({ ok: false, error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
   }
 
   try {
@@ -351,8 +364,42 @@ Deno.serve(async (req) => {
       stubMode,
     );
 
+    const familyMedicine = await dispatchBatch(
+      admin,
+      {
+        priority: "P1",
+        eventTypePattern: "medicine.%",
+        app: "family",
+        dedupeLike: (ev) => `med:${ev.aggregate_id}:%`,
+        limit: 50,
+      },
+      fcmKey,
+      stubMode,
+    );
+
+    const familyParentReminder = await dispatchBatch(
+      admin,
+      {
+        priority: "P1",
+        eventTypePattern: "parent_reminder.%",
+        app: "family",
+        dedupeLike: (ev) => `pr:${ev.aggregate_id}`,
+        limit: 50,
+      },
+      fcmKey,
+      stubMode,
+    );
+
     return new Response(
-      JSON.stringify({ ok: true, stub: stubMode, sos, familyStatus, familyP1 }),
+      JSON.stringify({
+        ok: true,
+        stub: stubMode,
+        sos,
+        familyStatus,
+        familyP1,
+        familyMedicine,
+        familyParentReminder,
+      }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (e) {

@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Pressable, StyleSheet, Text, TextInput, View, type ViewStyle } from "react-native";
+import { Platform, Pressable, StyleSheet, Text, TextInput, View, type ViewStyle } from "react-native";
 import { useRouter } from "expo-router";
 import { ChevronLeft } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -104,6 +104,26 @@ function useUiStyles() {
       color: colors.white,
       fontSize: 16 * fontScale,
       fontWeight: "700" as const,
+    },
+    secondaryBtn: {
+      borderRadius: radius.lg,
+      paddingVertical: 14,
+      paddingHorizontal: 20,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+      minHeight: 48,
+      borderWidth: 1,
+      borderColor: colors.cardBorder,
+      backgroundColor: colors.card,
+    },
+    secondaryBtnText: {
+      fontSize: 14 * fontScale,
+      fontWeight: "600" as const,
+      color: colors.foreground,
+      lineHeight: 18 * fontScale,
+      ...Platform.select({
+        android: { includeFontPadding: false, textAlignVertical: "center" as const },
+      }),
     },
     field: {
       gap: 6,
@@ -245,6 +265,34 @@ export function PrimaryButton({
       ]}
     >
       <Text style={styles.primaryBtnText}>{loading ? s.common.processing : label}</Text>
+    </Pressable>
+  );
+}
+
+export function SecondaryButton({
+  label,
+  onPress,
+  disabled,
+  loading,
+}: {
+  label: string;
+  onPress: () => void;
+  disabled?: boolean;
+  loading?: boolean;
+}) {
+  const styles = useUiStyles();
+  const { s } = useI18n();
+  return (
+    <Pressable
+      onPress={onPress}
+      disabled={disabled || loading}
+      style={({ pressed }) => [
+        styles.secondaryBtn,
+        (disabled || loading) && styles.primaryBtnDisabled,
+        pressed && !disabled && { opacity: 0.9, transform: [{ scale: 0.98 }] },
+      ]}
+    >
+      <Text style={styles.secondaryBtnText}>{loading ? s.common.processing : label}</Text>
     </Pressable>
   );
 }

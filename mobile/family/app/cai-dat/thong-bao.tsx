@@ -3,6 +3,7 @@ import { Switch, Text, View } from "react-native";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bell, Moon, Pill, Type } from "lucide-react-native";
 import { useAppPrefs } from "@mobile/hooks/useAppPrefs";
+import { syncLocalReminderSchedule } from "@mobile/lib/local-reminder-scheduler";
 import { useTheme } from "@mobile/theme/themeStore";
 import { useThemedStyles } from "@mobile/theme/useThemedStyles";
 import { useI18n } from "@mobile/i18n/useI18n";
@@ -19,14 +20,63 @@ import {
 } from "@mobile/api/notification-prefs";
 import { toast } from "@mobile/utils/toast";
 import { radius } from "@mobile/theme/colors";
+import {
+  getPushPermissionStatus,
+  registerNativePushToken,
+  requestPushPermission,
+  unregisterNativePushToken,
+} from "@mobile/lib/push-native";
+import { usePushPermissionResync } from "@mobile/hooks/usePushPermissionResync";
+import { markOsPushPermissionRequested } from "@mobile/lib/push-permission-state";
 
 export default function CaiDatThongBaoScreen() {
-  const { theme, easyRead, setTheme, setEasyRead } = useAppPrefs();
+  const { theme, easyRead, setTheme, setEasyRead, pushEnabled, setPushEnabled } = useAppPrefs();
   const { colors } = useTheme();
   const { s } = useI18n();
   const st = s.settings;
   const pf = st.prefs;
+  const notif = st.notifications;
   const styles = useSettingsStyles();
+  const [pushBusy, setPushBusy] = useState(false);
+
+  usePushPermissionResync(pushEnabled, setPushEnabled);
+
+  const onPushToggle = async (next: boolean) => {
+    if (pushBusy) return;
+    setPushBusy(true);
+    try {
+      if (next) {
+        let status = await getPushPermissionStatus();
+        if (status !== "granted") {
+          status = await requestPushPermission();
+          if (status !== "unsupported") await markOsPushPermissionRequested();
+        }
+        if (status !== "granted") {
+          setPushEnabled(false);
+          toast.error(
+            status === "unsupported"
+              ? "Thiết bị không hỗ trợ thông báo. Thử cài APK trên điện thoại thật."
+              : notif.pushDenied,
+          );
+          return;
+        }
+        setPushEnabled(true);
+        await registerNativePushToken("family", { requestPermission: false });
+        await syncLocalReminderSchedule(true);
+        toast.success(notif.pushLocalHint);
+        return;
+      }
+      setPushEnabled(false);
+      await unregisterNativePushToken("family");
+      await syncLocalReminderSchedule(false);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : notif.pushDenied;
+      if (msg) toast.error(msg);
+    } finally {
+      setPushBusy(false);
+    }
+  };
+
   const me = useQuery({ queryKey: ["np", "me"], queryFn: () => getMyPrefs() });
   const fam = useQuery({ queryKey: ["np", "family"], queryFn: () => listFamilyPrefs() });
 
@@ -50,6 +100,15 @@ export default function CaiDatThongBaoScreen() {
           desc={st.security.easyReadSub}
           value={easyRead}
           onChange={setEasyRead}
+        />
+        <PrefRow
+          styles={styles}
+          icon={<Bell size={18} color={colors.brand} />}
+          title={notif.push}
+          desc={notif.pushSub}
+          value={pushEnabled}
+          disabled={pushBusy}
+          onChange={(v) => void onPushToggle(v)}
         />
       </Card>
 
@@ -100,6 +159,7 @@ function useSettingsStyles() {
 
 function PrefForm({ initial }: { initial: NotificationPrefs }) {
   const qc = useQueryClient();
+  const { pushEnabled } = useAppPrefs();
   const { s } = useI18n();
   const st = s.settings;
   const pf = st.prefs;
@@ -129,6 +189,7 @@ function PrefForm({ initial }: { initial: NotificationPrefs }) {
     onSuccess: () => {
       toast.success(pf.settingsSaved);
       qc.invalidateQueries({ queryKey: ["np"] });
+      void syncLocalReminderSchedule(pushEnabled);
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -166,6 +227,7 @@ function PrefRow({
   desc,
   value,
   onChange,
+  disabled,
   styles,
 }: {
   icon: ReactNode;
@@ -173,6 +235,7 @@ function PrefRow({
   desc: string;
   value: boolean;
   onChange: (v: boolean) => void;
+  disabled?: boolean;
   styles?: ReturnType<typeof useSettingsStyles>;
 }) {
   const localStyles = styles ?? useSettingsStyles();
@@ -184,7 +247,12 @@ function PrefRow({
         <Text style={localStyles.prefTitle}>{title}</Text>
         <Text style={localStyles.muted}>{desc}</Text>
       </View>
-      <Switch value={value} onValueChange={onChange} trackColor={{ true: colors.brand }} />
+      <Switch
+        value={value}
+        onValueChange={onChange}
+        disabled={disabled}
+        trackColor={{ true: colors.brand }}
+      />
     </View>
   );
 }
