@@ -141,7 +141,48 @@ export async function createSecurityRequest(data: {
     .single();
   if (error) throw new Error(error.message);
   firePushDispatch();
-  return { id: row.id };
+  return { id: row.id as string };
+}
+
+export async function attachSecurityRequestEvidence(data: {
+  id: string;
+  files: { path: string; name: string; size: number; mime: string }[];
+  note?: string;
+}) {
+  const { supabase, userId } = await requireUser();
+  const parsed = z
+    .object({
+      id: z.string().uuid(),
+      files: z
+        .array(
+          z.object({
+            path: z.string().min(3).max(500),
+            name: z.string().min(1).max(255),
+            size: z.number().int().min(1).max(10 * 1024 * 1024),
+            mime: z.string().min(1).max(120),
+          }),
+        )
+        .min(1)
+        .max(10),
+      note: z.string().max(200).optional(),
+    })
+    .parse(data);
+
+  for (const f of parsed.files) {
+    if (f.path.split("/")[0] !== parsed.id) {
+      throw new Error("Đường dẫn tệp không hợp lệ");
+    }
+  }
+
+  const { error } = await supabase.from("sos_events").insert({
+    request_id: parsed.id,
+    actor_id: userId,
+    event_type: "attachment",
+    note: parsed.note ?? `Đã đính kèm ${parsed.files.length} tệp`,
+    metadata: { attachments: parsed.files } as never,
+  });
+  if (error) throw new Error(error.message);
+  return { ok: true as const };
 }
 
 /** Cư dân hủy yêu cầu khi còn trạng thái open. */

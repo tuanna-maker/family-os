@@ -61,7 +61,16 @@ BEGIN
   
   INSERT INTO public.user_roles (user_id, role, family_id) VALUES (uid_owner, 'family_owner', v_family_id);
   INSERT INTO public.user_roles (user_id, role, family_id) VALUES (uid_member, 'family_member', v_family_id);
-  INSERT INTO public.user_roles (user_id, role) VALUES (uid_sadmin, 'security_admin');
-  INSERT INTO public.user_roles (user_id, role) VALUES (uid_sstaff, 'security_staff');
+  -- G?n project_id cho b?o v? (l?y project ??u tiên trong DB pilot)
+  INSERT INTO public.user_roles (user_id, role, project_id, tenant_id)
+  SELECT uid_sadmin, 'security_admin', p.id, p.tenant_id
+  FROM public.projects p
+  ORDER BY p.created_at NULLS LAST
+  LIMIT 1;
+  INSERT INTO public.user_roles (user_id, role, project_id, tenant_id)
+  SELECT uid_sstaff, 'security_staff', p.id, p.tenant_id
+  FROM public.projects p
+  ORDER BY p.created_at NULLS LAST
+  LIMIT 1;
 
 END $$;

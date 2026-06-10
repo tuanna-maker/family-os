@@ -32,6 +32,7 @@ import type { AppColors } from "@mobile/theme/palettes";
 import { useFamilyContext } from "@mobile/hooks/useFamilyContext";
 import { getDashboard } from "@mobile/api/dashboard";
 import { listMoments } from "@mobile/api/moments";
+import { momentThumbUrl } from "@mobile/utils/momentMedia";
 import { listFamilyMembers } from "@mobile/api/family-members";
 import { AvatarUploadButton } from "@mobile/components/AvatarUploadButton";
 import { useI18n } from "@mobile/i18n/useI18n";
@@ -244,8 +245,9 @@ export default function GiaDinhScreen() {
 
   const momentsQ = useQuery({
     queryKey: ["family-moments-preview", familyId],
-    queryFn: () => listMoments({ family_id: familyId! }),
+    queryFn: () => listMoments({ family_id: familyId!, lite: true }),
     enabled: !!familyId,
+    staleTime: 60_000,
   });
 
   const membersQ = useQuery({
@@ -285,7 +287,7 @@ export default function GiaDinhScreen() {
           id: m.id,
           title: (m.caption ?? c.memory).replace(/^\[Pilot\]\s*/, ""),
           date: formatDate(m.taken_at, locale),
-          img: m.media_url,
+          img: momentThumbUrl(m.media_url, m.thumbnail_url, 320),
         }))
       : FALLBACK_MOMENTS;
 

@@ -23,7 +23,15 @@ export declare function createSecurityRequest(data: {
   request_type: string;
   elderly_id?: string | null;
   apartment?: string | null;
-}): Promise<unknown>;
+  building?: string | null;
+  payload?: Record<string, unknown>;
+}): Promise<{ id: string }>;
+export declare function attachSecurityRequestEvidence(data: {
+  id: string;
+  files: { path: string; name: string; size: number; mime: string }[];
+  note?: string;
+}): Promise<{ ok: true }>;
+export declare function cancelSecurityRequest(data: { id: string }): Promise<unknown>;
 export type SecurityRequestList = {
   rows: SecurityRequest[];
   total: number;

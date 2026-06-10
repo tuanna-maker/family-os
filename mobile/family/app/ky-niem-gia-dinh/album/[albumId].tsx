@@ -30,6 +30,7 @@ import { radius } from "@mobile/theme/colors";
 
 import { useI18n } from "@mobile/i18n/useI18n";
 import { displayAlbumTitle } from "@mobile/utils/displayContent";
+import { momentThumbUrl } from "@mobile/utils/momentMedia";
 
 
 
@@ -225,7 +226,11 @@ export default function AlbumDetailScreen() {
 
             <Pressable key={m.id} style={styles.cell} onPress={() => router.push(`/ky-niem-gia-dinh/${m.id}`)}>
 
-              <Image source={{ uri: m.media_url }} style={styles.img} />
+              <Image
+                source={{ uri: momentThumbUrl(m.media_url, m.thumbnail_url) }}
+                style={styles.img}
+                resizeMode="cover"
+              />
 
             </Pressable>
 

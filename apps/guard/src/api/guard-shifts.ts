@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { requireUser } from "@shared/supabase/auth";
+import { localDateIso, resolveGuardScope } from "@/lib/guard-scope";
 
 export type GuardShift = {
   id: string;
@@ -39,39 +40,42 @@ const locationSchema = z
   })
   .optional();
 
-function inferShiftType(d: Date): "morning" | "afternoon" | "night" {
-  const h = d.getHours();
-  if (h >= 6 && h < 14) return "morning";
-  if (h >= 14 && h < 22) return "afternoon";
-  return "night";
-}
+async function listMyShiftsRpc(
+  supabase: Awaited<ReturnType<typeof requireUser>>["supabase"],
+  userId: string,
+  scope: Awaited<ReturnType<typeof resolveGuardScope>>,
+  range?: { from?: string; to?: string },
+) {
+  const { data, error } = await supabase.rpc("list_my_guard_shifts", {
+    _from: range?.from ?? null,
+    _to: range?.to ?? null,
+    _limit: 90,
+  });
+  const rpcRows = (data ?? []) as GuardShift[];
+  if (!error && rpcRows.length > 0) return rpcRows;
 
-function shiftBounds(d: Date, type: "morning" | "afternoon" | "night") {
-  const base = new Date(d);
-  base.setMinutes(0, 0, 0);
-  const start = new Date(base);
-  const end = new Date(base);
-  if (type === "morning") {
-    start.setHours(6);
-    end.setHours(14);
-  } else if (type === "afternoon") {
-    start.setHours(14);
-    end.setHours(22);
-  } else {
-    start.setHours(22);
-    end.setDate(end.getDate() + 1);
-    end.setHours(6);
-  }
-  return { start: start.toISOString(), end: end.toISOString() };
+  const q = supabase
+    .from("guard_shifts")
+    .select("*")
+    .in("guard_id", scope.lookup_guard_ids)
+    .order("shift_date", { ascending: false })
+    .order("start_at", { ascending: false })
+    .limit(90);
+  if (range?.from) q.gte("shift_date", range.from);
+  if (range?.to) q.lte("shift_date", range.to);
+  const { data: rows, error: qErr } = await q;
+  if (qErr) throw new Error(qErr.message);
+  return (rows ?? []) as GuardShift[];
 }
 
 export async function getActiveShift(): Promise<GuardShift | null> {
   const { supabase, userId } = await requireUser();
+  const scope = await resolveGuardScope(supabase, userId);
 
   const { data: onDuty, error: dutyErr } = await supabase
     .from("guard_shifts")
     .select("*")
-    .eq("guard_id", userId)
+    .in("guard_id", scope.lookup_guard_ids)
     .eq("status", "checked_in")
     .order("check_in_at", { ascending: false })
     .limit(1)
@@ -79,12 +83,12 @@ export async function getActiveShift(): Promise<GuardShift | null> {
   if (dutyErr) throw new Error(dutyErr.message);
   if (onDuty) return onDuty as GuardShift;
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = localDateIso();
   const { data: scheduled, error: schedErr } = await supabase
     .from("guard_shifts")
     .select("*")
-    .eq("guard_id", userId)
-    .eq("status", "scheduled")
+    .in("guard_id", scope.lookup_guard_ids)
+    .in("status", ["scheduled", "checked_in"])
     .eq("shift_date", today)
     .order("start_at", { ascending: false })
     .limit(1)
@@ -107,9 +111,10 @@ export async function checkInShift(input?: {
     .parse(input ?? {});
 
   const { supabase, userId } = await requireUser();
+  const scope = await resolveGuardScope(supabase, userId);
   const now = new Date();
   const nowIso = now.toISOString();
-  const today = nowIso.slice(0, 10);
+  const today = localDateIso(now);
 
   const { data: active } = await supabase
     .from("guard_shifts")
@@ -122,8 +127,8 @@ export async function checkInShift(input?: {
 
   const { data: scheduled } = await supabase
     .from("guard_shifts")
-    .select("id")
-    .eq("guard_id", userId)
+    .select("id, project_id")
+    .in("guard_id", scope.lookup_guard_ids)
     .eq("status", "scheduled")
     .eq("shift_date", today)
     .order("start_at", { ascending: false })
@@ -136,6 +141,8 @@ export async function checkInShift(input?: {
     );
   }
 
+  const projectId = data.project_id ?? scheduled.project_id ?? scope.project_id;
+
   const { error } = await supabase
     .from("guard_shifts")
     .update({
@@ -143,6 +150,8 @@ export async function checkInShift(input?: {
       check_in_at: nowIso,
       check_in_location: data.location ?? null,
       notes: data.notes ?? null,
+      project_id: projectId,
+      guard_id: userId,
     })
     .eq("id", scheduled.id);
   if (error) throw new Error(error.message);
@@ -188,16 +197,13 @@ export async function checkOutShift(input?: {
   return { id: active.id as string };
 }
 
-export async function listMyShifts(): Promise<GuardShift[]> {
+export async function listMyShifts(range?: {
+  from?: string;
+  to?: string;
+}): Promise<GuardShift[]> {
   const { supabase, userId } = await requireUser();
-  const { data, error } = await supabase
-    .from("guard_shifts")
-    .select("*")
-    .eq("guard_id", userId)
-    .order("start_at", { ascending: false })
-    .limit(30);
-  if (error) throw new Error(error.message);
-  return (data ?? []) as GuardShift[];
+  const scope = await resolveGuardScope(supabase, userId);
+  return listMyShiftsRpc(supabase, userId, scope, range);
 }
 
 export async function logPatrolCheckpoint(input: {
@@ -220,6 +226,7 @@ export async function logPatrolCheckpoint(input: {
     .parse(input);
 
   const { supabase, userId } = await requireUser();
+  const scope = await resolveGuardScope(supabase, userId);
   const { data: active } = await supabase
     .from("guard_shifts")
     .select("id, project_id")
@@ -234,7 +241,7 @@ export async function logPatrolCheckpoint(input: {
     .insert({
       guard_id: userId,
       shift_id: active?.id ?? null,
-      project_id: active?.project_id ?? null,
+      project_id: active?.project_id ?? scope.project_id,
       checkpoint_code: data.checkpoint_code,
       route_code: data.route_code ?? null,
       scan_method: data.scan_method,

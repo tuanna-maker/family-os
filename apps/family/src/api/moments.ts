@@ -34,22 +34,35 @@ export type MomentComment = {
 
 const BUCKET = "family-moments";
 
-export async function listMoments(data: { family_id: string }) {
+export async function listMoments(data: { family_id: string; lite?: boolean }) {
   const { supabase } = await requireUser();
-  const parsed = z.object({ family_id: z.string().uuid() }).parse(data);
+  const parsed = z
+    .object({ family_id: z.string().uuid(), lite: z.boolean().optional() })
+    .parse(data);
   const { data: moments, error } = await supabase
     .from("family_moments")
     .select(
-      "id,family_id,created_by,album_id,caption,media_url,media_type,thumbnail_url,taken_at,tagged_member_ids,created_at",
+      parsed.lite
+        ? "id,family_id,caption,media_url,media_type,thumbnail_url,taken_at"
+        : "id,family_id,created_by,album_id,caption,media_url,media_type,thumbnail_url,taken_at,tagged_member_ids,created_at",
     )
     .eq("family_id", parsed.family_id)
     .order("taken_at", { ascending: false })
-    .limit(100);
+    .limit(parsed.lite ? 60 : 100);
   if (error) throw new Error(error.message);
-  const ids = (moments ?? []).map((m) => m.id);
-  if (ids.length === 0) {
-    return { moments: [] as Moment[], reactions: [] as MomentReaction[], comments: [] as MomentComment[] };
+  const rows = (moments ?? []).map((m) => ({
+    ...m,
+    tagged_member_ids: (m.tagged_member_ids as string[] | undefined) ?? [],
+    created_by: (m.created_by as string | undefined) ?? "",
+    album_id: (m.album_id as string | null | undefined) ?? null,
+    created_at: (m.created_at as string | undefined) ?? "",
+  })) as Moment[];
+
+  if (parsed.lite || rows.length === 0) {
+    return { moments: rows, reactions: [] as MomentReaction[], comments: [] as MomentComment[] };
   }
+
+  const ids = rows.map((m) => m.id);
   const [reacs, coms] = await Promise.all([
     supabase.from("moment_reactions").select("id,moment_id,user_id,emoji").in("moment_id", ids),
     supabase
@@ -61,10 +74,7 @@ export async function listMoments(data: { family_id: string }) {
   if (reacs.error) throw new Error(reacs.error.message);
   if (coms.error) throw new Error(coms.error.message);
   return {
-    moments: (moments ?? []).map((m) => ({
-      ...m,
-      tagged_member_ids: (m.tagged_member_ids as string[]) ?? [],
-    })) as Moment[],
+    moments: rows,
     reactions: (reacs.data ?? []) as MomentReaction[],
     comments: (coms.data ?? []) as MomentComment[],
   };

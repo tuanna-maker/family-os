@@ -9,6 +9,9 @@ export const TAB_BAR_CONTENT_HEIGHT = 58;
 /** Khoảng nổi dưới màn hình. */
 export const TAB_BAR_FLOAT_MARGIN = 12;
 
+/** Vùng gradient mờ phía trên thanh tab (GlassTabBar frostZone). */
+export const TAB_BAR_FROST_EXTRA = 72;
+
 /** Đẩy thanh tab lên thêm so với mép dưới điện thoại (~10–15px). */
 export const TAB_BAR_BOTTOM_OFFSET = 12;
 
@@ -23,6 +26,7 @@ export function getTabBarBottomInset(insets: EdgeInsets): number {
     TAB_BAR_CONTENT_HEIGHT +
     TAB_BAR_FLOAT_MARGIN +
     TAB_BAR_BOTTOM_OFFSET +
+    TAB_BAR_FROST_EXTRA +
     Math.max(insets.bottom, 6)
   );
 }

@@ -1,0 +1,401 @@
+﻿{
+  extraDependencies: [],
+  coreFeatures: [],
+  modules: [
+    {
+      packageName: [32m'@expo/dom-webview'[39m,
+      projects: [
+        {
+          name: [32m'expo-dom-webview'[39m,
+          sourceDir: [32m'D:\\family-app\\node_modules\\@expo\\dom-webview\\android'[39m,
+          modules: [
+            ExpoAndroidModuleConfig {
+              classifier: [32m'expo.modules.webview.DomWebViewModule'[39m,
+              name: [1mnull[22m
+            }
+          ],
+          services: [],
+          packages: [],
+          publication: {
+            groupId: [32m'expo.modules.webview'[39m,
+            artifactId: [32m'expo.modules.webview'[39m,
+            version: [32m'56.0.5'[39m,
+            repository: [32m'local-maven-repo'[39m
+          }
+        }
+      ],
+      packageVersion: [32m'56.0.5'[39m
+    },
+    {
+      packageName: [32m'@expo/log-box'[39m,
+      projects: [
+        {
+          name: [32m'expo-log-box'[39m,
+          sourceDir: [32m'D:\\family-app\\node_modules\\@expo\\log-box\\android'[39m,
+          modules: [],
+          services: [],
+          packages: [ [32m'expo.modules.logbox.ExpoLogBoxPackage'[39m ]
+        }
+      ],
+      packageVersion: [32m'56.0.12'[39m
+    },
+    {
+      packageName: [32m'expo'[39m,
+      projects: [
+        {
+          name: [32m'expo'[39m,
+          sourceDir: [32m'D:\\family-app\\node_modules\\expo\\android'[39m,
+          modules: [
+            ExpoAndroidModuleConfig {
+              classifier: [32m'expo.modules.fetch.ExpoFetchModule'[39m,
+              name: [1mnull[22m
+            }
+          ],
+          services: [],
+          packages: [ [32m'expo.modules.ExpoModulesPackage'[39m ]
+        }
+      ],
+      packageVersion: [32m'56.0.9'[39m
+    },
+    {
+      packageName: [32m'expo-application'[39m,
+      projects: [
+        {
+          name: [32m'expo-application'[39m,
+          sourceDir: [32m'D:\\family-app\\node_modules\\expo-application\\android'[39m,
+          modules: [
+            ExpoAndroidModuleConfig {
+              classifier: [32m'expo.modules.application.ApplicationModule'[39m,
+              name: [1mnull[22m
+            }
+          ],
+          services: [],
+          packages: []
+        }
+      ],
+      packageVersion: [32m'6.0.2'[39m
+    },
+    {
+      packageName: [32m'expo-asset'[39m,
+      projects: [
+        {
+          name: [32m'expo-asset'[39m,
+          sourceDir: [32m'D:\\family-app\\node_modules\\expo-asset\\android'[39m,
+          modules: [
+            ExpoAndroidModuleConfig {
+              classifier: [32m'expo.modules.asset.AssetModule'[39m,
+              name: [1mnull[22m
+            }
+          ],
+          services: [],
+          packages: [],
+          publication: {
+            groupId: [32m'expo.modules.asset'[39m,
+            artifactId: [32m'expo.modules.asset'[39m,
+            version: [32m'56.0.16'[39m,
+            repository: [32m'local-maven-repo'[39m
+          }
+        }
+      ],
+      packageVersion: [32m'56.0.16'[39m
+    },
+    {
+      packageName: [32m'expo-blur'[39m,
+      projects: [
+        {
+          name: [32m'expo-blur'[39m,
+          sourceDir: [32m'D:\\family-app\\node_modules\\expo-blur\\android'[39m,
+          modules: [],
+          services: [],
+          packages: []
+        }
+      ],
+      packageVersion: [32m'14.0.3'[39m
+    },
+    {
+      packageName: [32m'expo-constants'[39m,
+      projects: [
+        {
+          name: [32m'expo-constants'[39m,
+          sourceDir: [32m'D:\\family-app\\node_modules\\expo-constants\\android'[39m,
+          modules: [
+            ExpoAndroidModuleConfig {
+              classifier: [32m'expo.modules.constants.ConstantsModule'[39m,
+              name: [1mnull[22m
+            }
+          ],
+          services: [],
+          packages: [ [32m'expo.modules.constants.ConstantsPackage'[39m ]
+        }
+      ],
+      packageVersion: [32m'17.0.8'[39m
+    },
+    {
+      packageName: [32m'expo-device'[39m,
+      projects: [
+        {
+          name: [32m'expo-device'[39m,
+          sourceDir: [32m'D:\\family-app\\node_modules\\expo-device\\android'[39m,
+          modules: [
+            ExpoAndroidModuleConfig {
+              classifier: [32m'expo.modules.device.DeviceModule'[39m,
+              name: [1mnull[22m
+            }
+          ],
+          services: [],
+          packages: []
+        }
+      ],
+      packageVersion: [32m'7.0.3'[39m
+    },
+    {
+      packageName: [32m'expo-file-system'[39m,
+      projects: [
+        {
+          name: [32m'expo-file-system'[39m,
+          sourceDir: [32m'D:\\family-app\\node_modules\\expo-file-system\\android'[39m,
+          modules: [
+            ExpoAndroidModuleConfig {
+              classifier: [32m'expo.modules.filesystem.FileSystemModule'[39m,
+              name: [1mnull[22m
+            },
+            ExpoAndroidModuleConfig {
+              classifier: [32m'expo.modules.filesystem.next.FileSystemNextModule'[39m,
+              name: [1mnull[22m
+            }
+          ],
+          services: [],
+          packages: [ [32m'expo.modules.filesystem.FileSystemPackage'[39m ]
+        }
+      ],
+      packageVersion: [32m'18.0.12'[39m
+    },
+    {
+      packageName: [32m'expo-font'[39m,
+      projects: [
+        {
+          name: [32m'expo-font'[39m,
+          sourceDir: [32m'D:\\family-app\\node_modules\\expo-font\\android'[39m,
+          modules: [
+            ExpoAndroidModuleConfig {
+              classifier: [32m'expo.modules.font.FontLoaderModule'[39m,
+              name: [1mnull[22m
+            },
+            ExpoAndroidModuleConfig {
+              classifier: [32m'expo.modules.font.FontUtilsModule'[39m,
+              name: [1mnull[22m
+            }
+          ],
+          services: [],
+          packages: [],
+          publication: {
+            groupId: [32m'host.exp.exponent'[39m,
+            artifactId: [32m'expo.modules.font'[39m,
+            version: [32m'56.0.5'[39m,
+            repository: [32m'local-maven-repo'[39m
+          }
+        }
+      ],
+      packageVersion: [32m'56.0.5'[39m
+    },
+    {
+      packageName: [32m'expo-image-loader'[39m,
+      projects: [
+        {
+          name: [32m'expo-image-loader'[39m,
+          sourceDir: [32m'D:\\family-app\\node_modules\\expo-image-loader\\android'[39m,
+          modules: [],
+          services: [],
+          packages: [ [32m'expo.modules.imageloader.ImageLoaderPackage'[39m ]
+        }
+      ],
+      packageVersion: [32m'5.0.0'[39m
+    },
+    {
+      packageName: [32m'expo-image-picker'[39m,
+      projects: [
+        {
+          name: [32m'expo-image-picker'[39m,
+          sourceDir: [32m'D:\\family-app\\node_modules\\expo-image-picker\\android'[39m,
+          modules: [],
+          services: [],
+          packages: []
+        }
+      ],
+      packageVersion: [32m'16.0.6'[39m
+    },
+    {
+      packageName: [32m'expo-keep-awake'[39m,
+      projects: [
+        {
+          name: [32m'expo-keep-awake'[39m,
+          sourceDir: [32m'D:\\family-app\\node_modules\\expo-keep-awake\\android'[39m,
+          modules: [
+            ExpoAndroidModuleConfig {
+              classifier: [32m'expo.modules.keepawake.KeepAwakeModule'[39m,
+              name: [1mnull[22m
+            }
+          ],
+          services: [],
+          packages: [],
+          publication: {
+            groupId: [32m'host.exp.exponent'[39m,
+            artifactId: [32m'expo.modules.keepawake'[39m,
+            version: [32m'56.0.3'[39m,
+            repository: [32m'local-maven-repo'[39m
+          }
+        }
+      ],
+      packageVersion: [32m'56.0.3'[39m
+    },
+    {
+      packageName: [32m'expo-linear-gradient'[39m,
+      projects: [
+        {
+          name: [32m'expo-linear-gradient'[39m,
+          sourceDir: [32m'D:\\family-app\\mobile\\family\\node_modules\\expo-linear-gradient\\android'[39m,
+          modules: [],
+          services: [],
+          packages: []
+        }
+      ],
+      packageVersion: [32m'14.0.2'[39m
+    },
+    {
+      packageName: [32m'expo-linking'[39m,
+      projects: [
+        {
+          name: [32m'expo-linking'[39m,
+          sourceDir: [32m'D:\\family-app\\mobile\\family\\node_modules\\expo-linking\\android'[39m,
+          modules: [
+            ExpoAndroidModuleConfig {
+              classifier: [32m'expo.modules.linking.ExpoLinkingModule'[39m,
+              name: [1mnull[22m
+            }
+          ],
+          services: [],
+          packages: [ [32m'expo.modules.linking.ExpoLinkingPackage'[39m ]
+        }
+      ],
+      packageVersion: [32m'7.0.5'[39m
+    },
+    {
+      packageName: [32m'expo-modules-core'[39m,
+      projects: [
+        {
+          name: [32m'expo-modules-core'[39m,
+          sourceDir: [32m'D:\\family-app\\node_modules\\expo-modules-core\\android'[39m,
+          modules: [],
+          services: [],
+          packages: [
+            [32m'expo.modules.adapters.react.ReactAdapterPackage'[39m,
+            [32m'expo.modules.core.BasePackage'[39m,
+            [32m'expo.modules.kotlin.edgeToEdge.EdgeToEdgePackage'[39m
+          ]
+        }
+      ],
+      plugins: [
+        {
+          id: [32m'expo-module-gradle-plugin'[39m,
+          group: [32m'expo.modules'[39m,
+          sourceDir: [32m'D:\\family-app\\node_modules\\expo-modules-core\\expo-module-gradle-plugin'[39m,
+          applyToRootProject: [33mfalse[39m
+        }
+      ],
+      packageVersion: [32m'56.0.15'[39m
+    },
+    {
+      packageName: [32m'expo-notifications'[39m,
+      projects: [
+        {
+          name: [32m'expo-notifications'[39m,
+          sourceDir: [32m'D:\\family-app\\node_modules\\expo-notifications\\android'[39m,
+          modules: [
+            ExpoAndroidModuleConfig {
+              classifier: [32m'expo.modules.notifications.badge.BadgeModule'[39m,
+              name: [1mnull[22m
+            },
+            ExpoAndroidModuleConfig {
+              classifier: [32m'expo.modules.notifications.notifications.background.ExpoBackgroundNotificationTasksModule'[39m,
+              name: [1mnull[22m
+            },
+            ExpoAndroidModuleConfig {
+              classifier: [32m'expo.modules.notifications.notifications.categories.ExpoNotificationCategoriesModule'[39m,
+              name: [1mnull[22m
+            },
+            ExpoAndroidModuleConfig {
+              classifier: [32m'expo.modules.notifications.notifications.channels.NotificationChannelGroupManagerModule'[39m,
+              name: [1mnull[22m
+            },
+            ExpoAndroidModuleConfig {
+              classifier: [32m'expo.modules.notifications.notifications.channels.NotificationChannelManagerModule'[39m,
+              name: [1mnull[22m
+            },
+            ExpoAndroidModuleConfig {
+              classifier: [32m'expo.modules.notifications.notifications.emitting.NotificationsEmitter'[39m,
+              name: [1mnull[22m
+            },
+            ExpoAndroidModuleConfig {
+              classifier: [32m'expo.modules.notifications.notifications.handling.NotificationsHandler'[39m,
+              name: [1mnull[22m
+            },
+            ExpoAndroidModuleConfig {
+              classifier: [32m'expo.modules.notifications.permissions.NotificationPermissionsModule'[39m,
+              name: [1mnull[22m
+            },
+            ExpoAndroidModuleConfig {
+              classifier: [32m'expo.modules.notifications.notifications.presentation.ExpoNotificationPresentationModule'[39m,
+              name: [1mnull[22m
+            },
+            ExpoAndroidModuleConfig {
+              classifier: [32m'expo.modules.notifications.notifications.scheduling.NotificationScheduler'[39m,
+              name: [1mnull[22m
+            },
+            ExpoAndroidModuleConfig {
+              classifier: [32m'expo.modules.notifications.serverregistration.ServerRegistrationModule'[39m,
+              name: [1mnull[22m
+            },
+            ExpoAndroidModuleConfig {
+              classifier: [32m'expo.modules.notifications.tokens.PushTokenModule'[39m,
+              name: [1mnull[22m
+            }
+          ],
+          services: [],
+          packages: [ [32m'expo.modules.notifications.NotificationsPackage'[39m ]
+        }
+      ],
+      packageVersion: [32m'0.29.14'[39m
+    },
+    {
+      packageName: [32m'expo-secure-store'[39m,
+      projects: [
+        {
+          name: [32m'expo-secure-store'[39m,
+          sourceDir: [32m'D:\\family-app\\mobile\\family\\node_modules\\expo-secure-store\\android'[39m,
+          modules: [
+            ExpoAndroidModuleConfig {
+              classifier: [32m'expo.modules.securestore.SecureStoreModule'[39m,
+              name: [1mnull[22m
+            }
+          ],
+          services: [],
+          packages: []
+        }
+      ],
+      packageVersion: [32m'14.0.1'[39m
+    },
+    {
+      packageName: [32m'unimodules-app-loader'[39m,
+      projects: [
+        {
+          name: [32m'unimodules-app-loader'[39m,
+          sourceDir: [32m'D:\\family-app\\node_modules\\unimodules-app-loader\\android'[39m,
+          modules: [],
+          services: [],
+          packages: []
+        }
+      ],
+      packageVersion: [32m'5.0.1'[39m
+    }
+  ]
+}

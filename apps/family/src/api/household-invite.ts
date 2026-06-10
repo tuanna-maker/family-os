@@ -36,6 +36,21 @@ export function inviteWebUrl(token: string) {
   return `${WEB_ORIGIN}/gia-dinh/invite/${token}`;
 }
 
+function genInviteTokenLocal() {
+  const part = () => Math.random().toString(36).slice(2, 10);
+  return `${Date.now().toString(36)}${part()}${part()}`;
+}
+
+async function genInviteToken(supabase: ReturnType<typeof householdClient>) {
+  const { data, error } = await supabase.rpc("gen_invite_token");
+  if (!error && data) return data as string;
+  const msg = error?.message ?? "";
+  if (msg.includes("permission denied") || msg.includes("does not exist") || msg.includes("schema")) {
+    return genInviteTokenLocal();
+  }
+  throw new Error("Không tạo được mã mời");
+}
+
 export async function listHouseholdInvites(data: { household_id: string }) {
   const { supabase } = await requireUser();
   const parsed = z.object({ household_id: z.string().uuid() }).parse(data);
@@ -98,30 +113,52 @@ export async function createHouseholdInvite(data: {
   if (!fam) throw new Error("Không tìm thấy hộ gia đình");
   if (fam.owner_id !== userId) throw new Error("Chỉ chủ hộ mới được tạo lời mời");
 
-  const { data: token, error: tokErr } = await householdClient(supabase).rpc("gen_invite_token");
-  if (tokErr || !token) throw new Error("Không tạo được mã mời");
-
   const expiresAt = new Date(Date.now() + parsed.expires_in_days * 86_400_000).toISOString();
-  const { data: inv, error: insErr } = await householdClient(supabase)
-    .from("invite")
-    .insert({
-      household_id: parsed.household_id,
-      token,
-      invited_by: userId,
-      invited_email: parsed.invited_email ?? null,
-      invited_phone: parsed.invited_phone ?? null,
-      role: parsed.role,
-      expires_at: expiresAt,
-    })
-    .select("id, token, expires_at")
-    .single();
-  if (insErr) throw new Error(insErr.message);
 
-  const webUrl = inviteWebUrl(inv.token as string);
+  const tryDirectInsert = async () => {
+    const hc = householdClient(supabase);
+    const token = await genInviteToken(hc);
+    const { data: inv, error: insErr } = await hc
+      .from("invite")
+      .insert({
+        household_id: parsed.household_id,
+        token,
+        invited_by: userId,
+        invited_email: parsed.invited_email ?? null,
+        invited_phone: parsed.invited_phone ?? null,
+        role: parsed.role,
+        expires_at: expiresAt,
+      })
+      .select("id, token, expires_at")
+      .single();
+    if (insErr) throw new Error(insErr.message);
+    return inv as { id: string; token: string; expires_at: string };
+  };
+
+  let inv: { id: string; token: string; expires_at: string };
+  try {
+    inv = await tryDirectInsert();
+  } catch (e) {
+    const msg = (e as Error).message ?? "";
+    if (!msg.includes("permission denied") && !msg.includes("schema")) throw e;
+    const { data: rows, error: rpcErr } = await supabase.rpc("create_household_invite", {
+      _household_id: parsed.household_id,
+      _invited_email: parsed.invited_email ?? null,
+      _invited_phone: parsed.invited_phone ?? null,
+      _expires_in_days: parsed.expires_in_days,
+      _role: parsed.role,
+    });
+    if (rpcErr) throw new Error(rpcErr.message);
+    const row = (rows ?? [])[0] as { invite_id: string; token: string; expires_at: string } | undefined;
+    if (!row?.token) throw new Error("Không tạo được mã mời");
+    inv = { id: row.invite_id, token: row.token, expires_at: row.expires_at };
+  }
+
+  const webUrl = inviteWebUrl(inv.token);
   return {
-    invite_id: inv.id as string,
-    token: inv.token as string,
-    expires_at: inv.expires_at as string,
+    invite_id: inv.id,
+    token: inv.token,
+    expires_at: inv.expires_at,
     web_url: webUrl,
     deep_link: `vn.unicom.stos.family://invite/${inv.token}`,
   };

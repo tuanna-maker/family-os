@@ -24,7 +24,10 @@ function addDays(d: Date, n: number) {
 }
 
 function isoDate(d: Date) {
-  return d.toISOString().slice(0, 10);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
 }
 
 export default function ScheduleScreen() {
@@ -32,20 +35,28 @@ export default function ScheduleScreen() {
   const tabPad = useTabScrollPadding();
   const { colors } = useTheme();
   const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date()));
+  const weekEnd = addDays(weekStart, 6);
 
-  const { data: shifts = [], isLoading } = useQuery({
+  const {
+    data: shifts = [],
+    isLoading,
+    isError,
+    error,
+  } = useQuery({
     queryKey: ["guard-my-shifts"],
     queryFn: () => listMyShifts(),
   });
 
   const byDate = useMemo(() => {
     const map = new Map<string, GuardShift>();
-    for (const s of shifts) map.set(s.shift_date, s);
+    for (const s of shifts) {
+      const key = String(s.shift_date).slice(0, 10);
+      map.set(key, s);
+    }
     return map;
   }, [shifts]);
 
   const today = isoDate(new Date());
-  const weekEnd = addDays(weekStart, 6);
   const weekLabel = `${weekStart.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" })} – ${weekEnd.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" })}`;
 
   const days = Array.from({ length: 7 }, (_, i) => {
@@ -86,9 +97,13 @@ export default function ScheduleScreen() {
       <View className="px-5 mt-4 pb-8">
         {isLoading ? (
           <ActivityIndicator className="mt-8" />
+        ) : isError ? (
+          <Text className="text-sm text-destructive mt-4">
+            Không tải được lịch trực: {error instanceof Error ? error.message : "Lỗi không xác định"}
+          </Text>
         ) : (
           days.map(({ key, chip, shift, isToday }) => {
-            if (!shift || shift.status === "cancelled") {
+            if (!shift) {
               return (
                 <View
                   key={key}

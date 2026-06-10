@@ -35,7 +35,8 @@ export type SecurityGridItem = {
   requestType: "sos" | "fire" | "intrusion" | "noise" | "package" | "other";
   iconColorKey: "warning" | "emergency" | "brand" | "success" | "pink";
   tintKey: "tintOrange" | "tintRed" | "tintBlue" | "tintGreen" | "tintPink";
-  action: "trigger" | "call" | "chat";
+  action: "trigger" | "call" | "chat" | "navigate";
+  route?: string;
 };
 
 export function getBuildingStatus(locale: AppLocale) {
@@ -74,7 +75,19 @@ export function getSecurityServiceGrid(locale: AppLocale): SecurityGridItem[] {
       requestType: "package",
       iconColorKey: "brand",
       tintKey: "tintBlue",
-      action: "trigger",
+      action: "navigate",
+      route: "/bao-an/nhan-hang-ho",
+    },
+    {
+      id: "shipping",
+      icon: Send,
+      label: g.shipping?.label ?? "Gửi hàng đi",
+      desc: g.shipping?.desc ?? "Hỗ trợ gửi hàng qua shipper",
+      requestType: "other",
+      iconColorKey: "success",
+      tintKey: "tintGreen",
+      action: "navigate",
+      route: "/bao-an/gui-hang-di",
     },
     {
       id: "tech",

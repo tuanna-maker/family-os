@@ -8,7 +8,7 @@ import {
   Text,
   View,
 } from "react-native";
-import { useFocusEffect, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
 import { FolderOpen, Lock, Plus } from "lucide-react-native";
 import { Screen } from "@mobile/components/Screen";
@@ -23,6 +23,7 @@ import { useThemedStyles } from "@mobile/theme/useThemedStyles";
 import { cardShadow, radius } from "@mobile/theme/colors";
 import { useI18n } from "@mobile/i18n/useI18n";
 import type { I18nStrings } from "@mobile/i18n/strings";
+import { momentThumbUrl } from "@mobile/utils/momentMedia";
 
 function groupByMonth(moments: Moment[], common: I18nStrings["common"]) {
   const map = new Map<string, Moment[]>();
@@ -47,15 +48,17 @@ function MomentThumb({
   const styles = useKyNiemStyles();
   const { colors } = useTheme();
   const [imgFailed, setImgFailed] = useState(false);
-  const showImage = moment.media_url && !imgFailed;
+  const thumbUri = momentThumbUrl(moment.media_url, moment.thumbnail_url);
+  const showImage = thumbUri && !imgFailed;
 
   return (
     <Pressable style={styles.cell} onPress={onPress}>
       <Card style={styles.photoCard}>
         {showImage ? (
           <Image
-            source={{ uri: moment.media_url }}
+            source={{ uri: thumbUri }}
             style={styles.photo}
+            resizeMode="cover"
             onError={() => setImgFailed(true)}
           />
         ) : (
@@ -89,15 +92,10 @@ export default function KyNiemScreen() {
 
   const q = useQuery({
     queryKey: momentQueryKeys(familyId).list,
-    queryFn: () => listMoments({ family_id: familyId! }),
+    queryFn: () => listMoments({ family_id: familyId!, lite: true }),
     enabled: !!familyId,
+    staleTime: 60_000,
   });
-
-  useFocusEffect(
-    useCallback(() => {
-      if (familyId) void q.refetch();
-    }, [familyId, q.refetch]),
-  );
 
   const grouped = useMemo(() => groupByMonth(q.data?.moments ?? [], c), [q.data, c]);
 

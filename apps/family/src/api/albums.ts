@@ -85,7 +85,7 @@ export async function getAlbum(data: { album_id: string; family_id: string }) {
   if (!album) throw new Error("Không tìm thấy album");
   const { data: moments, error: mErr } = await supabase
     .from("family_moments")
-    .select("id,caption,media_url,media_type,taken_at,created_at")
+    .select("id,caption,media_url,thumbnail_url,media_type,taken_at,created_at")
     .eq("album_id", parsed.album_id)
     .order("taken_at", { ascending: false });
   if (mErr) throw new Error(mErr.message);

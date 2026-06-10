@@ -3,13 +3,15 @@ import { Linking, Pressable, ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { ChevronDown, ChevronUp, ShieldCheck } from "lucide-react-native";
+import { ChevronDown, ChevronRight, ChevronUp, ShieldCheck } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Screen } from "@mobile/components/Screen";
+import { getTabBarBottomInset } from "@mobile/theme/tabBar";
 import { Card } from "@mobile/components/ui";
 import { SectionHeader } from "@mobile/components/SectionHeader";
 import { SecurityRequestsTracker } from "@mobile/components/security/SecurityRequestsTracker";
 import { SecuritySendingOverlay } from "@mobile/components/security/SecuritySendingOverlay";
+import { SecurityRequestSheet } from "@mobile/components/security/SecurityRequestSheet";
 import {
   getBuildingStatus,
   securityMeta,
@@ -19,12 +21,14 @@ import {
   type SecurityCatalogGroup,
   type SecurityGridItem,
 } from "@mobile/constants/security";
+import { catalogItemRoute, SECURITY_DIALOG_ITEMS } from "@mobile/constants/security-nav";
 import { createSecurityRequest } from "@mobile/api/security";
 import { toast } from "@mobile/utils/toast";
 import { useI18n } from "@mobile/i18n/useI18n";
 import { useTheme } from "@mobile/theme/themeStore";
 import { useThemedStyles } from "@mobile/theme/useThemedStyles";
 import { radius } from "@mobile/theme/colors";
+import { useAppAlert } from "@mobile/components/AppAlert";
 
 function colorFromKey(
   colors: ReturnType<typeof useTheme>["colors"],
@@ -37,9 +41,17 @@ function tintFromKey(colors: ReturnType<typeof useTheme>["colors"], key: Securit
   return colors[key] ?? colors.tintBlue;
 }
 
+type DialogState = {
+  title: string;
+  requestType: string;
+  serviceGroup?: string;
+  serviceItem?: string;
+} | null;
+
 export default function BaoAnScreen() {
   const router = useRouter();
   const qc = useQueryClient();
+  const alert = useAppAlert();
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
   const { locale, s } = useI18n();
@@ -50,6 +62,7 @@ export default function BaoAnScreen() {
   const buildingStatus = getBuildingStatus(locale);
   const [pending, setPending] = useState<string | null>(null);
   const [sendingLabel, setSendingLabel] = useState<string | null>(null);
+  const [dialog, setDialog] = useState<DialogState>(null);
   const styles = useThemedStyles((c, fontScale) => ({
     header: { paddingHorizontal: 16, paddingTop: insets.top + 12, paddingBottom: 4 },
     eyebrow: {
@@ -88,6 +101,13 @@ export default function BaoAnScreen() {
     sosEmoji: { fontSize: 36 },
     sosTitle: { fontSize: 20 * fontScale, fontWeight: "800" as const, color: c.white },
     sosSub: { fontSize: 13 * fontScale, color: "rgba(255,255,255,0.85)", marginTop: 2 },
+    guardCard: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      gap: 12,
+      padding: 14,
+      marginBottom: 8,
+    },
     grid: {
       flexDirection: "row" as const,
       flexWrap: "wrap" as const,
@@ -104,31 +124,6 @@ export default function BaoAnScreen() {
     },
     gridLabel: { fontSize: 14 * fontScale, fontWeight: "600" as const, color: c.foreground, marginTop: 10 },
     gridDesc: { fontSize: 11 * fontScale, color: c.muted, marginTop: 2 },
-    groupCard: { marginBottom: 10, padding: 0, overflow: "hidden" as const },
-    groupHead: {
-      flexDirection: "row" as const,
-      alignItems: "center" as const,
-      gap: 12,
-      padding: 14,
-    },
-    groupIcon: {
-      width: 40,
-      height: 40,
-      borderRadius: radius.md,
-      alignItems: "center" as const,
-      justifyContent: "center" as const,
-    },
-    groupTitle: { fontSize: 14 * fontScale, fontWeight: "600" as const, color: c.foreground },
-    groupSub: { fontSize: 11 * fontScale, color: c.muted, marginTop: 2 },
-    groupItem: {
-      flexDirection: "row" as const,
-      alignItems: "center" as const,
-      gap: 10,
-      paddingHorizontal: 14,
-      paddingVertical: 12,
-      borderTopWidth: 1,
-      borderTopColor: c.cardBorder,
-    },
     statusRow: {
       flexDirection: "row" as const,
       justifyContent: "space-between" as const,
@@ -140,12 +135,12 @@ export default function BaoAnScreen() {
     dot: { width: 6, height: 6, borderRadius: 3 },
   }));
 
-  const trigger = async (type: string, label: string) => {
+  const trigger = async (type: string, label: string, payload?: Record<string, unknown>) => {
     if (pending) return;
     setPending(type);
     setSendingLabel(c.sendingRequest);
     try {
-      await createSecurityRequest({ request_type: type });
+      await createSecurityRequest({ request_type: type, payload });
       void qc.invalidateQueries({ queryKey: ["security-requests"] });
       setSendingLabel(null);
       toast.success(sec.requestSent(label, securityMeta.responseTimeMinutes));
@@ -157,6 +152,45 @@ export default function BaoAnScreen() {
     }
   };
 
+  const confirmSos = () => {
+    alert.confirm({
+      title: "Gọi SOS khẩn cấp?",
+      message: "Đội bảo an và BQL sẽ được thông báo ngay. Chỉ dùng khi thật sự cần hỗ trợ khẩn.",
+      confirmText: "Gọi SOS",
+      destructive: true,
+      onConfirm: () => {
+        void trigger("sos", getRequestTypeLabel("sos", locale), {
+          label: "SOS khẩn cấp",
+          submitted_at: new Date().toISOString(),
+        });
+      },
+    });
+  };
+
+  const openCatalogItem = (group: SecurityCatalogGroup, itemId: string, label: string) => {
+    const route = catalogItemRoute(itemId);
+    if (route) {
+      router.push(route as never);
+      return;
+    }
+    const dialogCfg = SECURITY_DIALOG_ITEMS[itemId];
+    if (dialogCfg) {
+      setDialog({
+        title: label,
+        requestType: dialogCfg.requestType,
+        serviceGroup: group.title,
+        serviceItem: label,
+      });
+      return;
+    }
+    setDialog({
+      title: `${group.title} · ${label}`,
+      requestType: "other",
+      serviceGroup: group.title,
+      serviceItem: label,
+    });
+  };
+
   const onGridPress = (item: SecurityGridItem) => {
     if (item.action === "chat") {
       router.push("/bao-an/chat");
@@ -166,12 +200,31 @@ export default function BaoAnScreen() {
       Linking.openURL(`tel:${securityMeta.hotline.replace(/\s/g, "")}`);
       return;
     }
+    if (item.action === "navigate" && item.route) {
+      router.push(item.route as never);
+      return;
+    }
+    const dialogCfg = SECURITY_DIALOG_ITEMS[item.id];
+    if (dialogCfg) {
+      setDialog({ title: dialogCfg.label, requestType: dialogCfg.requestType });
+      return;
+    }
     void trigger(item.requestType, item.label);
   };
 
   return (
-    <Screen contentStyle={{ paddingTop: 0 }}>
+    <Screen scroll={false} contentStyle={{ paddingTop: 0 }}>
       <SecuritySendingOverlay visible={sendingLabel !== null} label={sendingLabel ?? ""} />
+      {dialog ? (
+        <SecurityRequestSheet
+          visible
+          title={dialog.title}
+          requestType={dialog.requestType}
+          serviceGroup={dialog.serviceGroup}
+          serviceItem={dialog.serviceItem}
+          onClose={() => setDialog(null)}
+        />
+      ) : null}
       <View style={styles.header}>
         <View style={styles.eyebrow}>
           <ShieldCheck color={colors.success} size={14} />
@@ -181,9 +234,12 @@ export default function BaoAnScreen() {
         <Text style={styles.subtitle}>{sec.subtitle(securityMeta.responseTimeMinutes)}</Text>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: getTabBarBottomInset(insets) }}
+      >
         <Pressable
-          onPress={() => trigger("sos", getRequestTypeLabel("sos", locale))}
+          onPress={confirmSos}
           disabled={pending === "sos"}
           style={{ marginHorizontal: 16, marginBottom: 4 }}
         >
@@ -204,6 +260,17 @@ export default function BaoAnScreen() {
         </Pressable>
 
         <View style={{ paddingHorizontal: 16 }}>
+          <Pressable onPress={() => router.push("/bao-an/bao-ve" as never)}>
+            <Card style={styles.guardCard}>
+              <Text style={{ fontSize: 22 }}>🛡️</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.gridLabel}>Đội bảo vệ chung cư</Text>
+                <Text style={styles.gridDesc}>Xem danh sách & ca trực hôm nay</Text>
+              </View>
+              <ChevronRight color={colors.muted} size={20} />
+            </Card>
+          </Pressable>
+
           <SecurityRequestsTracker />
 
           <View style={{ marginTop: 8 }}>
@@ -234,17 +301,9 @@ export default function BaoAnScreen() {
             })}
           </View>
 
-          <SectionHeader
-            title={sec.catalogTitle}
-            subtitle={c.groupCount(securityServiceCatalog.length)}
-          />
+          <SectionHeader title={sec.catalogTitle} subtitle={c.groupCount(securityServiceCatalog.length)} />
           {securityServiceCatalog.map((group) => (
-            <CatalogGroup
-              key={group.id}
-              group={group}
-              pending={pending}
-              onTrigger={trigger}
-            />
+            <CatalogGroup key={group.id} group={group} onItemPress={openCatalogItem} />
           ))}
 
           <SectionHeader title={sec.buildingStatus} />
@@ -268,7 +327,6 @@ export default function BaoAnScreen() {
             ))}
           </Card>
         </View>
-        <View style={{ height: 40 }} />
       </ScrollView>
     </Screen>
   );
@@ -276,12 +334,10 @@ export default function BaoAnScreen() {
 
 function CatalogGroup({
   group,
-  pending,
-  onTrigger,
+  onItemPress,
 }: {
   group: SecurityCatalogGroup;
-  pending: string | null;
-  onTrigger: (type: string, label: string) => void;
+  onItemPress: (group: SecurityCatalogGroup, itemId: string, label: string) => void;
 }) {
   const { colors } = useTheme();
   const [open, setOpen] = useState(false);
@@ -328,11 +384,7 @@ function CatalogGroup({
           <Text style={styles.groupTitle}>{group.title}</Text>
           <Text style={styles.groupSub}>{group.subtitle}</Text>
         </View>
-        {open ? (
-          <ChevronUp color={colors.muted} size={20} />
-        ) : (
-          <ChevronDown color={colors.muted} size={20} />
-        )}
+        {open ? <ChevronUp color={colors.muted} size={20} /> : <ChevronDown color={colors.muted} size={20} />}
       </Pressable>
       {open &&
         group.items.map((item) => {
@@ -341,14 +393,14 @@ function CatalogGroup({
             <Pressable
               key={item.id}
               style={styles.groupItem}
-              disabled={pending === item.requestType}
-              onPress={() => onTrigger(item.requestType, item.label)}
+              onPress={() => onItemPress(group, item.id, item.label)}
             >
               <ItemIcon color={accent} size={18} />
               <View style={{ flex: 1 }}>
                 <Text style={styles.itemLabel}>{item.label}</Text>
                 <Text style={styles.itemDesc}>{item.desc}</Text>
               </View>
+              <ChevronRight color={colors.muted} size={16} />
             </Pressable>
           );
         })}

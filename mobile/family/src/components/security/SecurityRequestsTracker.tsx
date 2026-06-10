@@ -3,7 +3,9 @@ import { useRouter } from "expo-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronRight, ShieldCheck } from "lucide-react-native";
 import { Card } from "@mobile/components/ui";
-import { listSecurityRequests, type SecurityRequest } from "@mobile/api/security";
+import { cancelSecurityRequest, listSecurityRequests, type SecurityRequest } from "@mobile/api/security";
+import { toast } from "@mobile/utils/toast";
+import { useAppAlert } from "@mobile/components/AppAlert";
 import { REQUEST_TYPE_EMOJI, getRequestStatusLabel, getRequestTypeLabel } from "@mobile/constants/security";
 import { formatRelativeAgo } from "@mobile/i18n/format";
 import { useI18n } from "@mobile/i18n/useI18n";
@@ -24,6 +26,7 @@ function statusTone(colors: ReturnType<typeof useTheme>["colors"], status: strin
 export function SecurityRequestsTracker() {
   const router = useRouter();
   const qc = useQueryClient();
+  const alert = useAppAlert();
   const { session } = useAuth();
   const { colors } = useTheme();
   const { locale, s } = useI18n();
@@ -122,7 +125,29 @@ export function SecurityRequestsTracker() {
       fontWeight: "700" as const,
     },
     rowMeta: { fontSize: 11 * fontScale, color: c.muted, marginTop: 2 },
+    cancelBtn: { marginTop: 6, alignSelf: "flex-start" as const },
+    cancelText: { fontSize: 12 * fontScale, fontWeight: "600" as const, color: c.emergency },
   }));
+
+  const onCancel = (id: string) => {
+    alert.confirm({
+      title: "Huỷ yêu cầu?",
+      message: "Yêu cầu đang chờ xử lý sẽ bị huỷ.",
+      confirmText: "Huỷ yêu cầu",
+      destructive: true,
+      onConfirm: () => {
+        void (async () => {
+          try {
+            await cancelSecurityRequest({ id });
+            void qc.invalidateQueries({ queryKey: ["security-requests"] });
+            toast.success("Đã huỷ yêu cầu");
+          } catch (e) {
+            toast.error(e instanceof Error ? e.message : "Huỷ thất bại");
+          }
+        })();
+      },
+    });
+  };
 
   return (
     <View>
@@ -174,6 +199,11 @@ export function SecurityRequestsTracker() {
                     {getRequestStatusLabel(r.status, locale)}
                   </Text>
                   <Text style={styles.rowMeta}>{sec.sentAgo(formatRelativeAgo(r.created_at, locale))}</Text>
+                  {r.status === "open" ? (
+                    <Pressable style={styles.cancelBtn} onPress={() => onCancel(r.id)} hitSlop={8}>
+                      <Text style={styles.cancelText}>Huỷ yêu cầu</Text>
+                    </Pressable>
+                  ) : null}
                 </View>
               </Card>
             );

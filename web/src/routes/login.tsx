@@ -1,7 +1,8 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
+import { resolveDestinationPure } from "@/lib/resolve-destination";
 import {
   Loader2,
   Mail,
@@ -18,8 +19,9 @@ import {
 
 export const Route = createFileRoute("/login")({
   head: () => ({ meta: [{ title: "Đăng nhập — STOS Life" }] }),
-  validateSearch: (s: Record<string, unknown>) => ({
-    redirect: (s.redirect as string) || "/workspaces",
+  validateSearch: (s: Record<string, unknown>): { redirect?: string; source?: string } => ({
+    ...(typeof s.redirect === "string" ? { redirect: s.redirect } : {}),
+    ...(typeof s.source === "string" ? { source: s.source } : {}),
   }),
   component: LoginPage,
 });
@@ -39,12 +41,27 @@ function translateError(message: string): string {
   return ERROR_MAP[message] ?? message;
 }
 
+async function resolvePostLoginDestination(
+  requestedRedirect?: string,
+  entrySource?: string,
+): Promise<string> {
+  if (entrySource === "landing") return "/home";
+  try {
+    const { getMyContext } = await import("@/lib/auth.functions");
+    const ctx = await getMyContext();
+    return resolveDestinationPure({ ctx, requestedRedirect, entrySource });
+  } catch {
+    return resolveDestinationPure({ ctx: null, requestedRedirect, entrySource });
+  }
+}
+
 function LoginPage() {
-  const { redirect } = Route.useSearch();
+  const { redirect, source } = Route.useSearch();
   const navigate = useNavigate();
   const { session, loading } = useAuth();
 
   const [mode, setMode] = useState<AuthMode>("signin");
+  const [resolving, setResolving] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
@@ -58,9 +75,19 @@ function LoginPage() {
     name?: string;
   }>({});
 
-  if (!loading && session) {
-    navigate({ to: redirect, replace: true });
-  }
+  useEffect(() => {
+    if (loading || !session || source === "landing") return;
+    let cancelled = false;
+    setResolving(true);
+    (async () => {
+      const to = await resolvePostLoginDestination(redirect, source);
+      if (!cancelled) navigate({ to, replace: true });
+      if (!cancelled) setResolving(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [loading, session, source, redirect, navigate]);
 
   const validate = () => {
     const errs: typeof fieldErrors = {};
@@ -85,7 +112,9 @@ function LoginPage() {
       if (mode === "signin") {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        navigate({ to: redirect, replace: true });
+        setResolving(true);
+        const to = await resolvePostLoginDestination(redirect, source);
+        await navigate({ to, replace: true });
       } else {
         const { data, error } = await supabase.auth.signUp({
           email,
@@ -97,7 +126,9 @@ function LoginPage() {
         });
         if (error) throw error;
         if (data.session) {
-          navigate({ to: redirect, replace: true });
+          setResolving(true);
+          const to = source === "landing" ? "/home" : await resolvePostLoginDestination(redirect, source);
+          await navigate({ to, replace: true });
         } else {
           setInfo("Đã gửi email xác thực. Vui lòng kiểm tra hộp thư để hoàn tất đăng ký.");
         }
@@ -105,12 +136,21 @@ function LoginPage() {
     } catch (err) {
       setError(translateError((err as Error).message));
     } finally {
+      setResolving(false);
       setBusy(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex bg-background">
+    <div className="min-h-screen flex bg-background relative">
+      {resolving && (
+        <div className="fixed inset-0 z-50 bg-background/85 backdrop-blur-sm grid place-items-center">
+          <div className="flex flex-col items-center gap-3 text-sm text-muted-foreground">
+            <Loader2 className="h-6 w-6 animate-spin text-brand" />
+            <span>Đang chuẩn bị workspace của bạn…</span>
+          </div>
+        </div>
+      )}
       {/* Left brand panel (desktop) */}
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-gradient-to-br from-brand via-primary to-pink p-12 flex-col justify-between text-white">
         <div className="absolute inset-0 opacity-30 [background-image:radial-gradient(circle_at_20%_20%,white_1px,transparent_1px)] [background-size:24px_24px]" />
