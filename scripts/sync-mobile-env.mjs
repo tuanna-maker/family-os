@@ -43,7 +43,7 @@ for (const [appKey, mobileKey] of pairs) {
     `EXPO_PUBLIC_PILOT_PREFILL=${src.VITE_PILOT_PREFILL ?? "true"}`,
   ];
   if (mobileKey === "family") {
-    lines.push("EXPO_PUBLIC_EAS_PROJECT_ID=29b5786e-10b8-41e9-88dd-dddbe1af9e56");
+    lines.push("EXPO_PUBLIC_EAS_PROJECT_ID=498d3d55-e61f-4d53-9891-27e92dd9c5cc");
   }
   fs.writeFileSync(dest, `${lines.join("\n")}\n`);
   console.log(`[sync-mobile-env] wrote mobile/${mobileKey}/.env`);

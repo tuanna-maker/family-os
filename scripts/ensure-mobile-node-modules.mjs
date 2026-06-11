@@ -9,6 +9,11 @@ import { fileURLToPath } from "node:url";
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 
+if (process.env.EAS_BUILD === "true") {
+  console.log("[ensure-mobile-node-modules] skip on EAS Build (deps hoisted at repo root)");
+  process.exit(0);
+}
+
 for (const app of ["family", "guard"]) {
   const mobileDir = path.join(ROOT, "mobile", app);
   const linkPath = path.join(mobileDir, "node_modules");

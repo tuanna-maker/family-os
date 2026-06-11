@@ -1,8 +1,9 @@
 {
   "expo": {
-    "name": "STOS Family",
-    "slug": "stos-family-native",
-    "version": "0.0.1",
+    "name": "STOS Life",
+    "slug": "stos-life",
+    "version": "1.0.0",
+    "owner": "tuanna-unicom",
     "orientation": "portrait",
     "scheme": "vn.unicom.stos.familyrn",
     "userInterfaceStyle": "automatic",
@@ -15,9 +16,12 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "vn.unicom.stos.familyrn",
+      "bundleIdentifier": "unicomhub.com",
       "infoPlist": {
-        "UIBackgroundModes": ["remote-notification", "fetch"]
+        "UIBackgroundModes": [
+          "remote-notification",
+          "fetch"
+        ]
       }
     },
     "android": {
@@ -67,7 +71,11 @@
       "supabaseAnonKey": "",
       "pilotPrefill": true,
       "eas": {
-        "projectId": "29b5786e-10b8-41e9-88dd-dddbe1af9e56"
+        "projectId": "498d3d55-e61f-4d53-9891-27e92dd9c5cc"
+      },
+      "authRedirectUrl": "vn.unicom.stos.familyrn://auth",
+      "router": {
+        "root": "./app"
       }
     }
   }

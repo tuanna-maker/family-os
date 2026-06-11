@@ -1,0 +1,20 @@
+# Bun — EAS phải dùng npm (package-lock.json)
+../../bun.lock
+../../bun.lockb
+../../bunfig.toml
+../../web/bun.lock
+../../web/bunfig.toml
+
+# Giảm kích thước archive
+../../web/
+../../mobile/guard/
+../../apps/family/android/
+../../apps/family/ios/
+../../apps/guard/android/
+../../apps/guard/ios/
+../../mobile/guard/android/
+android/
+**/.expo-crash-check/
+**/*.apk
+**/*.aab
+../../.git/

@@ -8,8 +8,8 @@ module.exports = ({ config }) => {
 
   return {
     ...config,
-    name: "STOS Family",
-    slug: "stos-family-native",
+    name: "STOS Life",
+    slug: "stos-life",
     extra: {
       ...config.extra,
       supabaseUrl,

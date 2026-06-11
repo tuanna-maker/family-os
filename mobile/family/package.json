@@ -20,7 +20,9 @@
     "start": "expo start",
     "android": "expo run:android",
     "ios": "expo run:ios",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "eas-build-pre-install": "cd ../.. && rm -f bun.lock bunfig.toml web/bun.lock web/bunfig.toml",
+    "eas-build-post-install": "cd ../.. && node scripts/ensure-mobile-node-modules.mjs || true"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "2.2.0",
