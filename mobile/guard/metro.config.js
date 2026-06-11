@@ -65,7 +65,7 @@ config.resolver.alias = {
   react: resolveReactPkg("react"),
   "react-dom": resolveReactPkg("react-dom"),
   "react-native": path.resolve(monorepoModules, "react-native"),
-  "expo-router/entry": path.resolve(monorepoModules, "expo-router/entry"),
+  "expo-router/entry": path.resolve(monorepoModules, "expo-router/entry.js"),
 };
 
 config = withNativeWind(config, { input: "./src/global.css" });

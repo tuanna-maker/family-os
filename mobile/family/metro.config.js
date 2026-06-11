@@ -39,7 +39,7 @@ config.resolver.alias = {
   "@mobile": path.resolve(projectRoot, "src"),
   react: path.resolve(monorepoModules, "react"),
   "react-native": path.resolve(monorepoModules, "react-native"),
-  "expo-router/entry": path.resolve(monorepoModules, "expo-router/entry"),
+  "expo-router/entry": path.resolve(monorepoModules, "expo-router/entry.js"),
 };
 
 module.exports = config;
