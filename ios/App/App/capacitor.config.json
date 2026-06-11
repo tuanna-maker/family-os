@@ -1,0 +1,16 @@
+{
+	"appId": "vn.stos.guard",
+	"appName": "STOS Guard",
+	"webDir": "capacitor-web",
+	"server": {
+		"url": "http://127.0.0.1:8080/guard",
+		"cleartext": true,
+		"androidScheme": "http"
+	},
+	"ios": {
+		"contentInset": "never",
+		"scrollEnabled": true,
+		"backgroundColor": "#141a28"
+	},
+	"packageClassList": []
+}
