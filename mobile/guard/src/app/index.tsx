@@ -1,21 +1,6 @@
 import { Redirect } from "expo-router";
-import { View, ActivityIndicator } from "react-native";
-import { useAuth } from "@mobile/hooks/useAuth";
 
+/** Entry for app icon + deep link scheme root (vn.unicom.stos.guardrn:///). */
 export default function Index() {
-  const { session, loading } = useAuth();
-
-  if (loading) {
-    return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-        <ActivityIndicator size="large" color="#2563eb" />
-      </View>
-    );
-  }
-
-  if (!session) {
-    return <Redirect href="/login" />;
-  }
-
-  return <Redirect href="/(tabs)" />;
+  return <Redirect href="/login" />;
 }

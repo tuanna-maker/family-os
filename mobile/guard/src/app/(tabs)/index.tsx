@@ -2,7 +2,7 @@ import React, { useCallback } from "react";
 import { View, Text, ScrollView, TouchableOpacity } from "react-native";
 import { showAppAlert } from "@mobile/components/AppAlert";
 import { Shield, LogIn, LogOut, MapPin, AlertTriangle, Users, Siren } from "lucide-react-native";
-import { Link, useFocusEffect, useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -79,7 +79,7 @@ export default function DashboardScreen() {
   };
 
   return (
-    <ScrollView className="flex-1 bg-background" contentContainerStyle={tabPad}>
+    <ScrollView style={{ flex: 1 }} contentContainerStyle={tabPad}>
       <View
         className="px-5 pb-4 flex-row items-start justify-between bg-background"
         style={{ paddingTop: Math.max(insets.top + 12, 48) }}
@@ -196,8 +196,11 @@ export default function DashboardScreen() {
           </LinearGradient>
         </TouchableOpacity>
 
-        <Link href="/patrol" asChild>
-          <TouchableOpacity className="w-[48%] mb-4" activeOpacity={0.9}>
+        <TouchableOpacity
+          className="w-[48%] mb-4"
+          activeOpacity={0.9}
+          onPress={() => router.push("/patrol")}
+        >
             <LinearGradient
               colors={["#3B82F6", "#2563EB"]}
               style={{
@@ -214,11 +217,13 @@ export default function DashboardScreen() {
               <Text className="text-sm font-bold text-white tracking-wide">TUẦN TRA</Text>
               <Text className="text-[11px] text-white/80 mt-0.5">Điểm danh</Text>
             </LinearGradient>
-          </TouchableOpacity>
-        </Link>
+        </TouchableOpacity>
 
-        <Link href="/incident" asChild>
-          <TouchableOpacity className="w-[48%] mb-4" activeOpacity={0.9}>
+        <TouchableOpacity
+          className="w-[48%] mb-4"
+          activeOpacity={0.9}
+          onPress={() => router.push("/incident")}
+        >
             <LinearGradient
               colors={["#F59E0B", "#D97706"]}
               style={{
@@ -235,13 +240,11 @@ export default function DashboardScreen() {
               <Text className="text-sm font-bold text-white tracking-wide">BÁO SỰ CỐ</Text>
               <Text className="text-[11px] text-white/80 mt-0.5">Gửi báo cáo</Text>
             </LinearGradient>
-          </TouchableOpacity>
-        </Link>
+        </TouchableOpacity>
       </View>
 
       <View className="px-5 mt-2 mb-8">
-        <Link href="/requests" asChild>
-          <TouchableOpacity activeOpacity={0.9}>
+        <TouchableOpacity activeOpacity={0.9} onPress={() => router.push("/requests")}>
             <LinearGradient
               colors={["#8B5CF6", "#6D28D9"]}
               style={{ flexDirection: "row", alignItems: "center", borderRadius: 24, padding: 20 }}
@@ -267,8 +270,7 @@ export default function DashboardScreen() {
                 </View>
               ) : null}
             </LinearGradient>
-          </TouchableOpacity>
-        </Link>
+        </TouchableOpacity>
       </View>
     </ScrollView>
   );

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getSupabase } from "@shared/supabase/get-client";
+import { useAuth } from "@mobile/hooks/useAuth";
 import {
   listPlatformNotifications,
   markPlatformRead,
@@ -110,6 +111,8 @@ function countInboxUnread(
 
 export function useGuardNotifications() {
   const qc = useQueryClient();
+  const { user } = useAuth();
+  const userId = user?.id;
 
   const listQ = useQuery({
     queryKey: ["guard-notifications"],
@@ -132,57 +135,59 @@ export function useGuardNotifications() {
   const ackedIds = useMemo(() => new Set(ackedQ.data ?? []), [ackedQ.data]);
 
   useEffect(() => {
+    if (!userId) return;
+
     const supabase = getSupabase();
-    let channel: ReturnType<typeof supabase.channel> | null = null;
+    const channelName = `guard-inbox-${userId}`;
+    for (const existing of supabase.getChannels()) {
+      if (existing.topic === `realtime:${channelName}`) {
+        void supabase.removeChannel(existing);
+      }
+    }
 
-    void supabase.auth.getUser().then(({ data }) => {
-      const userId = data.user?.id;
-      if (!userId) return;
-
-      channel = supabase
-        .channel(`guard-inbox-${userId}`)
-        .on(
-          "postgres_changes",
-          {
-            event: "*",
-            schema: "platform",
-            table: "notification",
-            filter: `user_id=eq.${userId}`,
-          },
-          (payload) => {
-            const row = (payload.new ?? payload.old) as PlatformNotification | undefined;
-            if (!row?.id) return;
-            qc.setQueryData<PlatformNotification[]>(["guard-notifications"], (old) => {
-              const prev = old ?? [];
-              const without = prev.filter((n) => n.id !== row.id);
-              if (payload.eventType === "DELETE") return without;
-              return [row, ...without];
-            });
-          },
-        )
-        .on(
-          "postgres_changes",
-          { event: "*", schema: "public", table: "security_requests" },
-          (payload) => {
-            const row = (payload.new ?? payload.old) as SecurityRequest | undefined;
-            if (!row?.id) return;
-            qc.setQueryData<SecurityRequest[]>(["guard-open-requests"], (old) => {
-              const prev = old ?? [];
-              const without = prev.filter((r) => r.id !== row.id);
-              if (payload.eventType === "DELETE") return without;
-              const open = row.status === "open" || row.status === "in_progress";
-              if (!open) return without;
-              return [row, ...without];
-            });
-          },
-        )
-        .subscribe();
-    });
+    const channel = supabase
+      .channel(channelName)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "platform",
+          table: "notification",
+          filter: `user_id=eq.${userId}`,
+        },
+        (payload) => {
+          const row = (payload.new ?? payload.old) as PlatformNotification | undefined;
+          if (!row?.id) return;
+          qc.setQueryData<PlatformNotification[]>(["guard-notifications"], (old) => {
+            const prev = old ?? [];
+            const without = prev.filter((n) => n.id !== row.id);
+            if (payload.eventType === "DELETE") return without;
+            return [row, ...without];
+          });
+        },
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "security_requests" },
+        (payload) => {
+          const row = (payload.new ?? payload.old) as SecurityRequest | undefined;
+          if (!row?.id) return;
+          qc.setQueryData<SecurityRequest[]>(["guard-open-requests"], (old) => {
+            const prev = old ?? [];
+            const without = prev.filter((r) => r.id !== row.id);
+            if (payload.eventType === "DELETE") return without;
+            const open = row.status === "open" || row.status === "in_progress";
+            if (!open) return without;
+            return [row, ...without];
+          });
+        },
+      )
+      .subscribe();
 
     return () => {
-      if (channel) void supabase.removeChannel(channel);
+      void supabase.removeChannel(channel);
     };
-  }, [qc]);
+  }, [userId, qc]);
 
   const platformItems = listQ.data ?? [];
   const openRequests = openQ.data ?? [];

@@ -61,12 +61,12 @@ export default function LoginScreen() {
         throw new Error("Tài khoản không thuộc đội an ninh STOS Guard.");
       }
       router.replace("/(tabs)");
+      return;
     } catch (e) {
       showAppAlert({
         title: "Đăng nhập thất bại",
         message: (e as Error).message || GENERIC_AUTH_ERROR,
       });
-    } finally {
       setLoading(false);
     }
   }

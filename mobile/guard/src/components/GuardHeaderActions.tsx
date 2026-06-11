@@ -1,19 +1,28 @@
-import { Link } from "expo-router";
+import { useRouter } from "expo-router";
 import { Bell, Moon, Sun } from "lucide-react-native";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useTheme } from "@mobile/theme/themeStore";
+
 type Props = {
   unread?: number;
   showBell?: boolean;
 };
 
+function iconBtnStyle(colors: { card: string; cardBorder: string }) {
+  return StyleSheet.flatten([
+    styles.iconBtn,
+    { backgroundColor: colors.card, borderColor: colors.cardBorder },
+  ]);
+}
+
 export function GuardHeaderActions({ unread = 0, showBell = true }: Props) {
+  const router = useRouter();
   const { colors, theme, toggleTheme } = useTheme();
 
   return (
     <View style={styles.row}>
       <Pressable
-        style={[styles.iconBtn, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}
+        style={iconBtnStyle(colors)}
         onPress={toggleTheme}
         accessibilityRole="button"
         accessibilityLabel={theme === "dark" ? "Chuyển sang chế độ sáng" : "Chuyển sang chế độ tối"}
@@ -26,20 +35,19 @@ export function GuardHeaderActions({ unread = 0, showBell = true }: Props) {
       </Pressable>
 
       {showBell ? (
-        <Link href="/(tabs)/notifications" asChild>
-          <Pressable
-            style={[styles.iconBtn, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}
-            accessibilityRole="button"
-            accessibilityLabel="Thông báo"
-          >
-            <Bell color={colors.foreground} size={18} />
-            {unread > 0 ? (
-              <View style={[styles.badge, { backgroundColor: colors.emergency }]}>
-                <Text style={styles.badgeText}>{unread > 9 ? "9+" : unread}</Text>
-              </View>
-            ) : null}
-          </Pressable>
-        </Link>
+        <Pressable
+          style={iconBtnStyle(colors)}
+          onPress={() => router.push("/(tabs)/notifications")}
+          accessibilityRole="button"
+          accessibilityLabel="Thông báo"
+        >
+          <Bell color={colors.foreground} size={18} />
+          {unread > 0 ? (
+            <View style={StyleSheet.flatten([styles.badge, { backgroundColor: colors.emergency }])}>
+              <Text style={styles.badgeText}>{unread > 9 ? "9+" : unread}</Text>
+            </View>
+          ) : null}
+        </Pressable>
       ) : null}
     </View>
   );
