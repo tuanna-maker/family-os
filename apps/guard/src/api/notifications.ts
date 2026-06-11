@@ -8,6 +8,7 @@ export type PlatformNotification = {
   data: Record<string, unknown>;
   status: string;
   read_at: string | null;
+  dismissed_at?: string | null;
   created_at: string;
 };
 
@@ -16,8 +17,9 @@ export async function listPlatformNotifications() {
   const { data, error } = await supabase
     .schema("platform")
     .from("notification")
-    .select("id, topic, title, body, data, status, read_at, created_at")
+    .select("id, topic, title, body, data, status, read_at, dismissed_at, created_at")
     .eq("user_id", userId)
+    .is("dismissed_at", null)
     .order("created_at", { ascending: false })
     .limit(50);
   if (error) throw new Error(error.message);
@@ -31,6 +33,7 @@ export async function unreadPlatformCount() {
     .from("notification")
     .select("id", { count: "exact", head: true })
     .eq("user_id", userId)
+    .is("dismissed_at", null)
     .is("read_at", null)
     .in("status", ["queued", "sent", "delivered"]);
   if (error) throw new Error(error.message);
@@ -61,15 +64,17 @@ export async function markAllPlatformRead() {
   return { ok: true as const };
 }
 
-/** Xóa thông báo platform đã đọc (giữ lại chưa đọc). */
+/** Ẩn vĩnh viễn thông báo platform đã đọc (soft-delete — không hiện lại sau cài app). */
 export async function deleteReadPlatformNotifications() {
   const { supabase, userId } = await requireUser();
+  const now = new Date().toISOString();
   const { error } = await supabase
     .schema("platform")
     .from("notification")
-    .delete()
+    .update({ dismissed_at: now })
     .eq("user_id", userId)
-    .not("read_at", "is", null);
+    .not("read_at", "is", null)
+    .is("dismissed_at", null);
   if (error) throw new Error(error.message);
   return { ok: true as const };
 }
@@ -77,12 +82,14 @@ export async function deleteReadPlatformNotifications() {
 export async function deletePlatformNotifications(ids: string[]) {
   if (ids.length === 0) return { ok: true as const };
   const { supabase, userId } = await requireUser();
+  const now = new Date().toISOString();
   const { error } = await supabase
     .schema("platform")
     .from("notification")
-    .delete()
+    .update({ dismissed_at: now })
     .eq("user_id", userId)
-    .in("id", ids);
+    .in("id", ids)
+    .is("dismissed_at", null);
   if (error) throw new Error(error.message);
   return { ok: true as const };
 }

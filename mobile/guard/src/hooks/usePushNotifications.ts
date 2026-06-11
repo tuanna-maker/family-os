@@ -263,6 +263,7 @@ export function usePushNotifications() {
             data?: Record<string, unknown>;
             status?: string;
             read_at?: string | null;
+            dismissed_at?: string | null;
             created_at?: string;
           };
           if (!row?.id) return;
@@ -270,6 +271,7 @@ export function usePushNotifications() {
             ["guard-notifications"],
             (old) => {
               const prev = old ?? [];
+              if (row.dismissed_at) return prev.filter((n) => n.id !== row.id);
               return prev.map((n) =>
                 n.id === row.id
                   ? {
@@ -280,6 +282,7 @@ export function usePushNotifications() {
                       data: row.data ?? n.data,
                       status: row.status ?? n.status,
                       read_at: row.read_at ?? n.read_at,
+                      dismissed_at: row.dismissed_at ?? n.dismissed_at,
                     }
                   : n,
               );

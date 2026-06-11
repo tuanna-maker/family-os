@@ -18,12 +18,13 @@ import {
   deletePlatformNotifications,
   type PlatformNotification,
 } from "@guard/api/notifications";
-import { listOpenResidentRequests, type SecurityRequest } from "@guard/api/security";
-import { RESIDENT_NOTIFICATION_TOPICS } from "@mobile/constants/notifications";
 import {
-  dismissGuardSecurityRequests,
-  loadDismissedSecurityRequestIds,
-} from "@mobile/lib/guard-notification-pull";
+  dismissInboxSecurityRequests,
+  listDismissedInboxRequestIds,
+  listOpenResidentRequests,
+  type SecurityRequest,
+} from "@guard/api/security";
+import { RESIDENT_NOTIFICATION_TOPICS } from "@mobile/constants/notifications";
 import { REQUEST_TYPE_LABEL } from "@mobile/utils/guardFormat";
 
 export type GuardResidentInboxItem = {
@@ -151,9 +152,8 @@ function useGuardNotificationsState() {
 
   const dismissedQ = useQuery({
     queryKey: ["guard-inbox-dismissed-request-ids"],
-    queryFn: loadDismissedSecurityRequestIds,
-    staleTime: Infinity,
-    initialData: [] as string[],
+    queryFn: listDismissedInboxRequestIds,
+    staleTime: 60_000,
   });
   const dismissedIds = useMemo(() => new Set(dismissedQ.data ?? []), [dismissedQ.data]);
 
@@ -185,6 +185,7 @@ function useGuardNotificationsState() {
             const prev = old ?? [];
             const without = prev.filter((n) => n.id !== row.id);
             if (payload.eventType === "DELETE") return without;
+            if (row.dismissed_at) return without;
             return [row, ...without];
           });
         },
@@ -391,7 +392,7 @@ function useGuardNotificationsState() {
 
       try {
         if (requestIdsToDismiss.length > 0) {
-          await dismissGuardSecurityRequests(requestIdsToDismiss);
+          await dismissInboxSecurityRequests(requestIdsToDismiss);
         }
         if (tab === "all") {
           await deleteReadPlatformNotifications();

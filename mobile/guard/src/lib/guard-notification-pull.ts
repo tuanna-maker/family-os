@@ -177,6 +177,7 @@ async function pollPlatformNotifications(
   const apiUrl =
     `${url}/rest/v1/notification` +
     `?user_id=eq.${encodedUser}` +
+    `&dismissed_at=is.null` +
     `&select=id,title,body,topic,created_at` +
     `&order=created_at.desc&limit=20`;
   const rows = await getJsonArray(apiUrl, anon, token, "platform");
