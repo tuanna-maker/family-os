@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { ActivityIndicator, Linking, Pressable, ScrollView, Text, View } from "react-native";
 import { useQuery } from "@tanstack/react-query";
 import { Calendar, CheckCircle2, Clock, Phone, Shield } from "lucide-react-native";
@@ -283,17 +283,6 @@ export default function BaoVeScreen() {
     }
     return days.map((d) => ({ ...d, shiftCount: countByIso.get(d.iso) ?? 0 }));
   }, [range.from, range.to, shifts]);
-
-  useEffect(() => {
-    if (tab !== "schedule" || shifts.length === 0) return;
-    const selectedIso = isoDate(selectedDate);
-    if (shifts.some((s) => s.shift_date.slice(0, 10) === selectedIso)) return;
-    const first = shifts[0]?.shift_date.slice(0, 10);
-    if (first) {
-      const [y, m, d] = first.split("-").map(Number);
-      setSelectedDate(new Date(y, m - 1, d, 0, 0, 0, 0));
-    }
-  }, [tab, shifts, selectedDate]);
 
   const unscoped =
     (guardsQ.isError && isUnscopedError(guardsQ.error)) ||
