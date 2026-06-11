@@ -11,21 +11,35 @@ process.env.EXPO_ROUTER_IMPORT_MODE =
 
 const config = getDefaultConfig(projectRoot);
 
+// Symlink mobile/*/node_modules → repo root confuses Metro's file watcher.
+config.resolver.blockList = [
+  ...(Array.isArray(config.resolver.blockList)
+    ? config.resolver.blockList
+    : config.resolver.blockList
+      ? [config.resolver.blockList]
+      : []),
+  /mobile\/[^/]+\/node_modules\/.*/,
+];
+
 config.projectRoot = projectRoot;
 config.watchFolders = [
   monorepoRoot,
   path.resolve(monorepoRoot, "node_modules"),
   path.resolve(monorepoRoot, "apps/family/src"),
 ];
-config.resolver.disableHierarchicalLookup = true;
-config.resolver.nodeModulesPaths = [
-  path.resolve(projectRoot, "node_modules"),
-  path.resolve(monorepoRoot, "node_modules"),
-];
+const monorepoModules = path.resolve(monorepoRoot, "node_modules");
+
+config.resolver.nodeModulesPaths = [monorepoModules, path.resolve(projectRoot, "node_modules")];
+config.resolver.extraNodeModules = {
+  "metro-runtime": path.resolve(monorepoModules, "metro-runtime"),
+};
 config.resolver.alias = {
   "@": path.resolve(monorepoRoot, "apps/family/src"),
   "@mobile/api": path.resolve(monorepoRoot, "apps/family/src/api"),
   "@mobile": path.resolve(projectRoot, "src"),
+  react: path.resolve(monorepoModules, "react"),
+  "react-native": path.resolve(monorepoModules, "react-native"),
+  "expo-router/entry": path.resolve(monorepoModules, "expo-router/entry"),
 };
 
 module.exports = config;

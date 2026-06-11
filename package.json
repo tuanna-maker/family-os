@@ -24,7 +24,12 @@
     "android:family:debug": "npm run build:family && node scripts/android-build.mjs family assembleDebug",
     "android:guard:debug": "npm run build:guard && node scripts/android-build.mjs guard assembleDebug",
     "mobile:family": "npm run start -w @mobile/family",
+    "mobile:family:start": "bash scripts/start-mobile-family.sh",
     "mobile:family:android": "npm run android -w @mobile/family",
+    "mobile:family:ios": "bash scripts/ios-mobile-family.sh",
+    "mobile:guard:start": "bash scripts/start-mobile-guard.sh",
+    "mobile:guard:ios": "bash scripts/ios-mobile-guard.sh",
+    "postinstall": "node scripts/ensure-mobile-node-modules.mjs && node scripts/sync-mobile-env.mjs",
     "android:mobile-family": "node scripts/android-build.mjs mobile-family assembleRelease",
     "android:mobile-family:debug": "node scripts/android-build.mjs mobile-family assembleDebug",
     "android:mobile-guard": "node scripts/android-build.mjs mobile-guard assembleRelease",
@@ -49,12 +54,19 @@
   "engines": {
     "node": ">=20.19.0"
   },
+  "overrides": {
+    "react": "19.2.3",
+    "react-dom": "19.2.3"
+  },
   "devDependencies": {
     "@playwright/test": "^1.52.0",
     "babel-plugin-module-resolver": "^5.0.2",
     "sharp": "^0.34.2"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.107.0"
+    "@supabase/supabase-js": "^2.107.0",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "tailwindcss": "^3.4.17"
   }
 }

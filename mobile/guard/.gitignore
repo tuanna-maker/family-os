@@ -40,6 +40,5 @@ yarn-error.*
 
 example
 
-# generated native folders
-/ios
+# generated native folders (android only — ios tracked with Pods excluded via ios/.gitignore)
 /android

@@ -5,10 +5,12 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "guard",
+    "scheme": "vn.unicom.stos.guardrn",
     "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
     "ios": {
       "icon": "./assets/images/icon.png",
+      "bundleIdentifier": "vn.unicom.stos.guardrn",
       "infoPlist": {
         "UIBackgroundModes": [
           "remote-notification",
