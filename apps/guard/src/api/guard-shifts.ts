@@ -40,6 +40,88 @@ const locationSchema = z
   })
   .optional();
 
+const STALE_AUTO_CLOSE_NOTE = "Tự động kết thúc ca — quá giờ kết thúc ca trực.";
+
+/** Thời điểm kết thúc ca (ưu tiên end_at; ca đêm có thể sang ngày hôm sau). */
+export function resolveShiftEnd(shift: Pick<GuardShift, "end_at" | "shift_date" | "shift_type">): Date {
+  if (shift.end_at) return new Date(shift.end_at);
+  const [y, m, d] = shift.shift_date.split("-").map(Number);
+  const end = new Date(y, m - 1, d);
+  switch (shift.shift_type) {
+    case "morning":
+      end.setHours(14, 0, 0, 0);
+      break;
+    case "afternoon":
+      end.setHours(22, 0, 0, 0);
+      break;
+    case "night":
+      end.setDate(end.getDate() + 1);
+      end.setHours(6, 0, 0, 0);
+      break;
+    default:
+      end.setHours(23, 59, 59, 999);
+  }
+  return end;
+}
+
+/** Ca checked_in còn trong giờ trực (kể cả ca đêm qua nửa đêm). */
+export function isOnDutyShift(shift: GuardShift, now = new Date()): boolean {
+  return shift.status === "checked_in" && resolveShiftEnd(shift) > now;
+}
+
+async function closeStaleOpenShifts(
+  supabase: Awaited<ReturnType<typeof requireUser>>["supabase"],
+  lookupGuardIds: string[],
+  now = new Date(),
+) {
+  const { data: openRows, error } = await supabase
+    .from("guard_shifts")
+    .select("id, end_at, shift_date, shift_type, notes, check_in_at")
+    .in("guard_id", lookupGuardIds)
+    .eq("status", "checked_in");
+  if (error) throw new Error(error.message);
+  if (!openRows?.length) return;
+
+  for (const row of openRows) {
+    const shift = row as GuardShift;
+    if (isOnDutyShift(shift, now)) continue;
+
+    const merged = [shift.notes, STALE_AUTO_CLOSE_NOTE].filter(Boolean).join("\n");
+    const checkOutAt =
+      shift.end_at ??
+      resolveShiftEnd(shift).toISOString();
+
+    const { error: updErr } = await supabase
+      .from("guard_shifts")
+      .update({
+        status: "checked_out",
+        check_out_at: checkOutAt,
+        notes: merged || null,
+      })
+      .eq("id", shift.id);
+    if (updErr) throw new Error(updErr.message);
+  }
+}
+
+async function findOpenOnDutyShift(
+  supabase: Awaited<ReturnType<typeof requireUser>>["supabase"],
+  lookupGuardIds: string[],
+  now = new Date(),
+): Promise<GuardShift | null> {
+  const { data: openRows, error } = await supabase
+    .from("guard_shifts")
+    .select("*")
+    .in("guard_id", lookupGuardIds)
+    .eq("status", "checked_in")
+    .order("check_in_at", { ascending: false });
+  if (error) throw new Error(error.message);
+  for (const row of openRows ?? []) {
+    const shift = row as GuardShift;
+    if (isOnDutyShift(shift, now)) return shift;
+  }
+  return null;
+}
+
 async function listMyShiftsRpc(
   supabase: Awaited<ReturnType<typeof requireUser>>["supabase"],
   userId: string,
@@ -71,24 +153,19 @@ async function listMyShiftsRpc(
 export async function getActiveShift(): Promise<GuardShift | null> {
   const { supabase, userId } = await requireUser();
   const scope = await resolveGuardScope(supabase, userId);
+  const now = new Date();
 
-  const { data: onDuty, error: dutyErr } = await supabase
-    .from("guard_shifts")
-    .select("*")
-    .in("guard_id", scope.lookup_guard_ids)
-    .eq("status", "checked_in")
-    .order("check_in_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  if (dutyErr) throw new Error(dutyErr.message);
-  if (onDuty) return onDuty as GuardShift;
+  await closeStaleOpenShifts(supabase, scope.lookup_guard_ids, now);
 
-  const today = localDateIso();
+  const onDuty = await findOpenOnDutyShift(supabase, scope.lookup_guard_ids, now);
+  if (onDuty) return onDuty;
+
+  const today = localDateIso(now);
   const { data: scheduled, error: schedErr } = await supabase
     .from("guard_shifts")
     .select("*")
     .in("guard_id", scope.lookup_guard_ids)
-    .in("status", ["scheduled", "checked_in"])
+    .eq("status", "scheduled")
     .eq("shift_date", today)
     .order("start_at", { ascending: false })
     .limit(1)
@@ -116,14 +193,10 @@ export async function checkInShift(input?: {
   const nowIso = now.toISOString();
   const today = localDateIso(now);
 
-  const { data: active } = await supabase
-    .from("guard_shifts")
-    .select("id")
-    .eq("guard_id", userId)
-    .eq("status", "checked_in")
-    .limit(1)
-    .maybeSingle();
-  if (active) return { id: active.id as string, reused: true };
+  await closeStaleOpenShifts(supabase, scope.lookup_guard_ids, now);
+
+  const onDuty = await findOpenOnDutyShift(supabase, scope.lookup_guard_ids, now);
+  if (onDuty) return { id: onDuty.id, reused: true };
 
   const { data: scheduled } = await supabase
     .from("guard_shifts")
@@ -170,13 +243,16 @@ export async function checkOutShift(input?: {
     .parse(input ?? {});
 
   const { supabase, userId } = await requireUser();
+  const scope = await resolveGuardScope(supabase, userId);
+  const now = new Date();
+
+  const onDuty = await findOpenOnDutyShift(supabase, scope.lookup_guard_ids, now);
+  if (!onDuty) throw new Error("Bạn chưa có ca trực đang mở để kết thúc");
+
   const { data: active, error: readErr } = await supabase
     .from("guard_shifts")
     .select("id, notes")
-    .eq("guard_id", userId)
-    .eq("status", "checked_in")
-    .order("check_in_at", { ascending: false })
-    .limit(1)
+    .eq("id", onDuty.id)
     .maybeSingle();
   if (readErr) throw new Error(readErr.message);
   if (!active) throw new Error("Bạn chưa có ca trực đang mở để kết thúc");
@@ -227,14 +303,7 @@ export async function logPatrolCheckpoint(input: {
 
   const { supabase, userId } = await requireUser();
   const scope = await resolveGuardScope(supabase, userId);
-  const { data: active } = await supabase
-    .from("guard_shifts")
-    .select("id, project_id")
-    .eq("guard_id", userId)
-    .eq("status", "checked_in")
-    .order("check_in_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+  const active = await findOpenOnDutyShift(supabase, scope.lookup_guard_ids);
 
   const { data: inserted, error } = await supabase
     .from("patrol_logs")
