@@ -11,6 +11,7 @@ const AUTH_CREDS = {
 const STATE_CREDS = {
   seenSecurityIds: "stos_guard_seen_security_ids",
   seenPlatformNotifIds: "stos_guard_seen_platform_notif_ids",
+  dismissedSecurityIds: "stos_guard_dismissed_security_ids",
   bootstrapped: "stos_guard_pull_bootstrapped",
 } as const;
 
@@ -64,6 +65,20 @@ export async function markGuardSecurityRequestSeen(id: string) {
   if (seen.has(id)) return;
   seen.add(id);
   await saveSeenSet(STATE_CREDS.seenSecurityIds, seen);
+}
+
+export async function loadDismissedSecurityRequestIds(): Promise<string[]> {
+  return [...(await loadSeenSet(STATE_CREDS.dismissedSecurityIds))];
+}
+
+/** Ẩn yêu cầu cư dân đã đọc khỏi hộp thư (yêu cầu vẫn mở trên server). */
+export async function dismissGuardSecurityRequests(ids: string[]) {
+  if (ids.length === 0) return;
+  const dismissed = await loadSeenSet(STATE_CREDS.dismissedSecurityIds);
+  for (const id of ids) {
+    if (id) dismissed.add(id);
+  }
+  await saveSeenSet(STATE_CREDS.dismissedSecurityIds, dismissed);
 }
 
 export async function markGuardPlatformNotifSeen(id: string) {

@@ -3,7 +3,6 @@ import { useRouter } from "expo-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
-  ChevronLeft,
   ChevronRight,
   Users,
   Calendar,
@@ -62,16 +61,6 @@ function formatVnd(n: number, locale: "vi" | "en") {
 
 function useGiaDinhStyles() {
   return useThemedStyles((c, fontScale) => ({
-    topBar: { flexDirection: "row" as const, alignItems: "center" as const, gap: 10, marginBottom: 8 },
-    backBtn: {
-      width: 40,
-      height: 40,
-      borderRadius: 20,
-      backgroundColor: c.mutedBg,
-      alignItems: "center" as const,
-      justifyContent: "center" as const,
-    },
-    pageTitle: { fontSize: 22 * fontScale, fontWeight: "800" as const, color: c.foreground, letterSpacing: -0.3 },
     heroCard: {
       backgroundColor: c.card,
       borderRadius: 28,
@@ -293,13 +282,6 @@ export default function GiaDinhScreen() {
 
   return (
     <Screen contentStyle={{ paddingTop: Math.max(insets.top + 8, 16) }}>
-      <View style={styles.topBar}>
-        <Pressable style={styles.backBtn} onPress={() => router.push("/(tabs)/home")}>
-          <ChevronLeft color={colors.foreground} size={22} />
-        </Pressable>
-        <Text style={styles.pageTitle}>{f.myFamily}</Text>
-      </View>
-
       <View style={styles.heroCard}>
         <Pressable style={styles.chevCircle} onPress={() => router.push("/(tabs)/tai-khoan")}>
           <ChevronRight color={colors.muted} size={14} />

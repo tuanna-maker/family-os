@@ -1,4 +1,12 @@
-import { useCallback, useEffect, useMemo } from "react";
+import {
+  createContext,
+  createElement,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  type ReactNode,
+} from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getSupabase } from "@shared/supabase/get-client";
 import { useAuth } from "@mobile/hooks/useAuth";
@@ -12,6 +20,10 @@ import {
 } from "@guard/api/notifications";
 import { listOpenResidentRequests, type SecurityRequest } from "@guard/api/security";
 import { RESIDENT_NOTIFICATION_TOPICS } from "@mobile/constants/notifications";
+import {
+  dismissGuardSecurityRequests,
+  loadDismissedSecurityRequestIds,
+} from "@mobile/lib/guard-notification-pull";
 import { REQUEST_TYPE_LABEL } from "@mobile/utils/guardFormat";
 
 export type GuardResidentInboxItem = {
@@ -37,7 +49,7 @@ function platformToResidentItem(n: PlatformNotification): GuardResidentInboxItem
     body: n.body,
     created_at: n.created_at,
     read: !!n.read_at,
-    isAlert: n.topic.startsWith("sos."),
+    isAlert: (n.topic ?? "").startsWith("sos."),
     requestId,
   };
 }
@@ -61,7 +73,8 @@ function requestToResidentItem(
   };
 }
 
-function isResidentTopic(topic: string) {
+function isResidentTopic(topic: string | null | undefined) {
+  if (!topic) return false;
   return RESIDENT_NOTIFICATION_TOPICS.includes(
     topic as (typeof RESIDENT_NOTIFICATION_TOPICS)[number],
   );
@@ -72,6 +85,7 @@ export function buildResidentInbox(
   notifications: PlatformNotification[],
   openRequests: SecurityRequest[],
   ackedRequestIds: Set<string>,
+  dismissedRequestIds: Set<string> = new Set(),
 ): GuardResidentInboxItem[] {
   const platformItems = notifications
     .filter((n) => isResidentTopic(n.topic))
@@ -83,6 +97,7 @@ export function buildResidentInbox(
 
   const requestItems = openRequests
     .filter((r) => !coveredRequestIds.has(r.id))
+    .filter((r) => !dismissedRequestIds.has(r.id))
     .map((r) => requestToResidentItem(r, ackedRequestIds));
 
   return [...platformItems, ...requestItems].sort(
@@ -109,7 +124,7 @@ function countInboxUnread(
   );
 }
 
-export function useGuardNotifications() {
+function useGuardNotificationsState() {
   const qc = useQueryClient();
   const { user } = useAuth();
   const userId = user?.id;
@@ -133,6 +148,14 @@ export function useGuardNotifications() {
     initialData: [] as string[],
   });
   const ackedIds = useMemo(() => new Set(ackedQ.data ?? []), [ackedQ.data]);
+
+  const dismissedQ = useQuery({
+    queryKey: ["guard-inbox-dismissed-request-ids"],
+    queryFn: loadDismissedSecurityRequestIds,
+    staleTime: Infinity,
+    initialData: [] as string[],
+  });
+  const dismissedIds = useMemo(() => new Set(dismissedQ.data ?? []), [dismissedQ.data]);
 
   useEffect(() => {
     if (!userId) return;
@@ -193,8 +216,8 @@ export function useGuardNotifications() {
   const openRequests = openQ.data ?? [];
 
   const residentItems = useMemo(
-    () => buildResidentInbox(platformItems, openRequests, ackedIds),
-    [platformItems, openRequests, ackedIds],
+    () => buildResidentInbox(platformItems, openRequests, ackedIds, dismissedIds),
+    [platformItems, openRequests, ackedIds, dismissedIds],
   );
 
   const companyItems = useMemo(
@@ -242,6 +265,7 @@ export function useGuardNotifications() {
           platformItems,
           openRequests,
           new Set([...ackedIds, requestId]),
+          dismissedIds,
         );
         syncBadgeQuery(platformItems, nextResident);
         return;
@@ -250,7 +274,7 @@ export function useGuardNotifications() {
       qc.setQueryData<PlatformNotification[]>(["guard-notifications"], (old) => {
         const next = patchNotificationRead(old, id);
         if (next) {
-          const resident = buildResidentInbox(next, openRequests, ackedIds);
+          const resident = buildResidentInbox(next, openRequests, ackedIds, dismissedIds);
           syncBadgeQuery(next, resident);
         }
         return next;
@@ -262,7 +286,7 @@ export function useGuardNotifications() {
         void qc.invalidateQueries({ queryKey: ["guard-notifications"] });
       }
     },
-    [ackRequest, ackedIds, openRequests, platformItems, qc, syncBadgeQuery],
+    [ackRequest, ackedIds, dismissedIds, openRequests, platformItems, qc, syncBadgeQuery],
   );
 
   const markAllRead = useCallback(
@@ -296,6 +320,7 @@ export function useGuardNotifications() {
           tab === "resident" || tab === "all"
             ? new Set([...ackedIds, ...openRequests.map((r) => r.id)])
             : ackedIds,
+          dismissedIds,
         );
         syncBadgeQuery(next, resident);
         return next;
@@ -315,41 +340,70 @@ export function useGuardNotifications() {
         void qc.invalidateQueries({ queryKey: ["guard-notifications"] });
       }
     },
-    [ackedIds, openRequests, platformItems, qc, syncBadgeQuery],
+    [ackedIds, dismissedIds, openRequests, platformItems, qc, syncBadgeQuery],
   );
 
   const deleteRead = useCallback(
     async (tab: "resident" | "company" | "all") => {
-      const idsToDelete: string[] = [];
+      const residentSnapshot = buildResidentInbox(
+        platformItems,
+        openRequests,
+        ackedIds,
+        dismissedIds,
+      );
+
+      const requestIdsToDismiss =
+        tab === "resident" || tab === "all"
+          ? residentSnapshot
+              .filter((n) => n.kind === "request" && n.read && n.requestId)
+              .map((n) => n.requestId!)
+          : [];
+
+      const idsToDelete = platformItems
+        .filter((n) => {
+          if (!n.read_at) return false;
+          const isRes = isResidentTopic(n.topic);
+          return (
+            tab === "all" ||
+            (tab === "resident" && isRes) ||
+            (tab === "company" && !isRes)
+          );
+        })
+        .map((n) => n.id);
+
+      const nextDismissed = new Set([
+        ...dismissedIds,
+        ...requestIdsToDismiss,
+      ]);
+
+      qc.setQueryData<string[]>(["guard-inbox-dismissed-request-ids"], [
+        ...nextDismissed,
+      ]);
 
       qc.setQueryData<PlatformNotification[]>(["guard-notifications"], (old) => {
         if (!old) return old;
-        const next = old.filter((n) => {
-          if (!n.read_at) return true;
-          const isRes = isResidentTopic(n.topic);
-          const shouldRemove =
-            tab === "all" ||
-            (tab === "resident" && isRes) ||
-            (tab === "company" && !isRes);
-          if (shouldRemove) idsToDelete.push(n.id);
-          return !shouldRemove;
-        });
-        const resident = buildResidentInbox(next, openRequests, ackedIds);
+        const removeIds = new Set(idsToDelete);
+        const next = old.filter((n) => !removeIds.has(n.id));
+        const resident = buildResidentInbox(next, openRequests, ackedIds, nextDismissed);
         syncBadgeQuery(next, resident);
         return next;
       });
 
       try {
+        if (requestIdsToDismiss.length > 0) {
+          await dismissGuardSecurityRequests(requestIdsToDismiss);
+        }
         if (tab === "all") {
           await deleteReadPlatformNotifications();
-        } else {
+        } else if (idsToDelete.length > 0) {
           await deletePlatformNotifications(idsToDelete);
         }
       } catch {
         void qc.invalidateQueries({ queryKey: ["guard-notifications"] });
+        void qc.invalidateQueries({ queryKey: ["guard-inbox-dismissed-request-ids"] });
       }
     },
-    [ackedIds, openRequests, qc, syncBadgeQuery],
+    [ackedIds, dismissedIds, openRequests, platformItems, qc, syncBadgeQuery],
   );
 
   return {
@@ -373,4 +427,21 @@ export function useGuardNotifications() {
     markAllRead,
     deleteRead,
   };
+}
+
+type GuardNotificationsValue = ReturnType<typeof useGuardNotificationsState>;
+
+const GuardNotificationsContext = createContext<GuardNotificationsValue | null>(null);
+
+export function GuardNotificationsProvider({ children }: { children: ReactNode }) {
+  const value = useGuardNotificationsState();
+  return createElement(GuardNotificationsContext.Provider, { value }, children);
+}
+
+export function useGuardNotifications() {
+  const ctx = useContext(GuardNotificationsContext);
+  if (!ctx) {
+    throw new Error("useGuardNotifications must be used within GuardNotificationsProvider");
+  }
+  return ctx;
 }

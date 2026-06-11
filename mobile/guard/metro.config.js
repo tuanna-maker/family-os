@@ -12,6 +12,30 @@ process.env.EXPO_ROUTER_IMPORT_MODE =
 
 let config = getDefaultConfig(projectRoot);
 const monorepoModules = path.resolve(monorepoRoot, "node_modules");
+const localModules = path.resolve(projectRoot, "node_modules");
+
+/** RN 0.85 ships react-native-renderer 19.2.3 — must match `react` exactly. */
+function resolveReactPkg(name) {
+  const local = path.join(localModules, name, "package.json");
+  const root = path.join(monorepoModules, name, "package.json");
+  try {
+    const v = require(local).version;
+    if (v === "19.2.3") return path.join(localModules, name);
+  } catch {
+    /* use root */
+  }
+  try {
+    const v = require(root).version;
+    if (v !== "19.2.3") {
+      throw new Error(
+        `${name}@${v} at repo root — mobile guard requires 19.2.3 (matches react-native-renderer). Run: npm install react@19.2.3 react-dom@19.2.3`,
+      );
+    }
+  } catch (e) {
+    if (e.message.includes("mobile guard requires")) throw e;
+  }
+  return path.join(monorepoModules, name);
+}
 
 config.resolver.blockList = [
   ...(Array.isArray(config.resolver.blockList)
@@ -38,7 +62,8 @@ config.resolver.alias = {
   "@guard/api": path.resolve(monorepoRoot, "apps/guard/src/api"),
   "@mobile": path.resolve(projectRoot, "src"),
   "@expo/ui/jetpack-compose": path.resolve(projectRoot, "src/shims/expo-ui-jetpack-compose.tsx"),
-  react: path.resolve(monorepoModules, "react"),
+  react: resolveReactPkg("react"),
+  "react-dom": resolveReactPkg("react-dom"),
   "react-native": path.resolve(monorepoModules, "react-native"),
   "expo-router/entry": path.resolve(monorepoModules, "expo-router/entry"),
 };

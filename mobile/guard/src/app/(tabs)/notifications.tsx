@@ -227,7 +227,7 @@ const CompanyCard = memo(function CompanyCard({
     () => formatNotifTime(item.created_at),
     [item.created_at, timeTick],
   );
-  const isSos = item.topic.startsWith("sos.");
+  const isSos = (item.topic ?? "").startsWith("sos.");
   const tone: CardTone = isSos
     ? {
         accent: "#EF4444",

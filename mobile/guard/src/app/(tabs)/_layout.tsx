@@ -1,12 +1,14 @@
 import { Tabs } from "expo-router";
 import { Home, CalendarDays, Bell, User } from "lucide-react-native";
 import { GuardTabBar } from "@mobile/components/GuardTabBar";
+import { GuardNotificationsProvider } from "@mobile/hooks/useGuardNotifications";
 import { useTheme } from "@mobile/theme/themeStore";
 import { transparentTabBarOptions } from "@mobile/theme/tabBarScreenOptions";
 export default function TabLayout() {
   const { colors } = useTheme();
 
   return (
+    <GuardNotificationsProvider>
     <Tabs
       tabBar={(props) => <GuardTabBar {...props} />}
       screenOptions={{
@@ -51,5 +53,6 @@ export default function TabLayout() {
         }}
       />
     </Tabs>
+    </GuardNotificationsProvider>
   );
 }

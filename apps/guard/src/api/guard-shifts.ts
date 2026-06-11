@@ -44,8 +44,12 @@ const STALE_AUTO_CLOSE_NOTE = "Tự động kết thúc ca — quá giờ kết 
 
 /** Thời điểm kết thúc ca (ưu tiên end_at; ca đêm có thể sang ngày hôm sau). */
 export function resolveShiftEnd(shift: Pick<GuardShift, "end_at" | "shift_date" | "shift_type">): Date {
-  if (shift.end_at) return new Date(shift.end_at);
-  const [y, m, d] = shift.shift_date.split("-").map(Number);
+  if (shift.end_at) {
+    const endAt = new Date(shift.end_at);
+    if (!Number.isNaN(endAt.getTime())) return endAt;
+  }
+  const dateStr = shift.shift_date?.slice(0, 10) ?? localDateIso();
+  const [y, m, d] = dateStr.split("-").map(Number);
   const end = new Date(y, m - 1, d);
   switch (shift.shift_type) {
     case "morning":
@@ -66,7 +70,15 @@ export function resolveShiftEnd(shift: Pick<GuardShift, "end_at" | "shift_date" 
 
 /** Ca checked_in còn trong giờ trực (kể cả ca đêm qua nửa đêm). */
 export function isOnDutyShift(shift: GuardShift, now = new Date()): boolean {
-  return shift.status === "checked_in" && resolveShiftEnd(shift) > now;
+  return shift.status === "checked_in" && resolveShiftEnd(shift).getTime() > now.getTime();
+}
+
+/** Đã quá giờ kết thúc ca (dùng khi query không trả status). */
+function isShiftPastEnd(
+  shift: Pick<GuardShift, "end_at" | "shift_date" | "shift_type">,
+  now = new Date(),
+): boolean {
+  return resolveShiftEnd(shift).getTime() <= now.getTime();
 }
 
 async function closeStaleOpenShifts(
@@ -84,7 +96,7 @@ async function closeStaleOpenShifts(
 
   for (const row of openRows) {
     const shift = row as GuardShift;
-    if (isOnDutyShift(shift, now)) continue;
+    if (!isShiftPastEnd(shift, now)) continue;
 
     const merged = [shift.notes, STALE_AUTO_CLOSE_NOTE].filter(Boolean).join("\n");
     const checkOutAt =

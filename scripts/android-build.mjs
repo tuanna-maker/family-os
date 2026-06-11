@@ -159,6 +159,14 @@ function ensureGuardNodeLinks(guardRoot) {
 }
 
 ensureLocalProperties(androidDir);
+if (app === "mobile-guard" || app === "mobile-family") {
+  const verify = spawnSync("node", ["scripts/verify-mobile-react.mjs"], {
+    cwd: ROOT,
+    stdio: "inherit",
+    shell: true,
+  });
+  if (verify.status !== 0) process.exit(verify.status ?? 1);
+}
 if (app === "mobile-guard") ensureGuardNodeLinks(mobileGuardRoot);
 // Family resolves native deps from monorepo root node_modules — junctions break Metro SHA-1 on Windows.
 
