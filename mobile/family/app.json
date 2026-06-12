@@ -25,6 +25,7 @@
       }
     },
     "android": {
+      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "foregroundImage": "./assets/icon.webp",
         "backgroundColor": "#071A3D"
@@ -35,7 +36,8 @@
         "VIBRATE",
         "POST_NOTIFICATIONS",
         "FOREGROUND_SERVICE",
-        "FOREGROUND_SERVICE_DATA_SYNC"
+        "FOREGROUND_SERVICE_DATA_SYNC",
+        "RECORD_AUDIO"
       ]
     },
     "plugins": [
@@ -55,6 +57,12 @@
       ],
       "expo-secure-store",
       "expo-image-picker",
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Cho phép ghi âm tin nhắn gửi đội bảo an."
+        }
+      ],
       [
         "expo-notifications",
         {

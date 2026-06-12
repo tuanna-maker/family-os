@@ -13,11 +13,15 @@ import { createApartmentDelivery, DELIVERY_OPTIONS } from "@mobile/api/security-
 import { useFamilyContext } from "@mobile/hooks/useFamilyContext";
 import { toast } from "@mobile/utils/toast";
 import { missingFieldMessage } from "@mobile/utils/formValidation";
+import { useI18n } from "@mobile/i18n/useI18n";
 
 export default function GiaoTanCanHoScreen() {
   const router = useRouter();
   const qc = useQueryClient();
   const { family } = useFamilyContext();
+  const { s } = useI18n();
+  const f = s.security.forms;
+  const scr = f.screens.deliver;
   const [busy, setBusy] = useState(false);
   const [apartment, setApartment] = useState("");
   const [recipientName, setRecipientName] = useState("");
@@ -31,9 +35,9 @@ export default function GiaoTanCanHoScreen() {
 
   const submit = async () => {
     const err = missingFieldMessage([
-      { value: apartment, label: "căn hộ nhận" },
-      { value: recipientName, label: "tên người nhận" },
-      { value: recipientPhone, label: "số điện thoại" },
+      { value: apartment, label: f.validation.recipientApartment },
+      { value: recipientName, label: f.validation.recipientName },
+      { value: recipientPhone, label: f.validation.phone },
     ]);
     if (err) {
       toast.error(err);
@@ -47,40 +51,45 @@ export default function GiaoTanCanHoScreen() {
         recipient_phone: recipientPhone.trim(),
         apartment: apartment.trim(),
         option_id: optionId,
-        option_label: opt.label,
+        option_label: f.deliveryOptions[optionId],
         delivery_fee: opt.fee,
         estimated_total: opt.fee,
       });
       void qc.invalidateQueries({ queryKey: ["security-requests"] });
-      toast.success("Đã đăng ký giao tận căn hộ");
+      toast.success(scr.success);
       router.back();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Gửi thất bại");
+      toast.error(e instanceof Error ? e.message : f.sendFailed);
     } finally {
       setBusy(false);
     }
   };
 
   return (
-    <SecurityServiceScreen title="Giao tận căn hộ" subtitle="Bảo vệ mang hàng lên tận cửa" onSubmit={() => void submit()} busy={busy}>
-      <FormSection title="1. Thông tin giao hàng">
-        <FormField label="Căn hộ nhận" value={apartment} onChangeText={setApartment} />
-        <FormField label="Người nhận" value={recipientName} onChangeText={setRecipientName} />
-        <FormField label="Số điện thoại" value={recipientPhone} onChangeText={setRecipientPhone} keyboardType="phone-pad" />
+    <SecurityServiceScreen title={scr.title} subtitle={scr.subtitle} onSubmit={() => void submit()} busy={busy}>
+      <FormSection title={f.sections.deliveryInfo}>
+        <FormField label={f.fields.recipientApartment} value={apartment} onChangeText={setApartment} />
+        <FormField label={f.fields.recipient} value={recipientName} onChangeText={setRecipientName} />
+        <FormField
+          label={f.fields.phone}
+          value={recipientPhone}
+          onChangeText={setRecipientPhone}
+          keyboardType="phone-pad"
+        />
       </FormSection>
-      <FormSection title="2. Hình thức giao">
-      <PlanCardSelect
-        label="Hình thức giao"
-        value={optionId}
-        onChange={setOptionId}
-        options={DELIVERY_OPTIONS.map((o) => ({
-          id: o.id,
-          label: o.label,
-          price: o.fee === 0 ? "Miễn phí" : formatVnd(o.fee),
-        }))}
-      />
+      <FormSection title={f.sections.deliveryMethod}>
+        <PlanCardSelect
+          label={f.fields.deliveryMethod}
+          value={optionId}
+          onChange={setOptionId}
+          options={DELIVERY_OPTIONS.map((o) => ({
+            id: o.id,
+            label: f.deliveryOptions[o.id],
+            price: o.fee === 0 ? f.free : formatVnd(o.fee),
+          }))}
+        />
       </FormSection>
-      <CostSummary label="Phí dịch vụ" value={formatVnd(opt.fee)} accent={opt.fee === 0} />
+      <CostSummary label={f.serviceFee} value={formatVnd(opt.fee)} accent={opt.fee === 0} />
     </SecurityServiceScreen>
   );
 }

@@ -73,4 +73,9 @@ BEGIN
   ORDER BY p.created_at NULLS LAST
   LIMIT 1;
 
+  -- Danh m?c chi tiêu + ngân sách m?u (8.000.000?/tháng hi?n t?i)
+  IF v_family_id IS NOT NULL THEN
+    PERFORM public.seed_family_expense_settings(v_family_id);
+  END IF;
+
 END $$;

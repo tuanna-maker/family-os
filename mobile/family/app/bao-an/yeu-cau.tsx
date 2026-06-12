@@ -160,7 +160,7 @@ export default function BaoAnYeuCauScreen() {
           <DotPagination page={page} totalPages={totalPages} onPage={setPage} />
           {total > 0 ? (
             <Text style={styles.pageInfo}>
-              {page + 1} / {totalPages} · {total} yêu cầu
+              {sec.requestPageInfo(page + 1, totalPages, total)}
             </Text>
           ) : null}
         </>

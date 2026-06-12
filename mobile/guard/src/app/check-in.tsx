@@ -1,18 +1,29 @@
 import React, { useEffect, useState } from "react";
-import { View, Text } from "react-native";
+import { View, Text, Pressable } from "react-native";
 import { showAppAlert } from "@mobile/components/AppAlert";
 import { useRouter } from "expo-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Button } from "@mobile/components/ui/Button";
 import { SubHeader } from "@mobile/components/SubHeader";
-import { MapPin, AlertTriangle } from "lucide-react-native";
+import { MapPin, AlertTriangle, Info } from "lucide-react-native";
 import { checkInShift, getActiveShift } from "@guard/api/guard-shifts";
 import { invalidateShiftQueries, resolveGuardLocation, type GuardCoords } from "@mobile/utils/guardGeo";
 import { shiftLabel, shiftTimeRange } from "@mobile/utils/guardFormat";
+import { useTheme } from "@mobile/theme/themeStore";
+
+function useLiveClock() {
+  const [now, setNow] = useState(new Date());
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(t);
+  }, []);
+  return now;
+}
 
 export default function CheckInScreen() {
   const router = useRouter();
   const qc = useQueryClient();
+  const { colors } = useTheme();
+  const now = useLiveClock();
   const [coords, setCoords] = useState<GuardCoords | null>(null);
   const [loading, setLoading] = useState(true);
   const [checkingIn, setCheckingIn] = useState(false);
@@ -28,7 +39,7 @@ export default function CheckInScreen() {
   const noShiftToday = !shiftLoading && !activeShift;
 
   useEffect(() => {
-    (async () => {
+    void (async () => {
       const { coords: c, error } = await resolveGuardLocation();
       setCoords(c);
       setGeoError(error);
@@ -79,51 +90,67 @@ export default function CheckInScreen() {
     }
   };
 
+  const timeStr = now.toLocaleTimeString("vi-VN", { hour12: false });
+  const dateStr = now.toLocaleDateString("vi-VN");
+
   return (
     <View className="flex-1 bg-background">
-      <SubHeader title="VÀO CA (CHECK-IN)" />
-      <View className="flex-1 p-6 items-center justify-center">
-        <View className="w-full bg-card rounded-2xl p-6 shadow-sm border border-border items-center">
-          <View className="h-16 w-16 bg-blue-100 rounded-full items-center justify-center mb-4">
-            <MapPin size={32} color="#2563eb" />
+      <SubHeader title="Vào ca" back="/(tabs)" />
+      <View className="flex-1 px-5 pt-4 pb-8">
+        <View className="items-center mb-6">
+          <View className="h-36 w-36 rounded-full border-2 border-brand/40 items-center justify-center bg-card">
+            <View className="h-28 w-28 rounded-full bg-brand/10 items-center justify-center">
+              <MapPin size={40} color={colors.brand} />
+            </View>
           </View>
-          <Text className="text-2xl font-bold mb-2 text-foreground">Check-in Ca trực</Text>
-
+          {coords ? (
+            <Text className="text-green-600 font-semibold mt-4 text-center">Lấy vị trí thành công</Text>
+          ) : loading ? (
+            <Text className="text-muted-foreground mt-4">Đang lấy vị trí…</Text>
+          ) : (
+            <Text className="text-amber-600 mt-4 text-center px-4">{geoError}</Text>
+          )}
+          <Text className="text-sm text-muted-foreground text-center mt-2 px-6">
+            Sảnh chính · Tòa A
+          </Text>
           {canCheckIn && activeShift ? (
-            <Text className="text-sm text-muted-foreground text-center mb-2">
+            <Text className="text-xs text-muted-foreground mt-2">
               {shiftLabel(activeShift.shift_type)} · {shiftTimeRange(activeShift.shift_type)}
             </Text>
           ) : null}
-
-          {noShiftToday ? (
-            <View className="items-center my-4 px-2">
-              <AlertTriangle size={28} color="#f59e0b" />
-              <Text className="text-amber-600 text-center mt-2">
-                Hôm nay bạn không có ca trực được phân công.
-              </Text>
-            </View>
-          ) : loading ? (
-            <Text className="text-muted-foreground mt-4">Đang lấy vị trí…</Text>
-          ) : coords ? (
-            <View className="items-center mb-6 mt-4">
-              <Text className="text-green-600 font-semibold mb-2">Lấy vị trí thành công</Text>
-              <Text className="font-mono bg-muted px-3 py-1 rounded text-sm text-foreground">
-                {coords.lat.toFixed(5)}, {coords.lng.toFixed(5)}
-              </Text>
-            </View>
-          ) : (
-            <Text className="text-amber-600 my-4 text-center px-2">{geoError}</Text>
-          )}
-
-          <Button
-            className="w-full h-12 mt-4"
-            onPress={handleCheckIn}
-            isLoading={checkingIn || shiftLoading}
-            disabled={checkingIn || shiftLoading || !canCheckIn}
-          >
-            Xác nhận Check-in
-          </Button>
         </View>
+
+        <View className="items-center mb-6">
+          <Text className="text-4xl font-bold text-green-500 tracking-wider">{timeStr}</Text>
+          <Text className="text-sm text-muted-foreground mt-1">{dateStr}</Text>
+        </View>
+
+        <View className="rounded-2xl border border-brand/30 bg-brand/5 p-4 flex-row gap-3 mb-8">
+          <Info size={20} color={colors.brand} style={{ marginTop: 2 }} />
+          <Text className="flex-1 text-sm text-foreground leading-5">
+            Vui lòng đảm bảo bạn đang ở đúng vị trí làm việc trước khi xác nhận vào ca.
+          </Text>
+        </View>
+
+        {noShiftToday ? (
+          <View className="items-center py-4">
+            <AlertTriangle size={28} color="#f59e0b" />
+            <Text className="text-amber-600 text-center mt-2 px-4">
+              Hôm nay bạn không có ca trực được phân công.
+            </Text>
+          </View>
+        ) : null}
+
+        <Pressable
+          onPress={() => void handleCheckIn()}
+          disabled={checkingIn || shiftLoading || !canCheckIn}
+          className={`mt-auto rounded-2xl py-4 items-center ${canCheckIn ? "bg-green-600" : "bg-muted"}`}
+          style={{ opacity: checkingIn || shiftLoading ? 0.7 : 1 }}
+        >
+          <Text className="text-white font-bold text-base uppercase tracking-wide">
+            {checkingIn ? "Đang xử lý…" : "Xác nhận vào ca"}
+          </Text>
+        </Pressable>
       </View>
     </View>
   );

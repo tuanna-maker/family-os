@@ -13,11 +13,15 @@ import { COURIERS, createPackageShip } from "@mobile/api/security-services";
 import { useFamilyContext } from "@mobile/hooks/useFamilyContext";
 import { toast } from "@mobile/utils/toast";
 import { missingFieldMessage } from "@mobile/utils/formValidation";
+import { useI18n } from "@mobile/i18n/useI18n";
 
 export default function GuiHangDiScreen() {
   const router = useRouter();
   const qc = useQueryClient();
   const { family, profile } = useFamilyContext();
+  const { s } = useI18n();
+  const f = s.security.forms;
+  const scr = f.screens.send;
   const [busy, setBusy] = useState(false);
   const [senderName, setSenderName] = useState("");
   const [senderAddress, setSenderAddress] = useState("");
@@ -35,12 +39,12 @@ export default function GuiHangDiScreen() {
 
   const submit = async () => {
     const err = missingFieldMessage([
-      { value: senderName, label: "tên người gửi" },
-      { value: senderAddress, label: "địa chỉ gửi" },
-      { value: senderPhone, label: "SĐT người gửi" },
-      { value: recipientName, label: "tên người nhận" },
-      { value: recipientAddress, label: "địa chỉ nhận" },
-      { value: recipientPhone, label: "SĐT người nhận" },
+      { value: senderName, label: f.validation.senderName },
+      { value: senderAddress, label: f.validation.senderAddress },
+      { value: senderPhone, label: f.validation.senderPhone },
+      { value: recipientName, label: f.validation.recipientName },
+      { value: recipientAddress, label: f.validation.recipientAddress },
+      { value: recipientPhone, label: f.validation.recipientPhone },
     ]);
     if (err) {
       toast.error(err);
@@ -57,45 +61,55 @@ export default function GuiHangDiScreen() {
         recipient_phone: recipientPhone.trim(),
         item_type: "package",
         courier_id: courierId,
-        courier_label: courier.label,
+        courier_label: f.couriers[courierId],
         shipping_fee: courier.fee,
         estimated_total: courier.fee,
       });
       void qc.invalidateQueries({ queryKey: ["security-requests"] });
-      toast.success("Đã đăng ký gửi hàng đi");
+      toast.success(scr.success);
       router.back();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Gửi thất bại");
+      toast.error(e instanceof Error ? e.message : f.sendFailed);
     } finally {
       setBusy(false);
     }
   };
 
   return (
-    <SecurityServiceScreen title="Gửi hàng đi" subtitle="Hỗ trợ gửi hàng qua đơn vị vận chuyển" onSubmit={() => void submit()} busy={busy}>
-      <FormSection title="1. Người gửi">
-        <FormField label="Người gửi" value={senderName} onChangeText={setSenderName} />
-        <FormField label="Địa chỉ gửi" value={senderAddress} onChangeText={setSenderAddress} />
-        <FormField label="SĐT người gửi" value={senderPhone} onChangeText={setSenderPhone} keyboardType="phone-pad" />
+    <SecurityServiceScreen title={scr.title} subtitle={scr.subtitle} onSubmit={() => void submit()} busy={busy}>
+      <FormSection title={f.sections.sender}>
+        <FormField label={f.fields.sender} value={senderName} onChangeText={setSenderName} />
+        <FormField label={f.fields.senderAddress} value={senderAddress} onChangeText={setSenderAddress} />
+        <FormField
+          label={f.fields.senderPhone}
+          value={senderPhone}
+          onChangeText={setSenderPhone}
+          keyboardType="phone-pad"
+        />
       </FormSection>
-      <FormSection title="2. Người nhận">
-        <FormField label="Người nhận" value={recipientName} onChangeText={setRecipientName} />
-        <FormField label="Địa chỉ nhận" value={recipientAddress} onChangeText={setRecipientAddress} />
-        <FormField label="SĐT người nhận" value={recipientPhone} onChangeText={setRecipientPhone} keyboardType="phone-pad" />
+      <FormSection title={f.sections.recipient}>
+        <FormField label={f.fields.recipient} value={recipientName} onChangeText={setRecipientName} />
+        <FormField label={f.fields.recipientAddress} value={recipientAddress} onChangeText={setRecipientAddress} />
+        <FormField
+          label={f.fields.recipientPhone}
+          value={recipientPhone}
+          onChangeText={setRecipientPhone}
+          keyboardType="phone-pad"
+        />
       </FormSection>
-      <FormSection title="3. Đơn vị vận chuyển">
-      <PlanCardSelect
-        label="Đơn vị vận chuyển"
-        value={courierId}
-        onChange={setCourierId}
-        options={COURIERS.map((c) => ({
-          id: c.id,
-          label: c.label,
-          price: formatVnd(c.fee),
-        }))}
-      />
+      <FormSection title={f.sections.courier}>
+        <PlanCardSelect
+          label={f.fields.courier}
+          value={courierId}
+          onChange={setCourierId}
+          options={COURIERS.map((c) => ({
+            id: c.id,
+            label: f.couriers[c.id],
+            price: formatVnd(c.fee),
+          }))}
+        />
       </FormSection>
-      <CostSummary label="Phí vận chuyển" value={formatVnd(courier.fee)} />
+      <CostSummary label={f.shippingFee} value={formatVnd(courier.fee)} />
     </SecurityServiceScreen>
   );
 }

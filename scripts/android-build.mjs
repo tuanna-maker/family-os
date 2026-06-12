@@ -171,7 +171,6 @@ if (app === "mobile-guard") ensureGuardNodeLinks(mobileGuardRoot);
 // Family resolves native deps from monorepo root node_modules — junctions break Metro SHA-1 on Windows.
 
 const gradle = process.platform === "win32" ? "gradlew.bat" : "./gradlew";
-spawnSync(gradle, ["--stop"], { cwd: androidDir, shell: true, stdio: "ignore" });
 if (task.includes("Release")) {
   const releaseApkDirs = [
     path.join(androidDirFromRoot(ROOT), "..", "release", "gradle-app-build", "outputs", "apk", "release"),

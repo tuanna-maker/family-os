@@ -73,7 +73,8 @@ export default function ScheduleScreen() {
         className="px-5 pb-4 bg-background border-b border-border"
         style={{ paddingTop: Math.max(insets.top + 12, 48) }}
       >
-        <Text className="text-xl font-bold text-foreground">Lịch trực</Text>
+        <Text className="text-xl font-bold text-foreground">LỊCH TRỰC</Text>
+        <Text className="text-xs text-muted-foreground mt-1">Ca trực theo tuần</Text>
       </View>
 
       <View className="px-5 mt-3">
@@ -125,19 +126,23 @@ export default function ScheduleScreen() {
                 <DayChip day={chip.day} date={chip.date} />
                 <View className="flex-1 min-w-0">
                   <Text className="text-[13px] font-semibold text-foreground">
-                    <Text className="text-success">{shiftLabel(shift.shift_type)}:</Text>{" "}
+                    <Text className="text-success">{shiftLabel(shift.shift_type)}</Text>
+                    {" · "}
                     {shiftTimeRange(shift.shift_type)}
                   </Text>
                   <Text className="text-[12px] mt-0.5 text-muted-foreground">
+                    Sảnh chính · Tòa A
+                  </Text>
+                  <Text className="text-[11px] mt-0.5 text-muted-foreground">
                     {shift.status === "checked_in"
                       ? "Đang trực"
                       : shift.status === "checked_out"
-                        ? "Đã kết thúc"
+                        ? "Đã kết thúc ca"
                         : "Đã phân ca"}
+                    {shift.check_in_at
+                      ? ` · Bàn giao: ${new Date(shift.check_in_at).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}`
+                      : ""}
                   </Text>
-                  {shift.notes ? (
-                    <Text className="text-[11px] text-muted-foreground mt-0.5">{shift.notes}</Text>
-                  ) : null}
                 </View>
                 {isToday ? (
                   <View className="bg-brand px-2 py-0.5 rounded-full">

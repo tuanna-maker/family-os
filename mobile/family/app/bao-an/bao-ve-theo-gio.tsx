@@ -2,23 +2,22 @@ import { useEffect, useState } from "react";
 import { Text } from "react-native";
 import { useRouter } from "expo-router";
 import { useQueryClient } from "@tanstack/react-query";
-import {
-  CostSummary,
-  FormField,
-  FormSection,
-  SecurityServiceScreen,
-  formatVnd,
-  todayISO,
-} from "@mobile/components/security/SecurityForm";
+import { FormField, SecurityServiceScreen, formatVnd, todayISO } from "@mobile/components/security/SecurityForm";
 import { createHourlyGuard, HOURLY_GUARD_RATE } from "@mobile/api/security-services";
 import { useFamilyContext } from "@mobile/hooks/useFamilyContext";
 import { toast } from "@mobile/utils/toast";
 import { missingFieldMessage } from "@mobile/utils/formValidation";
+import { useI18n } from "@mobile/i18n/useI18n";
+import { useTheme } from "@mobile/theme/themeStore";
 
 export default function BaoVeTheoGioScreen() {
   const router = useRouter();
   const qc = useQueryClient();
   const { family } = useFamilyContext();
+  const { s } = useI18n();
+  const { colors } = useTheme();
+  const f = s.security.forms;
+  const scr = f.screens.hourlyGuard;
   const [busy, setBusy] = useState(false);
   const [apartment, setApartment] = useState("");
   const [serviceDate, setServiceDate] = useState(todayISO());
@@ -37,7 +36,7 @@ export default function BaoVeTheoGioScreen() {
   const total = h * g * HOURLY_GUARD_RATE;
 
   const submit = async () => {
-    const err = missingFieldMessage([{ value: apartment, label: "căn hộ / khu vực" }]);
+    const err = missingFieldMessage([{ value: apartment, label: f.validation.area }]);
     if (err) {
       toast.error(err);
       return;
@@ -55,26 +54,26 @@ export default function BaoVeTheoGioScreen() {
         estimated_total: total,
       });
       void qc.invalidateQueries({ queryKey: ["security-requests"] });
-      toast.success("Đã đăng ký bảo vệ theo giờ");
+      toast.success(scr.success);
       router.back();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Gửi thất bại");
+      toast.error(e instanceof Error ? e.message : f.sendFailed);
     } finally {
       setBusy(false);
     }
   };
 
   return (
-    <SecurityServiceScreen title="Bảo vệ theo giờ" subtitle="Đặt lịch theo khung giờ cần" onSubmit={() => void submit()} busy={busy}>
-      <FormField label="Căn hộ / khu vực" value={apartment} onChangeText={setApartment} />
-      <FormField label="Ngày" value={serviceDate} onChangeText={setServiceDate} />
-      <FormField label="Giờ bắt đầu" value={startTime} onChangeText={setStartTime} />
-      <FormField label="Giờ kết thúc" value={endTime} onChangeText={setEndTime} />
-      <FormField label="Số giờ" value={hours} onChangeText={setHours} keyboardType="numeric" />
-      <FormField label="Số bảo vệ" value={guardCount} onChangeText={setGuardCount} keyboardType="numeric" />
-      <FormField label="Mô tả" value={description} onChangeText={setDescription} multiline />
-      <Text style={{ fontSize: 13, color: "#666" }}>
-        {formatVnd(HOURLY_GUARD_RATE)}/giờ/người · Ước tính: {formatVnd(total)}
+    <SecurityServiceScreen title={scr.title} subtitle={scr.subtitle} onSubmit={() => void submit()} busy={busy}>
+      <FormField label={f.fields.area} value={apartment} onChangeText={setApartment} />
+      <FormField label={f.fields.date} value={serviceDate} onChangeText={setServiceDate} />
+      <FormField label={f.fields.startTime} value={startTime} onChangeText={setStartTime} />
+      <FormField label={f.fields.endTime} value={endTime} onChangeText={setEndTime} />
+      <FormField label={f.fields.hours} value={hours} onChangeText={setHours} keyboardType="numeric" />
+      <FormField label={f.fields.guardCount} value={guardCount} onChangeText={setGuardCount} keyboardType="numeric" />
+      <FormField label={f.fields.description} value={description} onChangeText={setDescription} multiline />
+      <Text style={{ fontSize: 13, color: colors.muted }}>
+        {f.hourlyRate(formatVnd(HOURLY_GUARD_RATE), formatVnd(total))}
       </Text>
     </SecurityServiceScreen>
   );

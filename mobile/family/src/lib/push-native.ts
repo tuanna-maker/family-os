@@ -20,8 +20,38 @@ async function deviceModule() {
 export type PushPermissionStatus = "granted" | "denied" | "undetermined" | "unsupported";
 
 export type PushRegisterResult =
-  | { enabled: true; remote: boolean; token?: string }
+  | { enabled: true; remote: true; token: string }
+  | {
+      enabled: true;
+      remote: false;
+      reason: "no_expo_token" | "db_error";
+      detail?: string;
+    }
   | { enabled: false; reason: "simulator" | "unavailable" | "permission_denied" };
+
+/** Thông báo lỗi hiển thị cho user khi đăng ký push từ xa thất bại. */
+export function describePushRegisterFailure(reg: PushRegisterResult): string | null {
+  if (reg.enabled && reg.remote) return null;
+  if (!reg.enabled) {
+    if (reg.reason === "simulator") {
+      return "Máy ảo không đăng ký push từ xa. Dùng điện thoại thật.";
+    }
+    if (reg.reason === "permission_denied") return "Chưa cấp quyền thông báo hệ thống.";
+    if (reg.reason === "unavailable") return "Module thông báo không khả dụng trên thiết bị này.";
+    return null;
+  }
+  if (reg.reason === "db_error") {
+    return `Không lưu token push: ${reg.detail ?? "lỗi cơ sở dữ liệu"}`;
+  }
+  if (reg.reason === "no_expo_token") {
+    const detail = reg.detail ?? "";
+    if (/firebase|fcm|google-services/i.test(detail)) {
+      return "Android cần cấu hình Firebase (google-services.json) để nhận push khi thoát app.";
+    }
+    return detail || "Không lấy được token Expo Push.";
+  }
+  return null;
+}
 
 /** Chỉ dùng cho Expo Push token — không chặn xin quyền thông báo local. */
 export async function isPushEnvironmentSupported() {
@@ -76,23 +106,38 @@ async function ensureNotificationHandler() {
   }
 }
 
-function platformDb() {
-  const supabase = getSupabase();
-  return supabase as unknown as {
-    schema: (name: string) => {
-      from: (table: string) => {
+type DeviceTokenRow = {
+  user_id: string;
+  token: string;
+  platform: string;
+  app: string;
+  device_id: string | null;
+  last_seen_at: string;
+};
+
+function platformDeviceTokenDb() {
+  return getSupabase() as unknown as {
+    schema: (name: "platform") => {
+      from: (table: "device_token") => {
         upsert: (
-          row: Record<string, unknown>,
+          row: DeviceTokenRow,
           opts: { onConflict: string },
         ) => Promise<{ error: { message: string } | null }>;
         delete: () => {
-          eq: (col: string, val: string) => {
-            eq: (col2: string, val2: string) => Promise<{ error: { message: string } | null }>;
+          eq: (col: "user_id", val: string) => {
+            eq: (col2: "app", val2: string) => Promise<{ error: { message: string } | null }>;
           };
         };
       };
     };
   };
+}
+
+async function upsertDeviceToken(row: DeviceTokenRow) {
+  return platformDeviceTokenDb()
+    .schema("platform")
+    .from("device_token")
+    .upsert(row, { onConflict: "user_id,token" });
 }
 
 function easProjectId() {
@@ -122,20 +167,32 @@ async function setupAndroidChannels(
     lightColor: "#EF4444",
     bypassDnd: true,
   });
+
+  await Notifications.setNotificationChannelAsync("chat", {
+    name: app === "guard" ? "Tin nhắn cư dân" : "Chat bảo an",
+    importance: Notifications.AndroidImportance.HIGH,
+    vibrationPattern: [0, 180, 100, 180],
+    lightColor: "#2563EB",
+  });
 }
 
-/** Expo push token (iOS + Android) — không dùng FCM native / Firebase SDK. */
+/** Expo push token — Android release build cần Firebase/FCM (google-services.json). */
 async function tryExpoPushToken(
   Notifications: Awaited<ReturnType<typeof notificationsModule>>,
-): Promise<string | null> {
+): Promise<{ token: string | null; error?: string }> {
   const projectId = easProjectId();
+  if (!projectId) {
+    return { token: null, error: "Thiếu EAS projectId (extra.eas.projectId trong app.json)" };
+  }
   try {
-    const tokenData = await Notifications.getExpoPushTokenAsync(
-      projectId ? { projectId } : undefined,
-    );
-    return tokenData?.data ?? null;
-  } catch {
-    return null;
+    const tokenData = await Notifications.getExpoPushTokenAsync({ projectId });
+    const token = tokenData?.data ?? null;
+    if (!token) return { token: null, error: "getExpoPushTokenAsync trả về rỗng" };
+    return { token };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.warn("[push] getExpoPushTokenAsync:", message);
+    return { token: null, error: message };
   }
 }
 
@@ -254,42 +311,37 @@ export async function registerNativePushToken(
 
   await setupAndroidChannels(Notifications, app);
 
-  const token = await tryExpoPushToken(Notifications);
+  const { token, error: tokenError } = await tryExpoPushToken(Notifications);
 
   if (token) {
     try {
       const { userId } = await requireUser();
       const platform =
         Platform.OS === "ios" ? "ios" : Platform.OS === "android" ? "android" : "web";
-      const { error } = await platformDb()
-        .schema("platform")
-        .from("device_token")
-        .upsert(
-          {
-            user_id: userId,
-            token,
-            platform,
-            app,
-            device_id: Device.modelName ?? null,
-            last_seen_at: new Date().toISOString(),
-          },
-          { onConflict: "user_id,token" },
-        );
+      const { error } = await upsertDeviceToken({
+        user_id: userId,
+        token,
+        platform,
+        app,
+        device_id: Device.modelName ?? null,
+        last_seen_at: new Date().toISOString(),
+      });
       if (error) throw new Error(error.message);
       return { enabled: true, remote: true, token };
-    } catch {
-      // Token lấy được nhưng lưu server lỗi — vẫn coi như đã bật local.
-      return { enabled: true, remote: false };
+    } catch (err) {
+      const detail = err instanceof Error ? err.message : String(err);
+      console.warn("[push] Lưu device_token thất bại:", detail);
+      return { enabled: true, remote: false, reason: "db_error", detail };
     }
   }
 
-  return { enabled: true, remote: false };
+  return { enabled: true, remote: false, reason: "no_expo_token", detail: tokenError };
 }
 
 export async function unregisterNativePushToken(app: "family" | "guard" = "family") {
   try {
     const { userId } = await requireUser();
-    const { error } = await platformDb()
+    const { error } = await platformDeviceTokenDb()
       .schema("platform")
       .from("device_token")
       .delete()
@@ -318,7 +370,7 @@ export async function presentLocalNotification(input: {
   title: string;
   body?: string | null;
   data?: Record<string, unknown>;
-  channelId?: "default" | "security";
+  channelId?: "default" | "security" | "chat";
 }) {
   try {
     await ensureNotificationHandler();

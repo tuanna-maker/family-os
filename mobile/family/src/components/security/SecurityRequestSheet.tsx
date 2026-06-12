@@ -21,6 +21,7 @@ import { radius } from "@mobile/theme/colors";
 import { securityMeta } from "@mobile/constants/security";
 import { getSupabase } from "@shared/supabase/get-client";
 import { FieldLabel, PrimaryButton, TextField } from "@mobile/components/ui";
+import { useI18n } from "@mobile/i18n/useI18n";
 
 const BUCKET = "security-attachments";
 const MAX_FILE = 10 * 1024 * 1024;
@@ -58,6 +59,9 @@ export function SecurityRequestSheet({
   const [files, setFiles] = useState<PickedFile[]>([]);
   const [busy, setBusy] = useState(false);
   const { colors } = useTheme();
+  const { s } = useI18n();
+  const f = s.security.forms;
+  const rs = f.requestSheet;
   const styles = useThemedStyles((c, fontScale) => ({
     overlay: { flex: 1, justifyContent: "flex-end" as const },
     backdrop: {
@@ -157,7 +161,7 @@ export function SecurityRequestSheet({
   const pickFiles = async () => {
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!perm.granted) {
-      toast.error("Cần quyền truy cập thư viện ảnh");
+      toast.error(rs.photoPermission);
       return;
     }
     const res = await ImagePicker.launchImageLibraryAsync({
@@ -171,7 +175,7 @@ export function SecurityRequestSheet({
       if (files.length + next.length >= 10) break;
       const size = asset.fileSize ?? 0;
       if (size > MAX_FILE) {
-        toast.error(`${asset.fileName ?? "Ảnh"}: vượt 10MB`);
+        toast.error(rs.fileTooLarge(asset.fileName ?? "Photo"));
         continue;
       }
       next.push({
@@ -221,16 +225,16 @@ export function SecurityRequestSheet({
           try {
             await attachSecurityRequestEvidence({ id: res.id, files: uploaded });
           } catch (e) {
-            toast.error(e instanceof Error ? e.message : "Không ghi nhận được tệp đính kèm");
+            toast.error(e instanceof Error ? e.message : rs.attachFailed);
           }
         }
       }
 
       void qc.invalidateQueries({ queryKey: ["security-requests"] });
-      toast.success(`Đã gửi: ${title}`, `Bảo an phản hồi trong ~${securityMeta.responseTimeMinutes} phút`);
+      toast.success(rs.sent(title), rs.sentSub(securityMeta.responseTimeMinutes));
       onClose();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Gửi thất bại");
+      toast.error(e instanceof Error ? e.message : f.sendFailed);
     } finally {
       setBusy(false);
     }
@@ -239,7 +243,7 @@ export function SecurityRequestSheet({
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <KeyboardAvoidingView style={styles.overlay} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-        <Pressable style={styles.backdrop} onPress={onClose} accessibilityLabel="Đóng" />
+        <Pressable style={styles.backdrop} onPress={onClose} accessibilityLabel={rs.close} />
         <View style={styles.sheet}>
           <View style={styles.handle} />
           <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
@@ -247,10 +251,10 @@ export function SecurityRequestSheet({
               <View style={styles.headerText}>
                 <Text style={styles.title}>{title}</Text>
                 <Text style={styles.sub}>
-                  {hint ?? "Bổ sung vị trí & ghi chú để bảo an xử lý nhanh nhất."}
+                  {hint ?? rs.hint}
                 </Text>
               </View>
-              <Pressable onPress={onClose} style={styles.closeBtn} hitSlop={8} accessibilityLabel="Đóng">
+              <Pressable onPress={onClose} style={styles.closeBtn} hitSlop={8} accessibilityLabel={rs.close}>
                 <X color={colors.muted} size={22} />
               </Pressable>
             </View>
@@ -258,40 +262,40 @@ export function SecurityRequestSheet({
             <View style={styles.row2}>
               <View style={styles.col}>
                 <TextField
-                  label="Toà / Block"
+                  label={f.fields.building}
                   value={building}
                   onChangeText={setBuilding}
-                  placeholder="VD: Block A"
+                  placeholder={f.placeholders.building}
                 />
               </View>
               <View style={styles.col}>
                 <TextField
-                  label="Căn hộ"
+                  label={f.fields.unit}
                   value={apartment}
                   onChangeText={setApartment}
-                  placeholder="VD: A-1502"
+                  placeholder={f.placeholders.apartment}
                 />
               </View>
             </View>
 
             <TextField
-              label="Ghi chú"
+              label={f.fields.note}
               value={note}
               onChangeText={setNote}
-              placeholder="Mô tả thêm (tuỳ chọn)…"
+              placeholder={f.placeholders.note}
               multiline
             />
 
-            <FieldLabel>Ảnh / chứng cứ (tuỳ chọn)</FieldLabel>
+            <FieldLabel>{f.fields.evidence}</FieldLabel>
             <Pressable
               style={styles.attachBtn}
               onPress={() => void pickFiles()}
               disabled={busy || files.length >= 10}
             >
               <ImagePlus color={colors.foreground} size={18} />
-              <Text style={styles.attachText}>Đính kèm ảnh ({files.length}/10)</Text>
+              <Text style={styles.attachText}>{rs.attach(files.length)}</Text>
             </Pressable>
-            <Text style={styles.attachHint}>Tối đa 10MB/tệp · JPG/PNG/WEBP</Text>
+            <Text style={styles.attachHint}>{rs.attachHint}</Text>
             {files.map((f, i) => (
               <View key={`${f.uri}-${i}`} style={styles.fileRow}>
                 <Paperclip color={colors.muted} size={14} />
@@ -299,18 +303,18 @@ export function SecurityRequestSheet({
                   {f.name}
                 </Text>
                 <Pressable onPress={() => setFiles((p) => p.filter((_, idx) => idx !== i))}>
-                  <Text style={styles.fileRemove}>Xoá</Text>
+                  <Text style={styles.fileRemove}>{rs.remove}</Text>
                 </Pressable>
               </View>
             ))}
 
             <View style={styles.actions}>
               <Pressable onPress={onClose} style={styles.cancelBtn} disabled={busy}>
-                <Text style={styles.cancelText}>Huỷ</Text>
+                <Text style={styles.cancelText}>{rs.cancel}</Text>
               </Pressable>
               <View style={styles.submitWrap}>
                 <PrimaryButton
-                  label="Gửi yêu cầu"
+                  label={rs.submit}
                   onPress={() => void submit()}
                   loading={busy}
                   disabled={busy}

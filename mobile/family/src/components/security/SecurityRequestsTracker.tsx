@@ -31,6 +31,7 @@ export function SecurityRequestsTracker() {
   const { colors } = useTheme();
   const { locale, s } = useI18n();
   const sec = s.security;
+  const c = s.common;
   const q = useQuery({
     queryKey: ["security-requests", "preview"],
     queryFn: () => listSecurityRequests({ limit: 3, offset: 0 }),
@@ -131,18 +132,18 @@ export function SecurityRequestsTracker() {
 
   const onCancel = (id: string) => {
     alert.confirm({
-      title: "Huỷ yêu cầu?",
-      message: "Yêu cầu đang chờ xử lý sẽ bị huỷ.",
-      confirmText: "Huỷ yêu cầu",
+      title: sec.cancelRequestTitle,
+      message: sec.cancelRequestMessage,
+      confirmText: sec.cancelRequest,
       destructive: true,
       onConfirm: () => {
         void (async () => {
           try {
             await cancelSecurityRequest({ id });
             void qc.invalidateQueries({ queryKey: ["security-requests"] });
-            toast.success("Đã huỷ yêu cầu");
+            toast.success(c.cancelled);
           } catch (e) {
-            toast.error(e instanceof Error ? e.message : "Huỷ thất bại");
+            toast.error(e instanceof Error ? e.message : sec.cancelFailed);
           }
         })();
       },
@@ -201,7 +202,7 @@ export function SecurityRequestsTracker() {
                   <Text style={styles.rowMeta}>{sec.sentAgo(formatRelativeAgo(r.created_at, locale))}</Text>
                   {r.status === "open" ? (
                     <Pressable style={styles.cancelBtn} onPress={() => onCancel(r.id)} hitSlop={8}>
-                      <Text style={styles.cancelText}>Huỷ yêu cầu</Text>
+                      <Text style={styles.cancelText}>{sec.cancelRequest}</Text>
                     </Pressable>
                   ) : null}
                 </View>

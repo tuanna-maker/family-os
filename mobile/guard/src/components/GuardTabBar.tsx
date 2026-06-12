@@ -185,7 +185,7 @@ const styles = StyleSheet.create({
     fontSize: 9,
     lineHeight: 11,
     marginTop: 1,
-    maxWidth: 64,
+      maxWidth: 56,
     textAlign: "center",
     ...Platform.select({
       android: { includeFontPadding: false },

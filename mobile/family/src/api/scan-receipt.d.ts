@@ -5,7 +5,7 @@ export type ScanResult = {
   merchant: string;
   total: number;
   date: string;
-  category: "Ăn uống" | "Nhà cửa" | "Con cái" | "Sức khỏe" | "Giải trí" | "Khác";
+  category: string;
   note?: string;
   line_items?: ScanLineItem[];
 };

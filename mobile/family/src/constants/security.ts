@@ -81,8 +81,8 @@ export function getSecurityServiceGrid(locale: AppLocale): SecurityGridItem[] {
     {
       id: "shipping",
       icon: Send,
-      label: g.shipping?.label ?? "Gửi hàng đi",
-      desc: g.shipping?.desc ?? "Hỗ trợ gửi hàng qua shipper",
+      label: g.shipping.label,
+      desc: g.shipping.desc,
       requestType: "other",
       iconColorKey: "success",
       tintKey: "tintGreen",

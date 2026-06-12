@@ -17,4 +17,4 @@ export declare function updateExpense(data: {
   spent_on: string;
   note?: string | null;
 }): Promise<{ ok: boolean }>;
-export declare function deleteExpense(data: { id: string }): Promise<{ ok: boolean }>;
+export declare function deleteExpense(data: { id: string; source?: string }): Promise<{ ok: boolean }>;

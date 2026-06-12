@@ -24,6 +24,7 @@ import { useGuardPrefs } from "@mobile/hooks/useGuardPrefs";
 import { usePushPermissionResync } from "@mobile/hooks/usePushPermissionResync";
 import {
   getPushPermissionStatus,
+  describePushRegisterFailure,
   registerNativePushToken,
   requestPushPermission,
   unregisterNativePushToken,
@@ -86,7 +87,14 @@ export default function AccountScreen() {
           return;
         }
         setNotificationsEnabled(true);
-        await registerNativePushToken("guard", { requestPermission: false });
+        const reg = await registerNativePushToken("guard", { requestPermission: false });
+        const fail = describePushRegisterFailure(reg);
+        if (fail) {
+          showAppAlert({
+            title: "Cảnh báo",
+            message: `${fail} Thông báo khi thoát app có thể không hoạt động.`,
+          });
+        }
         return;
       }
       setNotificationsEnabled(false);

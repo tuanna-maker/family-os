@@ -5,14 +5,22 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const CATEGORIES = ["Ăn uống", "Nhà cửa", "Con cái", "Sức khỏe", "Giải trí", "Khác"] as const;
+const CATEGORY_KEYS = ["dining", "housing", "children", "health", "entertainment", "other"] as const;
+const LEGACY_CATEGORY: Record<string, (typeof CATEGORY_KEYS)[number]> = {
+  "Ăn uống": "dining",
+  "Nhà cửa": "housing",
+  "Con cái": "children",
+  "Sức khỏe": "health",
+  "Giải trí": "entertainment",
+  Khác: "other",
+};
 
 const SYSTEM = `Bạn là trợ lý OCR hoá đơn cho ứng dụng quản lý chi tiêu gia đình Việt Nam.
 Phân tích ảnh hoá đơn / biên lai và trả về JSON với:
 - merchant: tên cửa hàng (tiếng Việt nếu có)
 - total: tổng tiền cuối cùng, đơn vị VND, chỉ số nguyên (không kèm "đ" hay dấu phẩy)
 - date: ngày trên hoá đơn theo định dạng "DD/MM/YYYY", nếu không có thì "Hôm nay"
-- category: ĐỀ XUẤT phân loại vào MỘT trong: "Ăn uống","Nhà cửa","Con cái","Sức khỏe","Giải trí","Khác"
+- category: mã danh mục ASCII — MỘT trong: "dining","housing","children","health","entertainment","other"
 - note: 1 dòng ngắn mô tả (tối đa 80 ký tự)
 - line_items: mảng các dòng hàng hoá { name, qty, price } (price VND nguyên). Bỏ qua dòng tổng/thuế/giảm giá.
 Chỉ trả về JSON object, không markdown.`;
@@ -41,6 +49,20 @@ function validateInput(body: Record<string, unknown>) {
   return { ok: true as const, data: { family_id, imageDataUrl } };
 }
 
+function normalizeExpenseDate(raw: string) {
+  const s = raw.trim();
+  if (!s || s === "Hôm nay" || s.toLowerCase() === "today") {
+    return new Date().toISOString().slice(0, 10);
+  }
+  const dmy = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (dmy) {
+    const [, d, m, y] = dmy;
+    return `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`;
+  }
+  if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
+  return new Date().toISOString().slice(0, 10);
+}
+
 function parseAiResult(raw: Record<string, unknown>) {
   const merchant = String(raw.merchant ?? "").slice(0, 120);
   if (!merchant) throw new Error("missing merchant");
@@ -49,9 +71,10 @@ function parseAiResult(raw: Record<string, unknown>) {
   if (typeof total === "string") total = Number(String(total).replace(/[^\d]/g, ""));
   if (typeof total !== "number" || !Number.isFinite(total) || total < 0) throw new Error("invalid total");
 
-  const date = String(raw.date ?? "Hôm nay").slice(0, 40);
-  let category = String(raw.category ?? "Khác");
-  if (!CATEGORIES.includes(category as (typeof CATEGORIES)[number])) category = "Khác";
+  const date = normalizeExpenseDate(String(raw.date ?? "Hôm nay"));
+  let category = String(raw.category ?? "other").trim();
+  if (LEGACY_CATEGORY[category]) category = LEGACY_CATEGORY[category];
+  if (!CATEGORY_KEYS.includes(category as (typeof CATEGORY_KEYS)[number])) category = "other";
 
   const note = String(raw.note ?? "").slice(0, 200);
   const line_items = Array.isArray(raw.line_items)

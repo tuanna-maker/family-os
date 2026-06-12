@@ -8,13 +8,14 @@ import { useTheme } from "@mobile/theme/themeStore";
 import { useThemedStyles } from "@mobile/theme/useThemedStyles";
 import { radius } from "@mobile/theme/colors";
 import { getTabBarBottomInset } from "@mobile/theme/tabBar";
+import { useI18n } from "@mobile/i18n/useI18n";
 
 export function SecurityServiceScreen({
   title,
   subtitle,
   children,
   onSubmit,
-  submitLabel = "Gửi yêu cầu",
+  submitLabel,
   busy,
 }: {
   title: string;
@@ -25,7 +26,9 @@ export function SecurityServiceScreen({
   busy?: boolean;
 }) {
   const { colors } = useTheme();
+  const { s } = useI18n();
   const insets = useSafeAreaInsets();
+  const sendLabel = submitLabel ?? s.security.forms.submit;
   const styles = useThemedStyles((c, fontScale) => ({
     scroll: { paddingHorizontal: 16, gap: 12 },
     submit: {
@@ -52,7 +55,7 @@ export function SecurityServiceScreen({
           {busy ? (
             <ActivityIndicator color={colors.white} />
           ) : (
-            <Text style={styles.submitText}>{submitLabel}</Text>
+            <Text style={styles.submitText}>{sendLabel}</Text>
           )}
         </Pressable>
       </ScrollView>

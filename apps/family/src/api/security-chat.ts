@@ -73,14 +73,7 @@ export async function sendSecurityChatMessage(data: { body: string; family_id?: 
       body: parsed.body.trim(),
       created_at: new Date().toISOString(),
     };
-    const guard: SecurityChatMessage = {
-      id: crypto.randomUUID(),
-      sender_role: "guard",
-      body: "Bảo an đã nhận tin. Đội trực sẽ phản hồi trong vài phút.",
-      created_at: new Date(Date.now() + 400).toISOString(),
-    };
-    const next = [...local, resident, guard];
-    saveLocal(userId, next);
+    saveLocal(userId, [...local, resident]);
     return resident;
   }
   if (error) throw new Error(error.message);

@@ -2,18 +2,13 @@ import { useEffect, useState } from "react";
 import { Text } from "react-native";
 import { useRouter } from "expo-router";
 import { useQueryClient } from "@tanstack/react-query";
-import {
-  ChipSelect,
-  CostSummary,
-  FormField,
-  FormSection,
-  SecurityServiceScreen,
-  formatVnd,
-} from "@mobile/components/security/SecurityForm";
+import { ChipSelect, FormField, SecurityServiceScreen, formatVnd } from "@mobile/components/security/SecurityForm";
 import { createCustomGuard, CUSTOM_GUARD_SERVICES } from "@mobile/api/security-services";
 import { useFamilyContext } from "@mobile/hooks/useFamilyContext";
 import { toast } from "@mobile/utils/toast";
 import { missingFieldMessage } from "@mobile/utils/formValidation";
+import { useI18n } from "@mobile/i18n/useI18n";
+import { useTheme } from "@mobile/theme/themeStore";
 
 const BASE = 100_000;
 const PER_GUARD = 80_000;
@@ -22,6 +17,10 @@ export default function BaoVeTheoNhuCauRiengScreen() {
   const router = useRouter();
   const qc = useQueryClient();
   const { family } = useFamilyContext();
+  const { s } = useI18n();
+  const { colors } = useTheme();
+  const f = s.security.forms;
+  const scr = f.screens.customGuard;
   const [busy, setBusy] = useState(false);
   const [serviceId, setServiceId] = useState<(typeof CUSTOM_GUARD_SERVICES)[number]["id"]>("event");
   const [apartment, setApartment] = useState("");
@@ -39,8 +38,8 @@ export default function BaoVeTheoNhuCauRiengScreen() {
 
   const submit = async () => {
     const err = missingFieldMessage([
-      { value: apartment, label: "căn hộ" },
-      { value: startAt, label: "thời gian bắt đầu" },
+      { value: apartment, label: f.validation.apartment },
+      { value: startAt, label: f.validation.startAt },
     ]);
     if (err) {
       toast.error(err);
@@ -58,24 +57,39 @@ export default function BaoVeTheoNhuCauRiengScreen() {
         estimated_total: total,
       });
       void qc.invalidateQueries({ queryKey: ["security-requests"] });
-      toast.success("Đã gửi yêu cầu bảo vệ riêng");
+      toast.success(scr.success);
       router.back();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Gửi thất bại");
+      toast.error(e instanceof Error ? e.message : f.sendFailed);
     } finally {
       setBusy(false);
     }
   };
 
   return (
-    <SecurityServiceScreen title="Bảo vệ theo nhu cầu riêng" subtitle="Sự kiện, tuần tra, kiểm soát ra vào…" onSubmit={() => void submit()} busy={busy}>
-      <ChipSelect label="Loại dịch vụ" value={serviceId} onChange={setServiceId} options={CUSTOM_GUARD_SERVICES.map((s) => ({ id: s.id, label: s.label }))} />
-      <FormField label="Căn hộ / khu vực" value={apartment} onChangeText={setApartment} />
-      <FormField label="Bắt đầu" value={startAt} onChangeText={setStartAt} placeholder="VD: 18:00 15/06/2026" />
-      <FormField label="Kết thúc" value={endAt} onChangeText={setEndAt} placeholder="Tuỳ chọn" />
-      <FormField label="Số bảo vệ" value={guardCount} onChangeText={setGuardCount} keyboardType="numeric" />
-      <FormField label="Mô tả yêu cầu" value={description} onChangeText={setDescription} multiline />
-      <Text style={{ fontSize: 13, color: "#666" }}>Ước tính: {formatVnd(total)}</Text>
+    <SecurityServiceScreen title={scr.title} subtitle={scr.subtitle} onSubmit={() => void submit()} busy={busy}>
+      <ChipSelect
+        label={f.fields.serviceType}
+        value={serviceId}
+        onChange={setServiceId}
+        options={CUSTOM_GUARD_SERVICES.map((svc) => ({ id: svc.id, label: f.customGuardServices[svc.id] }))}
+      />
+      <FormField label={f.fields.area} value={apartment} onChangeText={setApartment} />
+      <FormField
+        label={f.fields.startAt}
+        value={startAt}
+        onChangeText={setStartAt}
+        placeholder={f.placeholders.startAt}
+      />
+      <FormField
+        label={f.fields.endAt}
+        value={endAt}
+        onChangeText={setEndAt}
+        placeholder={f.placeholders.endAt}
+      />
+      <FormField label={f.fields.guardCount} value={guardCount} onChangeText={setGuardCount} keyboardType="numeric" />
+      <FormField label={f.fields.requestDescription} value={description} onChangeText={setDescription} multiline />
+      <Text style={{ fontSize: 13, color: colors.muted }}>{f.estimateTotal(formatVnd(total))}</Text>
     </SecurityServiceScreen>
   );
 }

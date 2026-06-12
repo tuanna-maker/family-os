@@ -17,6 +17,11 @@ import {
   pullAndPresentFamilyNotifications,
 } from "@mobile/lib/notification-pull";
 import {
+  markFamilyChatMessageNotified,
+  pullAndPresentFamilyChatNotifications,
+  shouldNotifyFamilyChatMessage,
+} from "@mobile/lib/chat-notification-pull";
+import {
   registerFamilyBackgroundNotificationTask,
   unregisterFamilyBackgroundNotificationTask,
 } from "@mobile/tasks/background-notification-task";
@@ -130,6 +135,14 @@ export function usePushNotifications() {
   }, [prefsReady, authLoading, session, pushEnabled, setPushEnabled]);
 
   useEffect(() => {
+    if (!session || !prefsReady || !pushEnabled) return;
+    void (async () => {
+      if ((await getPushPermissionStatus()) !== "granted") return;
+      await registerNativePushToken("family", { requestPermission: false });
+    })();
+  }, [session?.user?.id, pushEnabled, prefsReady]);
+
+  useEffect(() => {
     if (!session || !prefsReady) return;
 
     void (async () => {
@@ -151,11 +164,26 @@ export function usePushNotifications() {
   }, [session, pushEnabled, prefsReady]);
 
   useEffect(() => {
+    const sub = AppState.addEventListener("change", (state) => {
+      if (state !== "active" || !pushEnabled || !session) return;
+      void (async () => {
+        if ((await getPushPermissionStatus()) !== "granted") return;
+        await registerNativePushToken("family", { requestPermission: false });
+        await syncFamilyBackgroundDelivery(true, session.access_token, session.user?.id);
+      })();
+    });
+    return () => sub.remove();
+  }, [pushEnabled, session?.access_token, session?.user?.id, session]);
+
+  useEffect(() => {
     if (!session || !pushEnabled) return;
 
     const onActive = () => {
       void syncLocalReminderSchedule(true);
-      void pullAndPresentFamilyNotifications().then((showed) => {
+      void Promise.all([
+        pullAndPresentFamilyNotifications(),
+        pullAndPresentFamilyChatNotifications(),
+      ]).then(([showed]) => {
         if (showed) invalidateInbox(qc);
       });
     };
@@ -183,8 +211,15 @@ export function usePushNotifications() {
         const sub1 = Notifications.addNotificationReceivedListener(() => {
           invalidateInbox(qc);
         });
-        const sub2 = Notifications.addNotificationResponseReceivedListener(() => {
+        const sub2 = Notifications.addNotificationResponseReceivedListener((response) => {
           invalidateInbox(qc);
+          const data = response.notification.request.content.data as {
+            route?: string;
+          };
+          if (data?.route === "/bao-an/chat") {
+            router.push("/bao-an/chat");
+            return;
+          }
           router.push("/thong-bao");
         });
         removeListeners = () => {
@@ -216,6 +251,21 @@ export function usePushNotifications() {
             title?: string;
             body?: string | null;
           };
+          if (row.type === "security.chat") {
+            if (!pushEnabledRef.current) return;
+            void (async () => {
+              const refId = (row as { ref_id?: string }).ref_id;
+              if (refId && !(await shouldNotifyFamilyChatMessage(refId))) return;
+              if (refId) await markFamilyChatMessageNotified(refId);
+              await presentLocalNotification({
+                title: row.title ?? "Đội bảo an",
+                body: row.body,
+                channelId: "chat",
+                data: { route: "/bao-an/chat", notificationId: row.id, type: row.type },
+              });
+            })();
+            return;
+          }
           void maybePresentOs(pushEnabledRef.current, {
             type: row.type,
             title: row.title ?? "Thông báo mới",

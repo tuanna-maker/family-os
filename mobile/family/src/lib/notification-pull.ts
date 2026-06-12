@@ -5,6 +5,10 @@ import {
   notificationChannelForType,
   shouldPresentOsNotification,
 } from "@mobile/lib/notification-os";
+import {
+  markFamilyChatMessageNotified,
+  shouldNotifyFamilyChatMessage,
+} from "@mobile/lib/chat-notification-pull";
 
 const AUTH_CREDS = {
   token: "stos_family_bg_token",
@@ -21,6 +25,7 @@ const STATE_CREDS = {
 export type FamilyNotificationRow = {
   id: string;
   type: string;
+  ref_id: string | null;
   title: string;
   body: string | null;
   read_at: string | null;
@@ -101,7 +106,7 @@ async function fetchFamilyNotifications(
     `${url}/rest/v1/notifications` +
     `?user_id=eq.${encodedUser}` +
     `&dismissed_at=is.null` +
-    `&select=id,type,title,body,read_at,created_at` +
+    `&select=id,type,ref_id,title,body,read_at,created_at` +
     `&order=created_at.desc&limit=30`;
 
   const res = await fetch(apiUrl, {
@@ -150,11 +155,21 @@ export async function pullAndPresentFamilyNotifications(): Promise<boolean> {
   if (fresh.length === 0) return false;
 
   for (const row of fresh) {
+    const isChat = row.type === "security.chat";
+    if (isChat && row.ref_id) {
+      if (!(await shouldNotifyFamilyChatMessage(row.ref_id))) {
+        seenIds.add(row.id);
+        continue;
+      }
+      await markFamilyChatMessageNotified(row.ref_id);
+    }
     await presentLocalNotification({
       title: row.title || "Thông báo mới",
       body: row.body,
       channelId: notificationChannelForType(row.type),
-      data: { notificationId: row.id, type: row.type },
+      data: isChat
+        ? { route: "/bao-an/chat", notificationId: row.id, type: row.type }
+        : { notificationId: row.id, type: row.type },
     });
     seenIds.add(row.id);
   }

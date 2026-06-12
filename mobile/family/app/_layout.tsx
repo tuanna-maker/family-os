@@ -12,6 +12,7 @@ SplashScreen.preventAutoHideAsync().catch(() => {});
 import { AuthProvider, useAuth } from "@mobile/hooks/useAuth";
 import { AppPrefsProvider } from "@mobile/hooks/useAppPrefs";
 import { usePushNotifications } from "@mobile/hooks/usePushNotifications";
+import { useSecurityChatPush } from "@mobile/hooks/useSecurityChatRealtime";
 import { ensureSupabase } from "@mobile/lib/supabase";
 import { ThemeBridge, useTheme } from "@mobile/theme/themeStore";
 import { AppAlertProvider } from "@mobile/components/AppAlert";
@@ -24,6 +25,11 @@ const queryClient = new QueryClient({
 
 function PushBootstrap() {
   usePushNotifications();
+  return null;
+}
+
+function SecurityChatPushBootstrap() {
+  useSecurityChatPush();
   return null;
 }
 
@@ -92,6 +98,7 @@ export default function RootLayout() {
               <ThemeBridge>
                 <AppAlertProvider>
                   <PushBootstrap />
+                  <SecurityChatPushBootstrap />
                   <AuthGate />
                 </AppAlertProvider>
               </ThemeBridge>

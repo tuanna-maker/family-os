@@ -29,8 +29,8 @@ import {
   syncPushBadge,
 } from "@mobile/lib/push-native";
 
-/** Chỉ poll nền khi realtime tạm mất — không gây refetch inbox. */
-const FOREGROUND_POLL_MS = 60_000;
+/** Poll nền — gồm tin chat cư dân (~5s giống Messenger khi app mở nền). */
+const FOREGROUND_POLL_MS = 5_000;
 
 async function syncGuardBackgroundDelivery(
   enabled: boolean,
@@ -100,6 +100,14 @@ export function usePushNotifications() {
   }, [prefsReady, authLoading, session, notificationsEnabled, setNotificationsEnabled]);
 
   useEffect(() => {
+    if (!session || !prefsReady || !notificationsEnabled) return;
+    void (async () => {
+      if ((await getPushPermissionStatus()) !== "granted") return;
+      await registerNativePushToken("guard", { requestPermission: false });
+    })();
+  }, [session?.user?.id, notificationsEnabled, prefsReady]);
+
+  useEffect(() => {
     if (!session || !prefsReady) return;
     void syncGuardBackgroundDelivery(
       notificationsEnabled,
@@ -149,7 +157,18 @@ export function usePushNotifications() {
     void (async () => {
       try {
         const Notifications = await import("expo-notifications");
-        const sub2 = Notifications.addNotificationResponseReceivedListener(() => {
+        const sub2 = Notifications.addNotificationResponseReceivedListener((response) => {
+          const data = response.notification.request.content.data as {
+            route?: string;
+            residentId?: string;
+          };
+          if (data?.route === "/chat" && data.residentId) {
+            router.push({
+              pathname: "/chat/[residentId]",
+              params: { residentId: data.residentId },
+            });
+            return;
+          }
           router.push("/(tabs)/notifications");
         });
         removeListeners = () => {

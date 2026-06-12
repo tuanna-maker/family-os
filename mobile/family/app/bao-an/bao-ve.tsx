@@ -22,12 +22,18 @@ import { useTheme } from "@mobile/theme/themeStore";
 import { useThemedStyles } from "@mobile/theme/useThemedStyles";
 import { radius } from "@mobile/theme/colors";
 import { getTabBarBottomInset } from "@mobile/theme/tabBar";
+import { useI18n } from "@mobile/i18n/useI18n";
+import { localeTag } from "@mobile/i18n/format";
+import type { getStrings } from "@mobile/i18n/useI18n";
 
-const SHIFT_LABEL: Record<string, string> = {
-  morning: "Ca sáng",
-  afternoon: "Ca chiều",
-  night: "Ca đêm",
-};
+type GuardStrings = ReturnType<typeof getStrings>["security"]["guards"];
+
+function shiftLabel(guards: GuardStrings, shiftType: string) {
+  if (shiftType === "morning") return guards.shiftMorning;
+  if (shiftType === "afternoon") return guards.shiftAfternoon;
+  if (shiftType === "night") return guards.shiftNight;
+  return shiftType;
+}
 
 function isUnscopedError(err: unknown) {
   return ((err as Error)?.message ?? "").includes("chưa được liên kết với căn hộ");
@@ -35,20 +41,24 @@ function isUnscopedError(err: unknown) {
 
 function GuardCard({
   g,
+  guards,
+  locale,
   styles,
   colors,
 }: {
   g: ProjectGuard;
+  guards: GuardStrings;
+  locale: "vi" | "en";
   styles: ReturnType<typeof useStyles>;
   colors: ReturnType<typeof useTheme>["colors"];
 }) {
-  const initials = (g.full_name ?? "BV")
+  const initials = (g.full_name ?? guards.defaultName)
     .split(/\s+/)
     .map((s) => s[0])
     .slice(-2)
     .join("")
     .toUpperCase();
-  const roleLabel = g.role === "security_admin" ? "Trưởng ca / Quản lý" : "Bảo vệ";
+  const roleLabel = g.role === "security_admin" ? guards.roleAdmin : guards.roleGuard;
 
   return (
     <Card style={{ marginBottom: 10, padding: 14 }}>
@@ -58,11 +68,11 @@ function GuardCard({
         </View>
         <View style={{ flex: 1 }}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-            <Text style={styles.name}>{g.full_name ?? "Bảo vệ"}</Text>
+            <Text style={styles.name}>{g.full_name ?? guards.defaultName}</Text>
             {g.on_shift_today ? (
               <View style={styles.badge}>
                 <CheckCircle2 color={colors.success} size={11} />
-                <Text style={styles.badgeText}>Đang trực</Text>
+                <Text style={styles.badgeText}>{guards.onDuty}</Text>
               </View>
             ) : null}
           </View>
@@ -74,8 +84,8 @@ function GuardCard({
             <View style={{ flexDirection: "row", alignItems: "center", gap: 4, marginTop: 4 }}>
               <Clock color={colors.muted} size={12} />
               <Text style={styles.role}>
-                Ca tới:{" "}
-                {new Date(g.next_shift_at).toLocaleString("vi-VN", {
+                {guards.nextShift}{" "}
+                {new Date(g.next_shift_at).toLocaleString(localeTag(locale), {
                   weekday: "short",
                   hour: "2-digit",
                   minute: "2-digit",
@@ -88,7 +98,7 @@ function GuardCard({
           <Pressable
             style={styles.callBtn}
             onPress={() => Linking.openURL(`tel:${g.phone!.replace(/\s/g, "")}`)}
-            accessibilityLabel="Gọi bảo vệ"
+            accessibilityLabel={guards.callGuard}
           >
             <Phone color={colors.white} size={16} />
           </Pressable>
@@ -101,17 +111,21 @@ function GuardCard({
 function ShiftDetailPanel({
   selectedDate,
   shifts,
+  guards,
+  locale,
   styles,
   colors,
 }: {
   selectedDate: Date;
   shifts: ProjectGuardShift[];
+  guards: GuardStrings;
+  locale: "vi" | "en";
   styles: ReturnType<typeof useStyles>;
   colors: ReturnType<typeof useTheme>["colors"];
 }) {
   const dayShifts = shifts.filter((s) => s.shift_date.slice(0, 10) === isoDate(selectedDate));
   const isToday = isSameCalendarDay(selectedDate, new Date());
-  const dayLabel = selectedDate.toLocaleDateString("vi-VN", {
+  const dayLabel = selectedDate.toLocaleDateString(localeTag(locale), {
     weekday: "long",
     day: "2-digit",
     month: "2-digit",
@@ -124,15 +138,15 @@ function ShiftDetailPanel({
         <Text style={styles.dayTitle}>{dayLabel}</Text>
         {isToday ? (
           <View style={styles.todayPill}>
-            <Text style={styles.todayPillText}>Hôm nay</Text>
+            <Text style={styles.todayPillText}>{guards.today}</Text>
           </View>
         ) : null}
-        <Text style={styles.shiftCount}>{dayShifts.length} ca</Text>
+        <Text style={styles.shiftCount}>{guards.shiftsCount(dayShifts.length)}</Text>
       </View>
 
       {dayShifts.length === 0 ? (
         <View style={styles.emptyDay}>
-          <Text style={styles.empty}>Không có ca trực trong ngày này.</Text>
+          <Text style={styles.empty}>{guards.noShiftsDay}</Text>
         </View>
       ) : (
         dayShifts.map((s) => (
@@ -140,16 +154,26 @@ function ShiftDetailPanel({
             <View style={styles.shiftRow}>
               <View style={styles.shiftAvatar}>
                 <Text style={styles.shiftAvatarText}>
-                  {(s.guard_name ?? "BV").split(/\s+/).slice(-1)[0]?.slice(0, 2).toUpperCase() ?? "BV"}
+                  {(s.guard_name ?? guards.defaultName)
+                    .split(/\s+/)
+                    .slice(-1)[0]
+                    ?.slice(0, 2)
+                    .toUpperCase() ?? guards.defaultName.slice(0, 2).toUpperCase()}
                 </Text>
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={styles.name}>{s.guard_name ?? "Bảo vệ"}</Text>
-                <Text style={styles.role}>{SHIFT_LABEL[s.shift_type] ?? s.shift_type}</Text>
+                <Text style={styles.name}>{s.guard_name ?? guards.defaultName}</Text>
+                <Text style={styles.role}>{shiftLabel(guards, s.shift_type)}</Text>
                 <Text style={styles.role}>
-                  {new Date(s.start_at).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}
+                  {new Date(s.start_at).toLocaleTimeString(localeTag(locale), {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
                   {" – "}
-                  {new Date(s.end_at).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}
+                  {new Date(s.end_at).toLocaleTimeString(localeTag(locale), {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
                 </Text>
               </View>
             </View>
@@ -255,6 +279,8 @@ function useStyles() {
 export default function BaoVeScreen() {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
+  const { locale, s } = useI18n();
+  const guards = s.security.guards;
   const styles = useStyles();
   const [tab, setTab] = useState<"team" | "schedule">("team");
 
@@ -296,28 +322,21 @@ export default function BaoVeScreen() {
 
   return (
     <Screen scroll={false} contentStyle={{ paddingTop: 0 }} insetTabBar={false}>
-      <PageHeader
-        title="Đội bảo vệ chung cư"
-        subtitle="Lịch trực đội bảo vệ & danh sách nhân sự phụ trách dự án"
-        back="/(tabs)/bao-an"
-      />
+      <PageHeader title={guards.title} subtitle={guards.subtitle} back="/(tabs)/bao-an" />
 
       <View style={styles.tabs}>
         <Pressable style={[styles.tab, tab === "team" && styles.tabActive]} onPress={() => setTab("team")}>
-          <Text style={[styles.tabText, tab === "team" && styles.tabTextActive]}>Đội bảo vệ</Text>
+          <Text style={[styles.tabText, tab === "team" && styles.tabTextActive]}>{guards.tabTeam}</Text>
         </Pressable>
         <Pressable style={[styles.tab, tab === "schedule" && styles.tabActive]} onPress={() => setTab("schedule")}>
-          <Text style={[styles.tabText, tab === "schedule" && styles.tabTextActive]}>Lịch trực tuần</Text>
+          <Text style={[styles.tabText, tab === "schedule" && styles.tabTextActive]}>{guards.tabSchedule}</Text>
         </Pressable>
       </View>
 
       {unscoped ? (
         <View style={styles.warn}>
-          <Text style={styles.warnTitle}>Tài khoản chưa liên kết căn hộ</Text>
-          <Text style={styles.warnBody}>
-            Vui lòng liên hệ Ban Quản Lý chung cư để được cập nhật căn hộ. Sau đó bạn sẽ xem được đội bảo vệ và lịch
-            trực của chung cư mình.
-          </Text>
+          <Text style={styles.warnTitle}>{guards.unscopedTitle}</Text>
+          <Text style={styles.warnBody}>{guards.unscopedBody}</Text>
         </View>
       ) : null}
 
@@ -333,9 +352,11 @@ export default function BaoVeScreen() {
               <Text style={styles.empty}>{(guardsQ.error as Error).message}</Text>
             </Card>
           ) : (guardsQ.data?.guards ?? []).length === 0 ? (
-            <Text style={styles.empty}>Chưa có bảo vệ nào được phân công cho chung cư.</Text>
+            <Text style={styles.empty}>{guards.noGuards}</Text>
           ) : (
-            guardsQ.data!.guards.map((g) => <GuardCard key={g.guard_id} g={g} styles={styles} colors={colors} />)
+            guardsQ.data!.guards.map((g) => (
+              <GuardCard key={g.guard_id} g={g} guards={guards} locale={locale} styles={styles} colors={colors} />
+            ))
           )
         ) : null}
 
@@ -358,6 +379,8 @@ export default function BaoVeScreen() {
               <ShiftDetailPanel
                 selectedDate={selectedDate}
                 shifts={shifts}
+                guards={guards}
+                locale={locale}
                 styles={styles}
                 colors={colors}
               />

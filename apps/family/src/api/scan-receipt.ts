@@ -20,7 +20,7 @@ const ParsedSchema = z.object({
   merchant: z.string().min(1).max(120),
   total: z.number().min(0).max(1_000_000_000),
   date: z.string().min(1).max(40),
-  category: z.enum(["Ăn uống", "Nhà cửa", "Con cái", "Sức khỏe", "Giải trí", "Khác"]),
+  category: z.string().min(1).max(64),
   note: z.string().max(200).optional().default(""),
   line_items: z.array(LineItemSchema).max(50).optional().default([]),
 });

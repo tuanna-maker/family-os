@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { SecurityShell } from "./components/SecurityShell";
 import { cn } from "@shared/utils";
 import { listSecurityChatMessages, sendSecurityChatMessage } from "@/api/security-chat";
+import { useSecurityChatRealtime } from "@/hooks/use-security-chat-realtime";
 import { useFamilyContext } from "@/hooks/use-family-context";
 import { securityMeta } from "./data";
 
@@ -14,10 +15,12 @@ export function SecurityChatPage() {
   const [text, setText] = useState("");
   const endRef = useRef<HTMLDivElement>(null);
 
+  useSecurityChatRealtime(familyId);
+
   const q = useQuery({
     queryKey: ["security-chat", familyId],
     queryFn: () => listSecurityChatMessages(familyId),
-    refetchInterval: 8000,
+    staleTime: 30_000,
   });
 
   const sendMut = useMutation({

@@ -23,6 +23,11 @@ dist-ssr
 # Env templates
 !.env.example
 
+# Firebase secrets (never commit)
+*-firebase-adminsdk*.json
+**/google-services.json
+**/google-service-account.json
+
 # Test artifacts
 **/tests/coverage/
 playwright-report/

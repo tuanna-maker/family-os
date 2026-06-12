@@ -1,7 +1,7 @@
 import React, { useCallback } from "react";
 import { View, Text, ScrollView, TouchableOpacity } from "react-native";
 import { showAppAlert } from "@mobile/components/AppAlert";
-import { Shield, LogIn, LogOut, MapPin, AlertTriangle, Users, Siren } from "lucide-react-native";
+import { Shield, LogIn, LogOut, MapPin, AlertTriangle, Users, Siren, MessageCircle } from "lucide-react-native";
 import { useFocusEffect, useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -9,6 +9,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "@mobile/hooks/useAuth";
 import { useGuardNotifications } from "@mobile/hooks/useGuardNotifications";
 import { listOpenResidentRequests } from "@guard/api/security";
+import { countGuardChatUnread, listGuardChatThreads } from "@guard/api/security-chat";
 import { getActiveShift } from "@guard/api/guard-shifts";
 import { initialsFromName, shiftLabel, shiftTimeRange } from "@mobile/utils/guardFormat";
 import { useTabScrollPadding } from "@mobile/hooks/useTabScrollPadding";
@@ -30,6 +31,12 @@ export default function DashboardScreen() {
     queryFn: () => getActiveShift(),
     staleTime: 45_000,
   });
+  const { data: chatThreads = [] } = useQuery({
+    queryKey: ["guard-chat-threads"],
+    queryFn: () => listGuardChatThreads(),
+    staleTime: 30_000,
+  });
+  const chatUnread = countGuardChatUnread(chatThreads);
 
   useFocusEffect(
     useCallback(() => {
@@ -199,7 +206,7 @@ export default function DashboardScreen() {
         <TouchableOpacity
           className="w-[48%] mb-4"
           activeOpacity={0.9}
-          onPress={() => router.push("/patrol")}
+          onPress={() => router.push("/(tabs)/patrol")}
         >
             <LinearGradient
               colors={["#3B82F6", "#2563EB"]}
@@ -239,6 +246,38 @@ export default function DashboardScreen() {
               </View>
               <Text className="text-sm font-bold text-white tracking-wide">BÁO SỰ CỐ</Text>
               <Text className="text-[11px] text-white/80 mt-0.5">Gửi báo cáo</Text>
+            </LinearGradient>
+        </TouchableOpacity>
+      </View>
+
+      <View className="px-5 mt-2 mb-4">
+        <TouchableOpacity activeOpacity={0.9} onPress={() => router.push("/chat")}>
+            <LinearGradient
+              colors={["#0EA5E9", "#0284C7"]}
+              style={{ flexDirection: "row", alignItems: "center", borderRadius: 24, padding: 20 }}
+            >
+              <View className="h-12 w-12 rounded-2xl bg-white/20 items-center justify-center mr-4">
+                <MessageCircle size={24} color="white" />
+              </View>
+              <View className="flex-1">
+                <Text className="text-base font-bold text-white tracking-wide">
+                  TIN NHẮN CƯ DÂN
+                </Text>
+                <Text className="text-[12px] text-white/90 mt-0.5">
+                  {chatUnread > 0
+                    ? `${chatUnread} tin chưa đọc · Phản hồi realtime`
+                    : chatThreads.length > 0
+                      ? `${chatThreads.length} hội thoại · Chat realtime`
+                      : "Phản hồi tin nhắn từ cư dân"}
+                </Text>
+              </View>
+              {chatUnread > 0 ? (
+                <View className="min-w-[28px] h-7 rounded-full bg-white/25 items-center justify-center px-2">
+                  <Text className="text-xs font-bold text-white">
+                    {chatUnread > 9 ? "9+" : chatUnread}
+                  </Text>
+                </View>
+              ) : null}
             </LinearGradient>
         </TouchableOpacity>
       </View>

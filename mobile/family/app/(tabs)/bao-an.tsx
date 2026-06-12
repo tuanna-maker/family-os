@@ -206,7 +206,7 @@ export default function BaoAnScreen() {
     }
     const dialogCfg = SECURITY_DIALOG_ITEMS[item.id];
     if (dialogCfg) {
-      setDialog({ title: dialogCfg.label, requestType: dialogCfg.requestType });
+      setDialog({ title: item.label, requestType: dialogCfg.requestType });
       return;
     }
     void trigger(item.requestType, item.label);
@@ -264,8 +264,8 @@ export default function BaoAnScreen() {
             <Card style={styles.guardCard}>
               <Text style={{ fontSize: 22 }}>🛡️</Text>
               <View style={{ flex: 1 }}>
-                <Text style={styles.gridLabel}>Đội bảo vệ chung cư</Text>
-                <Text style={styles.gridDesc}>Xem danh sách & ca trực hôm nay</Text>
+                <Text style={styles.gridLabel}>{sec.guardTeamTitle}</Text>
+                <Text style={styles.gridDesc}>{sec.guardTeamCardDesc}</Text>
               </View>
               <ChevronRight color={colors.muted} size={20} />
             </Card>

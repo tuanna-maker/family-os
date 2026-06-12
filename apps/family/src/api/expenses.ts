@@ -115,10 +115,16 @@ export async function updateExpense(data: {
   return { ok: true };
 }
 
-export async function deleteExpense(data: any) {
-  const { supabase, userId } = await requireUser();
+export async function deleteExpense(data: { id: string; source?: string }) {
+  const { supabase } = await requireUser();
 
-        const { error } = await supabase.from("expenses").delete().eq("id", data.id);
+  if (data.source === "scan") {
+    const { error } = await supabase.from("receipt_scans").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
+  }
+
+  const { error } = await supabase.from("expenses").delete().eq("id", data.id);
+  if (error) throw new Error(error.message);
+  return { ok: true };
 }

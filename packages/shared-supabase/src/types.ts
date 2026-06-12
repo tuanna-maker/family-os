@@ -418,6 +418,126 @@ export type Database = {
         }
         Relationships: []
       }
+      expense_categories: {
+        Row: {
+          category_key: string
+          color: string
+          created_at: string
+          family_id: string
+          icon: string
+          id: string
+          label_en: string
+          label_vi: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          category_key: string
+          color?: string
+          created_at?: string
+          family_id: string
+          icon?: string
+          id?: string
+          label_en: string
+          label_vi: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          category_key?: string
+          color?: string
+          created_at?: string
+          family_id?: string
+          icon?: string
+          id?: string
+          label_en?: string
+          label_vi?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expense_categories_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      expense_category_budgets: {
+        Row: {
+          amount: number
+          budget_month: string
+          category_key: string
+          created_at: string
+          family_id: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          budget_month: string
+          category_key: string
+          created_at?: string
+          family_id: string
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          budget_month?: string
+          category_key?: string
+          created_at?: string
+          family_id?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expense_category_budgets_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      expense_month_budgets: {
+        Row: {
+          budget_month: string
+          created_at: string
+          family_id: string
+          id: string
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          budget_month: string
+          created_at?: string
+          family_id: string
+          id?: string
+          total_amount?: number
+          updated_at?: string
+        }
+        Update: {
+          budget_month?: string
+          created_at?: string
+          family_id?: string
+          id?: string
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expense_month_budgets_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       expenses: {
         Row: {
           amount: number
@@ -1540,6 +1660,10 @@ export type Database = {
         Returns: undefined
       }
       resolve_login_email: { Args: { _username: string }; Returns: string }
+      seed_family_expense_settings: {
+        Args: { _family_id: string }
+        Returns: undefined
+      }
       tick_reminder_notifications: { Args: never; Returns: number }
     }
     Enums: {

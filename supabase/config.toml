@@ -15,3 +15,6 @@ verify_jwt = false
 # Optional — deploy when OpenAI secret is configured
 [functions.scan-receipt]
 verify_jwt = true
+
+[functions.dispatch-chat-push]
+verify_jwt = true

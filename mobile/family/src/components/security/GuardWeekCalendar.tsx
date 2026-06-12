@@ -3,6 +3,8 @@ import { radius } from "@mobile/theme/colors";
 import { useTheme } from "@mobile/theme/themeStore";
 import { useThemedStyles } from "@mobile/theme/useThemedStyles";
 import { isSameCalendarDay } from "@mobile/components/calendar/MonthCalendar";
+import { useI18n } from "@mobile/i18n/useI18n";
+import { localeTag } from "@mobile/i18n/format";
 
 export type WeekDayCell = {
   date: Date;
@@ -33,6 +35,19 @@ export function formatViDateRange(from: string, to: string): string {
   return `${formatViDate(from)} - ${formatViDate(to)}`;
 }
 
+export function formatWeekDateRange(from: string, to: string, locale: "vi" | "en"): string {
+  if (locale === "en") {
+    const fmt = (iso: string) =>
+      parseLocalDate(iso).toLocaleDateString(localeTag(locale), {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      });
+    return `${fmt(from)} - ${fmt(to)}`;
+  }
+  return formatViDateRange(from, to);
+}
+
 /** Thứ 2 → Chủ nhật của tuần chứa `anchor` (mặc định hôm nay). */
 export function getCurrentWeekRange(anchor = new Date()) {
   const today = new Date(anchor);
@@ -57,8 +72,6 @@ export function buildWeekDays(fromIso: string, toIso: string): WeekDayCell[] {
   return days;
 }
 
-const WEEKDAYS = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];
-
 type Props = {
   days: WeekDayCell[];
   selectedDate: Date;
@@ -69,6 +82,9 @@ type Props = {
 
 export function GuardWeekCalendar({ days, selectedDate, onSelectDate, rangeFrom, rangeTo }: Props) {
   const { colors } = useTheme();
+  const { locale, s } = useI18n();
+  const forms = s.security.forms;
+  const weekdays = forms.weekdays;
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
@@ -111,14 +127,14 @@ export function GuardWeekCalendar({ days, selectedDate, onSelectDate, rangeFrom,
 
   return (
     <View style={styles.wrap}>
-      <Text style={styles.title}>Lịch trực đội bảo vệ · Tuần này</Text>
-      <Text style={styles.range}>{formatViDateRange(rangeFrom, rangeTo)}</Text>
+      <Text style={styles.title}>{forms.weekCalendarTitle}</Text>
+      <Text style={styles.range}>{formatWeekDateRange(rangeFrom, rangeTo, locale)}</Text>
       <View style={styles.row}>
         {days.map((cell, i) => {
           const selected = isSameCalendarDay(cell.date, selectedDate);
           const isToday = isSameCalendarDay(cell.date, today);
           const hasShifts = cell.shiftCount > 0;
-          const wd = WEEKDAYS[i] ?? WEEKDAYS[(cell.date.getDay() + 6) % 7];
+          const wd = weekdays[i] ?? weekdays[(cell.date.getDay() + 6) % 7];
 
           let bg = "transparent";
           let textColor = colors.foreground;

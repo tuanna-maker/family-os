@@ -1,42 +1,48 @@
-import { useRef, useState } from "react";
-import {
-  FlatList,
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from "react-native";
+import { useRef } from "react";
+import { FlatList, KeyboardAvoidingView, Platform } from "react-native";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Send } from "lucide-react-native";
 import { PageHeader } from "@mobile/components/ui";
-import { colors, radius } from "@mobile/theme/colors";
 import { useFamilyContext } from "@mobile/hooks/useFamilyContext";
-import { listSecurityChatMessages, sendSecurityChatMessage } from "@mobile/lib/security-chat";
+import {
+  listSecurityChatMessages,
+  sendSecurityChatMessage,
+  type SecurityChatMessage,
+  type SendSecurityChatPayload,
+} from "@mobile/lib/security-chat";
+import { useSecurityChatCacheSync } from "@mobile/hooks/useSecurityChatRealtime";
+import { SecurityChatBubble } from "@mobile/components/security/SecurityChatBubble";
+import { SecurityChatComposer } from "@mobile/components/security/SecurityChatComposer";
 import { useI18n } from "@mobile/i18n/useI18n";
-import { formatTime } from "@mobile/i18n/format";
+import { useThemedStyles } from "@mobile/theme/useThemedStyles";
 
 export default function BaoAnChatScreen() {
   const { familyId } = useFamilyContext();
   const qc = useQueryClient();
   const { locale, s } = useI18n();
   const chat = s.security.chat;
-  const [text, setText] = useState("");
-  const listRef = useRef<FlatList>(null);
+  const listRef = useRef<FlatList<SecurityChatMessage>>(null);
+  const styles = useThemedStyles((c) => ({
+    root: { flex: 1, backgroundColor: c.background },
+    list: { padding: 16, paddingBottom: 8, flexGrow: 1 },
+  }));
+
+  useSecurityChatCacheSync(familyId);
 
   const q = useQuery({
     queryKey: ["security-chat", familyId],
     queryFn: () => listSecurityChatMessages(familyId),
-    refetchInterval: 8000,
+    staleTime: 30_000,
   });
 
   const sendMut = useMutation({
-    mutationFn: () => sendSecurityChatMessage({ body: text, family_id: familyId }),
-    onSuccess: () => {
-      setText("");
-      qc.invalidateQueries({ queryKey: ["security-chat", familyId] });
+    mutationFn: (payload: SendSecurityChatPayload) =>
+      sendSecurityChatMessage({ ...payload, family_id: familyId }),
+    onSuccess: (row) => {
+      qc.setQueryData<SecurityChatMessage[]>(["security-chat", familyId], (old) => {
+        const prev = (old ?? []).filter((m) => m.id !== "welcome");
+        if (prev.some((m) => m.id === row.id)) return prev;
+        return [...prev, row];
+      });
       setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 100);
     },
   });
@@ -56,94 +62,25 @@ export default function BaoAnChatScreen() {
         data={messages}
         keyExtractor={(m) => m.id}
         contentContainerStyle={styles.list}
+        style={styles.root}
         onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: false })}
-        renderItem={({ item }) => {
-          const mine = item.sender_role === "resident";
-          const system = item.sender_role === "system";
-          return (
-            <View style={[styles.bubbleWrap, mine && styles.bubbleWrapMine]}>
-              <View
-                style={[
-                  styles.bubble,
-                  mine && styles.bubbleMine,
-                  system && styles.bubbleSystem,
-                ]}
-              >
-                <Text style={[styles.body, mine && styles.bodyMine]}>{item.body}</Text>
-                <Text style={[styles.time, mine && styles.bodyMine]}>
-                  {formatTime(item.created_at, locale)}
-                </Text>
-              </View>
-            </View>
-          );
-        }}
+        renderItem={({ item }) => (
+          <SecurityChatBubble
+            item={item}
+            mine={item.sender_role === "resident"}
+            locale={locale}
+            guardLabel={chat.guardLabel}
+          />
+        )}
       />
 
-      <View style={styles.inputRow}>
-        <TextInput
-          value={text}
-          onChangeText={setText}
-          placeholder={chat.placeholder}
-          placeholderTextColor={colors.muted}
-          style={styles.input}
-          multiline
-        />
-        <Pressable
-          style={[styles.send, !text.trim() && { opacity: 0.5 }]}
-          onPress={() => text.trim() && sendMut.mutate()}
-          disabled={!text.trim() || sendMut.isPending}
-        >
-          <Send color={colors.white} size={20} />
-        </Pressable>
-      </View>
+      <SecurityChatComposer
+        placeholder={chat.placeholder}
+        sending={sendMut.isPending}
+        onSend={async (payload) => {
+          await sendMut.mutateAsync(payload);
+        }}
+      />
     </KeyboardAvoidingView>
   );
 }
-
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.background },
-  list: { padding: 16, paddingBottom: 8, flexGrow: 1 },
-  bubbleWrap: { marginBottom: 10, alignItems: "flex-start" },
-  bubbleWrapMine: { alignItems: "flex-end" },
-  bubble: {
-    maxWidth: "85%",
-    backgroundColor: colors.card,
-    borderRadius: radius.lg,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: colors.cardBorder,
-  },
-  bubbleMine: { backgroundColor: colors.brandDeep, borderColor: colors.brandDeep },
-  bubbleSystem: { backgroundColor: colors.mutedBg },
-  body: { color: colors.foreground, fontSize: 15, lineHeight: 20 },
-  bodyMine: { color: colors.white },
-  time: { fontSize: 10, color: colors.muted, marginTop: 6, alignSelf: "flex-end" },
-  inputRow: {
-    flexDirection: "row",
-    alignItems: "flex-end",
-    gap: 8,
-    padding: 12,
-    borderTopWidth: 1,
-    borderTopColor: colors.cardBorder,
-    backgroundColor: colors.card,
-  },
-  input: {
-    flex: 1,
-    minHeight: 44,
-    maxHeight: 100,
-    backgroundColor: colors.background,
-    borderRadius: radius.lg,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    color: colors.foreground,
-    fontSize: 16,
-  },
-  send: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: colors.brandDeep,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-});

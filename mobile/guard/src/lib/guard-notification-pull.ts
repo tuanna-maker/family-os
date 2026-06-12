@@ -11,9 +11,13 @@ const AUTH_CREDS = {
 const STATE_CREDS = {
   seenSecurityIds: "stos_guard_seen_security_ids",
   seenPlatformNotifIds: "stos_guard_seen_platform_notif_ids",
+  seenChatMsgIds: "stos_guard_seen_chat_msg_ids",
   dismissedSecurityIds: "stos_guard_dismissed_security_ids",
   bootstrapped: "stos_guard_pull_bootstrapped",
 } as const;
+
+const LEGACY_AUTO_REPLY =
+  /Bảo an đã nhận tin\. Đội trực sẽ phản hồi|Security received your message\. The on-duty team/i;
 
 const SEEN_CAP = 300;
 
@@ -123,7 +127,41 @@ async function getJsonArray(
   return Array.isArray(rows) ? rows : [];
 }
 
-type LocalAlert = { title: string; body?: string; channelId: "default" | "security"; id: string };
+type LocalAlert = {
+  title: string;
+  body?: string;
+  channelId: "default" | "security";
+  id: string;
+  data?: Record<string, unknown>;
+};
+
+export async function markGuardChatMessageNotified(messageId: string) {
+  if (!messageId) return;
+  const seen = await loadSeenSet(STATE_CREDS.seenChatMsgIds);
+  if (seen.has(messageId)) return;
+  seen.add(messageId);
+  await saveSeenSet(STATE_CREDS.seenChatMsgIds, seen);
+}
+
+export async function shouldNotifyGuardChatMessage(messageId: string) {
+  const seen = await loadSeenSet(STATE_CREDS.seenChatMsgIds);
+  return !seen.has(messageId);
+}
+
+function chatPreviewBody(row: Record<string, unknown>) {
+  const type = String(row.message_type ?? "text");
+  const body = String(row.body ?? "").trim();
+  if (type === "image") return body && body !== "Ảnh" ? body : "Đã gửi ảnh";
+  if (type === "audio") return body && body !== "Ghi âm" ? body : "Đã gửi ghi âm";
+  return body || "Tin nhắn mới";
+}
+
+function isLegacyAutoReplyRow(row: Record<string, unknown>) {
+  return (
+    String(row.sender_role ?? "") === "guard" &&
+    LEGACY_AUTO_REPLY.test(String(row.body ?? ""))
+  );
+}
 
 async function pollSecurityRequests(
   url: string,
@@ -215,6 +253,52 @@ async function pollPlatformNotifications(
   return alerts;
 }
 
+async function pollResidentChatMessages(
+  url: string,
+  anon: string,
+  token: string,
+): Promise<LocalAlert[]> {
+  const apiUrl =
+    `${url}/rest/v1/security_chat_messages` +
+    `?sender_role=eq.resident` +
+    `&select=id,user_id,sender_role,body,message_type,created_at` +
+    `&order=created_at.desc&limit=30`;
+  const rows = await getJsonArray(apiUrl, anon, token, "public");
+  if (rows.length === 0) return [];
+
+  const seen = await loadSeenSet(STATE_CREDS.seenChatMsgIds);
+  const bootKey = `${STATE_CREDS.bootstrapped}:chat`;
+  const bootstrapped = await AsyncStorage.getItem(bootKey);
+
+  if (!bootstrapped) {
+    for (const row of rows) {
+      const id = String(row.id ?? "");
+      if (id) seen.add(id);
+    }
+    await saveSeenSet(STATE_CREDS.seenChatMsgIds, seen);
+    await AsyncStorage.setItem(bootKey, "1");
+    return [];
+  }
+
+  const alerts: LocalAlert[] = [];
+  for (let i = rows.length - 1; i >= 0; i -= 1) {
+    const row = rows[i];
+    const id = String(row.id ?? "");
+    const residentId = String(row.user_id ?? "");
+    if (!id || !residentId || seen.has(id) || isLegacyAutoReplyRow(row)) continue;
+    alerts.push({
+      id,
+      title: "Tin nhắn cư dân",
+      body: chatPreviewBody(row),
+      channelId: "chat",
+      data: { route: "/chat", residentId },
+    });
+    seen.add(id);
+  }
+  if (alerts.length > 0) await saveSeenSet(STATE_CREDS.seenChatMsgIds, seen);
+  return alerts;
+}
+
 /** Poll Supabase — fallback khi realtime tạm ngắt (không invalidate inbox). */
 export async function pullAndPresentGuardNotifications(): Promise<boolean> {
   const creds = await loadCredentials();
@@ -228,7 +312,8 @@ export async function pullAndPresentGuardNotifications(): Promise<boolean> {
     creds.token,
     creds.userId,
   );
-  const all = [...securityAlerts, ...platformAlerts];
+  const chatAlerts = await pollResidentChatMessages(creds.url, creds.anon, creds.token);
+  const all = [...securityAlerts, ...platformAlerts, ...chatAlerts];
   if (all.length === 0) return false;
 
   for (const alert of all) {
