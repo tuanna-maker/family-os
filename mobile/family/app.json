@@ -3,7 +3,7 @@
     "name": "STOS Life",
     "slug": "stos-life",
     "version": "1.0.0",
-    "owner": "tuanna-unicom",
+    "owner": "unicom-vibe-coding-team",
     "orientation": "default",
     "scheme": "vn.unicom.stos.familyrn",
     "userInterfaceStyle": "automatic",
@@ -88,12 +88,12 @@
       "supabaseUrl": "",
       "supabaseAnonKey": "",
       "pilotPrefill": true,
-      "eas": {
-        "projectId": "498d3d55-e61f-4d53-9891-27e92dd9c5cc"
-      },
       "authRedirectUrl": "vn.unicom.stos.familyrn://auth",
       "router": {
         "root": "./app"
+      },
+      "eas": {
+        "projectId": "498d3d55-e61f-4d53-9891-27e92dd9c5cc"
       }
     }
   }

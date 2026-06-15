@@ -1,10 +1,5 @@
-/** Guard RN must not link Capacitor pods from the web app workspace. */
+/** Family RN must not link Capacitor pods from the web app workspace. */
 module.exports = {
-  project: {
-    android: {
-      packageName: "com.stos.guard",
-    },
-  },
   dependencies: {
     "@capacitor/preferences": {
       platforms: { ios: null, android: null },

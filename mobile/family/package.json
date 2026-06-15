@@ -6,7 +6,10 @@
   "expo": {
     "autolinking": {
       "exclude": [
-        "expo-status-bar"
+        "expo-status-bar",
+        "@capacitor/preferences",
+        "@capacitor/core",
+        "@capacitor/ios"
       ]
     }
   },
@@ -16,7 +19,7 @@
     "ios": "expo run:ios",
     "typecheck": "tsc --noEmit",
     "eas-build-pre-install": "cd ../.. && rm -f bun.lock bunfig.toml web/bun.lock web/bunfig.toml",
-    "eas-build-post-install": "cd ../.. && node scripts/ensure-mobile-node-modules.mjs || true"
+    "eas-build-post-install": "cd ../.. && node scripts/fix-xcode-env-lf.mjs && npm install -w @mobile/family --include=dev"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "2.2.0",

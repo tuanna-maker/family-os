@@ -54,13 +54,6 @@ export function GlassTabBar({ state, descriptors, navigation }: BottomTabBarProp
   return (
     <View style={styles.root} pointerEvents="box-none" collapsable={false}>
       <View style={[styles.frostZone, { height: frostZoneHeight }]} pointerEvents="none">
-        {Platform.OS === "ios" ? (
-          <BlurView
-            intensity={isDark ? 72 : 88}
-            tint={isDark ? "dark" : "light"}
-            style={StyleSheet.absoluteFillObject}
-          />
-        ) : null}
         <LinearGradient
           colors={
             isDark

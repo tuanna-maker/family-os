@@ -1,0 +1,3 @@
+# Xcode shell env must use LF — CRLF breaks EAS/macOS bash (`\r: command not found`).
+mobile/**/ios/.xcode.env text eol=lf
+mobile/**/ios/.xcode.env.local text eol=lf

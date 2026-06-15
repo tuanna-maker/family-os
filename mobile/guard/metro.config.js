@@ -43,7 +43,7 @@ config.resolver.blockList = [
     : config.resolver.blockList
       ? [config.resolver.blockList]
       : []),
-  /mobile\/[^/]+\/node_modules\/.*/,
+  /mobile\/family\/node_modules\/.*/,
 ];
 
 config.projectRoot = projectRoot;
@@ -53,7 +53,7 @@ config.watchFolders = [
   path.resolve(monorepoRoot, "packages/shared-supabase"),
   path.resolve(monorepoRoot, "apps/guard/src"),
 ];
-config.resolver.nodeModulesPaths = [monorepoModules, path.resolve(projectRoot, "node_modules")];
+config.resolver.nodeModulesPaths = [localModules, monorepoModules];
 config.resolver.extraNodeModules = {
   "metro-runtime": path.resolve(monorepoModules, "metro-runtime"),
 };

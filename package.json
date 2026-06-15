@@ -65,6 +65,7 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.107.0",
     "expo-audio": "~56.0.12",
+    "lucide-react-native": "^0.475.0",
     "react": "19.2.3",
     "react-dom": "19.2.3"
   }
