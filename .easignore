@@ -5,9 +5,8 @@ bunfig.toml
 web/bun.lock
 web/bunfig.toml
 
-# Giảm kích thước archive (chỉ cần mobile/family + apps/family/src + packages)
+# Giảm kích thước archive (mỗi app có .easignore riêng trong mobile/family|guard)
 web/
-mobile/guard/
 apps/family/android/
 apps/family/ios/
 apps/guard/android/
