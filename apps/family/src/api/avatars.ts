@@ -1,3 +1,4 @@
+import * as FileSystem from "expo-file-system/legacy";
 import { z } from "zod";
 import { requireUser } from "@shared/supabase/auth";
 
@@ -17,14 +18,15 @@ async function readImageBytes(uri: string): Promise<{ bytes: Uint8Array; content
   const contentType = ext === "png" ? "image/png" : "image/jpeg";
 
   if (uri.startsWith("file://") || uri.startsWith("content://")) {
-    const FileSystem = await import("expo-file-system");
-    const info = await FileSystem.getInfoAsync(uri);
-    if (!info.exists) throw new Error("Không đọc được ảnh từ thiết bị");
-    const base64 = await FileSystem.readAsStringAsync(uri, {
-      encoding: FileSystem.EncodingType.Base64,
-    });
-    const bytes = base64ToUint8Array(base64);
-    return { bytes, contentType };
+    try {
+      const base64 = await FileSystem.readAsStringAsync(uri, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+      const bytes = base64ToUint8Array(base64);
+      return { bytes, contentType };
+    } catch {
+      throw new Error("Không đọc được ảnh từ thiết bị");
+    }
   }
 
   const response = await fetch(uri);
@@ -62,6 +64,20 @@ export async function updateProfileAvatar(data: { avatar_url: string }) {
     .update({ avatar_url: parsed.avatar_url })
     .eq("id", userId);
   if (error) throw new Error(error.message);
+
+  const { data: ownedFamily } = await supabase
+    .from("families")
+    .select("id")
+    .eq("owner_id", userId)
+    .maybeSingle();
+  if (ownedFamily?.id) {
+    const { error: familyErr } = await supabase
+      .from("families")
+      .update({ avatar_url: parsed.avatar_url })
+      .eq("id", ownedFamily.id);
+    if (familyErr) throw new Error(familyErr.message);
+  }
+
   return { ok: true as const, avatar_url: parsed.avatar_url };
 }
 
@@ -89,5 +105,12 @@ export async function updateFamilyAvatar(data: { family_id: string; avatar_url: 
     .update({ avatar_url: parsed.avatar_url })
     .eq("id", parsed.family_id);
   if (error) throw new Error(error.message);
+
+  const { error: profileErr } = await supabase
+    .from("profiles")
+    .update({ avatar_url: parsed.avatar_url })
+    .eq("id", userId);
+  if (profileErr) throw new Error(profileErr.message);
+
   return { ok: true as const, avatar_url: parsed.avatar_url };
 }

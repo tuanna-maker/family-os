@@ -10,7 +10,8 @@
       "@mobile/api/*": ["./src/api/*"],
       "@shared/supabase": ["../../packages/shared-supabase/src/index.ts"],
       "@shared/supabase/*": ["../../packages/shared-supabase/src/*"],
-      "@shared/utils": ["../../packages/shared-utils/src/index.ts"]
+      "@shared/utils": ["../../packages/shared-utils/src/index.ts"],
+      "@shared/utils/security-status-notify": ["../../packages/shared-utils/src/security-status-notify.ts"]
     }
   },
   "include": ["**/*.ts", "**/*.tsx", ".expo/types/**/*.ts", "expo-env.d.ts"],

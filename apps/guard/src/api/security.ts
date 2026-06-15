@@ -3,13 +3,6 @@ import { requireUser } from "@shared/supabase/auth";
 import { getSupabase } from "@shared/supabase/get-client";
 import { sosDispatchSchema, SOS_SCHEMA_VERSION } from "@/features/security-ops/dashboard/sosSchema";
 
-/** Tránh import barrel @shared/supabase (kéo Capacitor vào React Native). */
-function firePushDispatch() {
-  void getSupabase()
-    .functions.invoke("dispatch-push", { body: {} })
-    .catch(() => {});
-}
-
 export type SecurityRequest = {
   id: string;
   request_type: string;
@@ -125,6 +118,17 @@ export async function createSecurityRequest(data: any) {
     return { id: row.id };
 }
 
+export async function getSecurityRequest(id: string) {
+  const { supabase } = await requireUser();
+  const { data, error } = await supabase
+    .from("security_requests")
+    .select("id, request_type, status, building, apartment, requester_id, created_at, resolved_at, payload")
+    .eq("id", id)
+    .single();
+  if (error) throw new Error(error.message);
+  return data as SecurityRequest;
+}
+
 export async function listSecurityRequests() {
   const { supabase, userId } = await requireUser();
 
@@ -187,7 +191,7 @@ export async function updateSecurityRequest(
 
   const { data: prev, error: prevErr } = await supabase
     .from("security_requests")
-    .select("id, status, request_type, apartment, building")
+    .select("id, status, request_type, apartment, building, requester_id, payload")
     .eq("id", data.id)
     .single();
   if (prevErr) throw new Error(prevErr.message);
@@ -205,8 +209,8 @@ export async function updateSecurityRequest(
   const eventType = data.status === "in_progress" ? "claimed" : "resolved";
   const eventNote =
     data.status === "in_progress"
-      ? "Bảo vệ đã tiếp nhận"
-      : (data.note ?? "Đã hoàn tất");
+      ? "Đội bảo an đã nhận và đang xử lý"
+      : (data.note ?? "Đã hoàn tất xử lý");
 
   await Promise.all([
     supabase.from("sos_events").insert({
@@ -223,8 +227,6 @@ export async function updateSecurityRequest(
       _metadata: {},
     }),
   ]);
-
-  if (!opts?.skipPush) firePushDispatch();
 
   const unitParts = [prev.apartment, prev.building].filter(Boolean);
   return {
@@ -249,8 +251,6 @@ export async function batchUpdateSecurityRequests(input: {
       ),
     ),
   );
-
-  if (input.ids.length > 0) firePushDispatch();
 
   return settled.map((entry, index) => {
     const id = input.ids[index];
@@ -473,6 +473,7 @@ export type SosEvent = {
   to_status: string | null;
   note: string | null;
   created_at: string;
+  metadata?: Record<string, unknown> | null;
 };
 
 const SOS_STATUSES = ["open", "in_progress", "resolved", "cancelled"] as const;
@@ -529,9 +530,26 @@ export async function listSosEvents(data: any) {
 
         const { data: rows, error } = await supabase
       .from("sos_events")
-      .select("id, request_id, actor_id, event_type, from_status, to_status, note, created_at")
+      .select("id, request_id, actor_id, event_type, from_status, to_status, note, created_at, metadata")
       .eq("request_id", data.id)
       .order("created_at", { ascending: true });
     if (error) throw new Error(error.message);
     return (rows ?? []) as SosEvent[];
+}
+
+const ATTACHMENTS_BUCKET = "security-attachments";
+
+export async function signSecurityAttachmentUrls(paths: string[]) {
+  const { supabase } = await requireUser();
+  const unique = [...new Set(paths.filter(Boolean))];
+  if (unique.length === 0) return [] as { path: string; url: string }[];
+
+  const { data, error } = await supabase.storage
+    .from(ATTACHMENTS_BUCKET)
+    .createSignedUrls(unique, 60 * 30);
+  if (error) throw new Error(error.message);
+
+  return (data ?? [])
+    .filter((row) => row.signedUrl)
+    .map((row) => ({ path: row.path ?? "", url: row.signedUrl as string }));
 }

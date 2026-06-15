@@ -12,6 +12,7 @@ import { SectionHeader } from "@mobile/components/SectionHeader";
 import { SecurityRequestsTracker } from "@mobile/components/security/SecurityRequestsTracker";
 import { SecuritySendingOverlay } from "@mobile/components/security/SecuritySendingOverlay";
 import { SecurityRequestSheet } from "@mobile/components/security/SecurityRequestSheet";
+import { SecurityServiceGridPager } from "@mobile/components/security/SecurityServiceGridPager";
 import {
   getBuildingStatus,
   securityMeta,
@@ -277,29 +278,13 @@ export default function BaoAnScreen() {
             <SectionHeader title={sec.sendRequestTitle} />
           </View>
 
-          <View style={styles.grid}>
-            {securityServiceGrid.map((item) => {
-              const Icon = item.icon;
-              const iconColor = colorFromKey(colors, item.iconColorKey);
-              const tint = tintFromKey(colors, item.tintKey);
-              return (
-                <Pressable
-                  key={item.id}
-                  style={{ width: "48%", marginBottom: 10, opacity: pending ? 0.55 : 1 }}
-                  disabled={!!pending}
-                  onPress={() => onGridPress(item)}
-                >
-                  <Card style={styles.gridCard}>
-                    <View style={[styles.gridIcon, { backgroundColor: tint }]}>
-                      <Icon color={iconColor} size={20} />
-                    </View>
-                    <Text style={styles.gridLabel}>{item.label}</Text>
-                    <Text style={styles.gridDesc}>{item.desc}</Text>
-                  </Card>
-                </Pressable>
-              );
-            })}
-          </View>
+          <SecurityServiceGridPager
+            items={securityServiceGrid}
+            disabled={!!pending}
+            onPress={onGridPress}
+            colorFromKey={(key) => colorFromKey(colors, key)}
+            tintFromKey={(key) => tintFromKey(colors, key)}
+          />
 
           <SectionHeader title={sec.catalogTitle} subtitle={c.groupCount(securityServiceCatalog.length)} />
           {securityServiceCatalog.map((group) => (

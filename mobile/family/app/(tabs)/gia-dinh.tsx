@@ -38,6 +38,7 @@ import { useI18n } from "@mobile/i18n/useI18n";
 import { formatApptTime, formatCurrency, formatDate, formatExpenseMonthLabel } from "@mobile/i18n/format";
 import { useAuth } from "@mobile/hooks/useAuth";
 import { uploadAvatarFromUri, updateFamilyAvatar } from "@mobile/api/avatars";
+import { resolveHouseholdAvatarUrl } from "@mobile/lib/household-avatar";
 import { toast } from "@mobile/utils/toast";
 
 const FOOD_THUMBS = [
@@ -255,8 +256,12 @@ export default function GiaDinhScreen() {
   const memberCount = members.length;
   const heroMember =
     members.find((m) => m.is_owner) ?? members[0] ?? null;
-  const heroAvatar =
-    family?.avatar_url ?? heroMember?.avatar_url ?? profile?.avatar_url ?? null;
+  const heroAvatar = resolveHouseholdAvatarUrl({
+    profile,
+    family,
+    memberAvatar: heroMember?.avatar_url,
+    isOwner,
+  });
 
   const onFamilyAvatarPick = async (uri: string) => {
     if (!familyId) throw new Error(c.noFamilyYet);

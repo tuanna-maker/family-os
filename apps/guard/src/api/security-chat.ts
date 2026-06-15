@@ -74,13 +74,34 @@ export async function listGuardChatThreads() {
 export async function getResidentChatProfile(residentUserId: string) {
   const parsed = z.string().uuid().parse(residentUserId);
   const { supabase } = await requireUser();
-  const { data, error } = await supabase
+  const { data: profile, error } = await supabase
     .from("profiles")
     .select("full_name, avatar_url")
     .eq("id", parsed)
     .maybeSingle();
   if (error) throw new Error(error.message);
-  return (data ?? { full_name: null, avatar_url: null }) as ResidentChatProfile;
+
+  let familyAvatar: string | null = null;
+  const { data: membership } = await supabase
+    .from("family_members")
+    .select("family_id")
+    .eq("user_id", parsed)
+    .limit(1)
+    .maybeSingle();
+  if (membership?.family_id) {
+    const { data: fam } = await supabase
+      .from("families")
+      .select("avatar_url")
+      .eq("id", membership.family_id)
+      .maybeSingle();
+    familyAvatar = (fam as { avatar_url?: string | null } | null)?.avatar_url ?? null;
+  }
+
+  const row = profile ?? { full_name: null, avatar_url: null };
+  return {
+    full_name: row.full_name,
+    avatar_url: row.avatar_url ?? familyAvatar,
+  } as ResidentChatProfile;
 }
 
 export async function listResidentChatMessages(residentUserId: string) {

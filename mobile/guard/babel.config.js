@@ -14,6 +14,8 @@ module.exports = function (api) {
             "@": "../../apps/guard/src",
             "@guard/api": "../../apps/guard/src/api",
             "@mobile": "./src",
+            "@shared/utils": "../../packages/shared-utils/src",
+            "@shared/utils/security-status-notify": "../../packages/shared-utils/src/security-status-notify.ts",
           },
           extensions: [".tsx", ".ts", ".js", ".json"],
         },

@@ -45,6 +45,7 @@ import { cardShadow, radius } from "@mobile/theme/colors";
 import { useTheme } from "@mobile/theme/themeStore";
 import { useThemedStyles } from "@mobile/theme/useThemedStyles";
 import { useFamilyContext } from "@mobile/hooks/useFamilyContext";
+import { useLayoutInfo } from "@mobile/hooks/useLayoutInfo";
 
 const ACTIVITY_PAGE_SIZE = 5;
 
@@ -208,21 +209,24 @@ function useHomeStyles() {
       backgroundColor: colors.card,
       borderWidth: 1,
       padding: 14,
-      flexDirection: "row" as const,
-      alignItems: "center" as const,
-      gap: 10,
+      gap: 12,
       ...cardShadow(colors),
     },
-    securityMain: { flexDirection: "row" as const, alignItems: "center" as const, gap: 10, flexShrink: 0 },
-    securityIcon: { width: 44, height: 44, borderRadius: radius.lg, alignItems: "center" as const, justifyContent: "center" as const },
+    securityTop: { flexDirection: "row" as const, alignItems: "center" as const, gap: 10 },
+    securityMain: { flexDirection: "row" as const, alignItems: "center" as const, gap: 10, flex: 1, minWidth: 0 },
+    securityIcon: { width: 44, height: 44, borderRadius: radius.lg, alignItems: "center" as const, justifyContent: "center" as const, flexShrink: 0 },
+    securityTextBlock: { flex: 1, minWidth: 0 },
     securityLabel: { fontSize: 14 * fontScale, color: colors.muted },
     securityHeadline: { fontSize: 16 * fontScale, fontWeight: "700" as const },
     securitySub: { fontSize: 12 * fontScale, color: colors.muted, marginTop: 2 },
-    divider: { width: 1, height: 40, backgroundColor: colors.cardBorder },
-    chipScroll: { flexGrow: 0 },
-    chipItem: { flexDirection: "row" as const, alignItems: "center" as const, gap: 8, marginRight: 12 },
+    securityDivider: { height: 1, backgroundColor: colors.cardBorder, marginBottom: 2 },
+    chipScroll: { marginHorizontal: -2, flexGrow: 0 },
+    chipScrollContent: { alignItems: "center" as const, paddingTop: 8, paddingBottom: 6, paddingRight: 4 },
+    chipItem: { flexDirection: "row" as const, alignItems: "center" as const, gap: 8, marginRight: 16 },
+    chipIconWrap: { paddingTop: 6, paddingRight: 6, position: "relative" as const },
     chipIcon: { width: 36, height: 36, borderRadius: radius.md, alignItems: "center" as const, justifyContent: "center" as const },
-    chipLabel: { fontSize: 14 * fontScale, fontWeight: "600" as const, color: colors.foreground, maxWidth: 100 },
+    chipTextBlock: { maxWidth: 140 },
+    chipLabel: { fontSize: 14 * fontScale, fontWeight: "600" as const, color: colors.foreground },
     chipValue: { fontSize: 12 * fontScale },
     chipCount: {
       position: "absolute" as const,
@@ -298,6 +302,7 @@ export default function HomeScreen() {
   const h = s.home;
   const c = s.common;
   const styles = useHomeStyles();
+  const { isLandscape } = useLayoutInfo();
   const { familyId, family } = useFamilyContext();
   const displayName = family?.name ?? c.defaultFamilyName;
   const services = getHomeServices(locale);
@@ -318,14 +323,14 @@ export default function HomeScreen() {
   });
 
   const todayQ = useQuery({
-    queryKey: ["family-today", familyId],
-    queryFn: () => getFamilyToday({ family_id: familyId! }),
+    queryKey: ["family-today", familyId, locale],
+    queryFn: () => getFamilyToday({ family_id: familyId!, locale }),
     enabled: !!familyId,
   });
 
   const securityQ = useQuery({
-    queryKey: ["security-status", familyId],
-    queryFn: () => getSecurityStatus({ family_id: familyId! }),
+    queryKey: ["security-status", familyId, locale],
+    queryFn: () => getSecurityStatus({ family_id: familyId!, locale }),
     enabled: !!familyId,
     staleTime: 45_000,
   });
@@ -406,7 +411,7 @@ export default function HomeScreen() {
         </View>
       </View>
 
-      <View style={styles.heroWrap}>
+      <View style={[styles.heroWrap, isLandscape && { minHeight: 240 }]}>
         <ImageBackground source={SECURITY_HERO} style={{ flex: 1 }} imageStyle={{ opacity: 0.9 }}>
           <LinearGradient
             colors={["#071A3DE6", "#071A3DCC", "#071A3D33"]}
@@ -422,7 +427,7 @@ export default function HomeScreen() {
               <Text style={styles.heroTitle}>{h.heroTitle}</Text>
               <View style={styles.badgeRow}>
                 <FeatureBadge Icon={ShieldCheck} title={h.quickSupport} sub="24/7" />
-                <FeatureBadge Icon={Clock} title={h.quickArrival} sub="5–10 phút" />
+                <FeatureBadge Icon={Clock} title={h.quickArrival} sub={h.quickArrivalSub} />
                 <FeatureBadge Icon={UserCheck} title={h.proTeam} sub={h.proTeamSub} />
               </View>
               <Pressable style={styles.sosBtn} onPress={() => router.push("/(tabs)/bao-an")}>
@@ -456,39 +461,50 @@ export default function HomeScreen() {
         style={[styles.securityCard, { borderColor: securityBorder }]}
         onPress={() => router.push("/(tabs)/bao-an")}
       >
-        <View style={styles.securityMain}>
-          <View style={[styles.securityIcon, { backgroundColor: securityStyle.chip }]}>
-            <ShieldCheck color={securityStyle.text} size={20} />
-            {securityTone !== "success" && (
-              <View
-                style={{
-                  position: "absolute",
-                  top: -2,
-                  right: -2,
-                  width: 10,
-                  height: 10,
-                  borderRadius: 5,
-                  backgroundColor: securityStyle.dot,
-                  borderWidth: 2,
-                  borderColor: colors.card,
-                }}
-              />
-            )}
-          </View>
-          <View>
-            <Text style={styles.securityLabel}>{h.securityStatus}</Text>
-            <Text style={[styles.securityHeadline, { color: securityStyle.headline }]}>{securityHeadline}</Text>
-            <Text style={styles.securitySub}>{securityUpdated}</Text>
+        <View style={styles.securityTop}>
+          <View style={styles.securityMain}>
+            <View style={[styles.securityIcon, { backgroundColor: securityStyle.chip }]}>
+              <ShieldCheck color={securityStyle.text} size={20} />
+              {securityTone !== "success" && (
+                <View
+                  style={{
+                    position: "absolute",
+                    top: -2,
+                    right: -2,
+                    width: 10,
+                    height: 10,
+                    borderRadius: 5,
+                    backgroundColor: securityStyle.dot,
+                    borderWidth: 2,
+                    borderColor: colors.card,
+                  }}
+                />
+              )}
+            </View>
+            <View style={styles.securityTextBlock}>
+              <Text style={styles.securityLabel}>{h.securityStatus}</Text>
+              <Text style={[styles.securityHeadline, { color: securityStyle.headline }]} numberOfLines={2}>
+                {securityHeadline}
+              </Text>
+              <Text style={styles.securitySub} numberOfLines={1}>
+                {securityUpdated}
+              </Text>
+            </View>
           </View>
         </View>
-        <View style={styles.divider} />
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll} contentContainerStyle={{ alignItems: "center" }}>
+        <View style={styles.securityDivider} />
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.chipScroll}
+          contentContainerStyle={styles.chipScrollContent}
+        >
           {securityChips.map((c) => {
             const Icon = SECURITY_CHIP_ICONS[c.key] ?? ShieldCheck;
             const chipStyle = securityToneStyle(colors, c.tone);
             return (
               <View key={c.key} style={styles.chipItem}>
-                <View style={{ position: "relative" }}>
+                <View style={styles.chipIconWrap}>
                   <View style={[styles.chipIcon, { backgroundColor: chipStyle.chip }]}>
                     <Icon color={chipStyle.text} size={16} />
                   </View>
@@ -498,7 +514,7 @@ export default function HomeScreen() {
                     </View>
                   )}
                 </View>
-                <View>
+                <View style={styles.chipTextBlock}>
                   <Text style={styles.chipLabel} numberOfLines={1}>
                     {c.label}
                   </Text>
@@ -513,7 +529,6 @@ export default function HomeScreen() {
             );
           })}
         </ScrollView>
-        <ChevronRight color={colors.muted} size={16} />
       </Pressable>
 
       <Card style={{ marginTop: 16 }}>
@@ -526,7 +541,11 @@ export default function HomeScreen() {
             const iconColor = colorFromKey(colors, svc.colorKey);
             const bg = colorFromKey(colors, svc.bgKey);
             return (
-              <Pressable key={svc.id} style={styles.serviceCell} onPress={() => router.push(svc.href)}>
+              <Pressable
+                key={svc.id}
+                style={[styles.serviceCell, { width: isLandscape ? "16.666%" : "33.33%" }]}
+                onPress={() => router.push(svc.href)}
+              >
                 <View style={[styles.serviceIconBox, { backgroundColor: bg }]}>
                   {svc.id === "sos" ? (
                     <View style={styles.sosCircle}>

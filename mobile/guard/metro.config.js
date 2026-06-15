@@ -61,6 +61,10 @@ config.resolver.alias = {
   "@": path.resolve(monorepoRoot, "apps/guard/src"),
   "@guard/api": path.resolve(monorepoRoot, "apps/guard/src/api"),
   "@mobile": path.resolve(projectRoot, "src"),
+  "@shared/utils/security-status-notify": path.resolve(
+    monorepoRoot,
+    "packages/shared-utils/src/security-status-notify.ts",
+  ),
   "@expo/ui/jetpack-compose": path.resolve(projectRoot, "src/shims/expo-ui-jetpack-compose.tsx"),
   react: resolveReactPkg("react"),
   "react-dom": resolveReactPkg("react-dom"),

@@ -3,6 +3,7 @@ import {
   markOsPushPermissionRequested,
   wasOsPushPermissionRequested,
 } from "@mobile/lib/push-permission-state";
+import { markFamilyChatMessageNotified } from "@mobile/lib/chat-notification-pull";
 import Constants from "expo-constants";
 import { requireUser } from "@shared/supabase/auth";
 import { getSupabase } from "@shared/supabase/get-client";
@@ -87,22 +88,65 @@ async function requestAndroidPostNotifications(): Promise<PushPermissionStatus |
   }
 }
 
+function isRemotePushTrigger(trigger: unknown) {
+  return (
+    !!trigger &&
+    typeof trigger === "object" &&
+    "type" in trigger &&
+    (trigger as { type?: string }).type === "push"
+  );
+}
+
 async function ensureNotificationHandler() {
   if (handlerReady) return;
   try {
     const Notifications = await notificationsModule();
+    const show = {
+      shouldShowAlert: true,
+      shouldPlaySound: true,
+      shouldSetBadge: true,
+      shouldShowBanner: true,
+      shouldShowList: true,
+    } as const;
+    const hide = {
+      shouldShowAlert: false,
+      shouldPlaySound: false,
+      shouldSetBadge: true,
+      shouldShowBanner: false,
+      shouldShowList: false,
+    } as const;
+
     Notifications.setNotificationHandler({
-      handleNotification: async () => ({
-        shouldShowAlert: true,
-        shouldPlaySound: true,
-        shouldSetBadge: true,
-        shouldShowBanner: true,
-        shouldShowList: true,
-      }),
+      handleNotification: async (notification) => {
+        const data = notification.request.content.data as Record<string, unknown>;
+        const chatMessageId = typeof data.chatMessageId === "string" ? data.chatMessageId : null;
+        if (chatMessageId) await markFamilyChatMessageNotified(chatMessageId);
+
+        const isChat =
+          !!chatMessageId ||
+          data.route === "/bao-an/chat" ||
+          data.type === "security.chat";
+        const isRemote = isRemotePushTrigger(notification.request.trigger);
+        // Chỉ ẩn push từ xa khi app mở — local (trigger null) vẫn hiện banner OS.
+        if (isChat && isRemote && AppState.currentState === "active") return hide;
+        return show;
+      },
     });
     handlerReady = true;
   } catch {
     // Native module unavailable.
+  }
+}
+
+/** Đảm bảo handler + kênh Android trước khi hiện thông báo local. */
+export async function bootstrapOsNotifications(app: "family" | "guard" = "family") {
+  await ensureNotificationHandler();
+  if ((await getPushPermissionStatus()) !== "granted") return;
+  try {
+    const Notifications = await notificationsModule();
+    await setupAndroidChannels(Notifications, app);
+  } catch {
+    // Best-effort.
   }
 }
 
@@ -371,14 +415,16 @@ export async function presentLocalNotification(input: {
   body?: string | null;
   data?: Record<string, unknown>;
   channelId?: "default" | "security" | "chat";
+  identifier?: string;
 }) {
   try {
-    await ensureNotificationHandler();
+    await bootstrapOsNotifications("family");
     const Notifications = await notificationsModule();
     const granted = (await Notifications.getPermissionsAsync()).status === "granted";
     if (!granted) return;
 
     await Notifications.scheduleNotificationAsync({
+      identifier: input.identifier,
       content: {
         title: input.title,
         body: input.body ?? undefined,

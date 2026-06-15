@@ -8,6 +8,7 @@ type ChatRow = {
   sender_id: string | null;
   body: string | null;
   message_type: string | null;
+  push_dispatched_at?: string | null;
 };
 
 const LEGACY_AUTO_REPLY =
@@ -28,8 +29,21 @@ function isLegacyAutoReply(row: ChatRow) {
 async function loadMessage(admin: SupabaseClient, messageId: string) {
   const { data, error } = await admin
     .from("security_chat_messages")
-    .select("id,user_id,project_id,sender_role,sender_id,body,message_type")
+    .select("id,user_id,project_id,sender_role,sender_id,body,message_type,push_dispatched_at")
     .eq("id", messageId)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  return data as ChatRow | null;
+}
+
+async function claimPushDispatch(admin: SupabaseClient, messageId: string) {
+  const now = new Date().toISOString();
+  const { data, error } = await admin
+    .from("security_chat_messages")
+    .update({ push_dispatched_at: now })
+    .eq("id", messageId)
+    .is("push_dispatched_at", null)
+    .select("id,user_id,project_id,sender_role,sender_id,body,message_type")
     .maybeSingle();
   if (error) throw new Error(error.message);
   return data as ChatRow | null;
@@ -217,12 +231,25 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: "message_not_found" }), { status: 404 });
     }
 
+    if (row.push_dispatched_at) {
+      return new Response(JSON.stringify({ ok: true, skipped: "already_dispatched" }), {
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
     const allowed = await authorizeCaller(req, admin, row);
     if (!allowed) {
       return new Response(JSON.stringify({ error: "forbidden" }), { status: 403 });
     }
 
-    const result = await dispatchPush(admin, row);
+    const claimed = await claimPushDispatch(admin, messageId);
+    if (!claimed) {
+      return new Response(JSON.stringify({ ok: true, skipped: "already_dispatched" }), {
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    const result = await dispatchPush(admin, claimed);
     return new Response(JSON.stringify(result), {
       headers: { "Content-Type": "application/json" },
     });

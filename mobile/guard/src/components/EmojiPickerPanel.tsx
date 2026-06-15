@@ -1,5 +1,7 @@
-import { FlatList, Pressable, Text, View } from "react-native";
+import { FlatList, Platform, Pressable, Text, View, useWindowDimensions } from "react-native";
 import { CHAT_EMOJIS } from "@mobile/constants/chat-emojis";
+
+const COLS = 8;
 
 type Props = {
   onPick: (emoji: string) => void;
@@ -7,6 +9,9 @@ type Props = {
 };
 
 export function EmojiPickerPanel({ onPick, onClose }: Props) {
+  const { width } = useWindowDimensions();
+  const cellSize = Math.floor((width - 16) / COLS);
+
   return (
     <View className="h-[220px] border-t border-border bg-card">
       <View className="flex-row items-center justify-between px-3.5 py-2">
@@ -18,15 +23,30 @@ export function EmojiPickerPanel({ onPick, onClose }: Props) {
       <FlatList
         data={CHAT_EMOJIS}
         keyExtractor={(item, i) => `${item}-${i}`}
-        numColumns={8}
+        numColumns={COLS}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: 6, paddingBottom: 8 }}
+        contentContainerStyle={{ paddingHorizontal: 8, paddingBottom: 8 }}
         renderItem={({ item }) => (
           <Pressable
-            className="flex-1 max-w-[12.5%] aspect-square items-center justify-center"
             onPress={() => onPick(item)}
+            style={{
+              width: cellSize,
+              height: cellSize,
+              alignItems: "center",
+              justifyContent: "center",
+            }}
           >
-            <Text className="text-[26px]">{item}</Text>
+            <Text
+              style={{
+                fontSize: 26,
+                lineHeight: 30,
+                textAlign: "center",
+                ...(Platform.OS === "android" ? { includeFontPadding: false } : null),
+              }}
+              allowFontScaling={false}
+            >
+              {item}
+            </Text>
           </Pressable>
         )}
       />

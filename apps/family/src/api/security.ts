@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { requireUser } from "@shared/supabase/auth";
-import { firePushDispatch } from "@shared/supabase";
 import { sosDispatchSchema, SOS_SCHEMA_VERSION } from "@/features/security-core/sosSchema";
+import { familyTodayCopy, normalizeHomeLocale, securityCopy, type HomeLocale } from "./home-locale";
 
 export type SecurityRequest = {
   id: string;
@@ -93,8 +93,6 @@ export async function createSosDispatch(data: any) {
       } as never,
     });
 
-    firePushDispatch();
-
     return {
       id: row.id as string,
       ticket_code,
@@ -140,7 +138,6 @@ export async function createSecurityRequest(data: {
     .select("id")
     .single();
   if (error) throw new Error(error.message);
-  firePushDispatch();
   return { id: row.id as string };
 }
 
@@ -305,19 +302,29 @@ export type SecurityStatus = {
 
 const CHIP_DEFS: Array<{
   key: SecurityChip["key"];
-  label: string;
-  okValue: string;
-  types: ReadonlyArray<typeof TYPES[number]>;
+  types: ReadonlyArray<(typeof TYPES)[number]>;
 }> = [
-  { key: "camera", label: "Camera & An ninh", okValue: "Hoạt động", types: ["intrusion"] },
-  { key: "fire", label: "PCCC", okValue: "Bình thường", types: ["fire"] },
-  { key: "elevator", label: "Thang máy", okValue: "Bình thường", types: ["other"] },
+  { key: "camera", types: ["intrusion"] },
+  { key: "fire", types: ["fire"] },
+  { key: "elevator", types: ["other"] },
 ];
 
-export async function getSecurityStatus(data: any) {
+function chipLabels(locale: HomeLocale) {
+  const t = securityCopy(locale);
+  return {
+    camera: { label: t.chipCamera, okValue: t.okActive },
+    fire: { label: t.chipFire, okValue: t.okNormal },
+    elevator: { label: t.chipElevator, okValue: t.okNormal },
+  } as const;
+}
+
+export async function getSecurityStatus(data: { family_id: string; locale?: string }) {
   const { supabase, userId } = await requireUser();
 
         const fid = data.family_id;
+    const locale = normalizeHomeLocale(data.locale);
+    const t = securityCopy(locale);
+    const labels = chipLabels(locale);
     const nowMs = Date.now();
     const STALE_REQ_MS = 24 * 60 * 60 * 1000; // 24h: tránh cảnh báo treo mãi do request cũ không được đóng
 
@@ -378,25 +385,26 @@ export async function getSecurityStatus(data: any) {
 
     const chips: SecurityChip[] = CHIP_DEFS.map((def) => {
       const count = def.types.reduce(
-        (sum, t) => sum + (countByType.get(t) ?? 0),
+        (sum, typ) => sum + (countByType.get(typ) ?? 0),
         0,
       );
+      const meta = labels[def.key];
       // Camera chip also reflects SOS / intrusion alarms
       const effective = def.key === "camera" ? count + sosCount : count;
       if (effective > 0) {
         const tone: SecurityTone = def.key === "fire" ? "emergency" : "warning";
         return {
           key: def.key,
-          label: def.label,
-          value: `${effective} cảnh báo`,
+          label: meta.label,
+          value: t.alertCount(effective),
           tone,
           count: effective,
         };
       }
       return {
         key: def.key,
-        label: def.label,
-        value: def.okValue,
+        label: meta.label,
+        value: meta.okValue,
         tone: "success",
         count: 0,
       };
@@ -411,20 +419,20 @@ export async function getSecurityStatus(data: any) {
       openReqs.length > 0 || elderAlerts.length > 0;
 
     let overall: SecurityTone = "success";
-    let headline = "Tất cả bình thường";
-    let subline = "Không có cảnh báo đang mở";
+    let headline = t.allNormal;
+    let subline = t.noOpenAlerts;
     if (hasEmergency) {
       overall = "emergency";
-      headline = "Cảnh báo khẩn cấp";
+      headline = t.emergency;
       subline = sosCount > 0
-        ? `${sosCount} yêu cầu SOS đang mở`
+        ? t.sosOpen(sosCount)
         : (countByType.get("fire") ?? 0) > 0
-          ? "Báo cháy chưa xử lý"
-          : "Người thân cần hỗ trợ ngay";
+          ? t.fireOpen
+          : t.elderUrgent;
     } else if (hasWarning) {
       overall = "warning";
-      headline = "Có cảnh báo cần xem";
-      subline = `${openReqs.length + elderAlerts.length} mục đang chờ xử lý`;
+      headline = t.hasAlerts;
+      subline = t.pendingItems(openReqs.length + elderAlerts.length);
     }
 
     return {

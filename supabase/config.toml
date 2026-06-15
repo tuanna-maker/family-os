@@ -18,3 +18,9 @@ verify_jwt = true
 
 [functions.dispatch-chat-push]
 verify_jwt = true
+
+[functions.dispatch-notification-push]
+verify_jwt = false
+
+[functions.dispatch-security-request-push]
+verify_jwt = false

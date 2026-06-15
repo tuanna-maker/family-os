@@ -87,35 +87,27 @@ function isOnResidentThread(pathname: string | null, residentUserId: string) {
 
 
 function shouldShowGuardChatBanner(pathname: string | null, residentUserId: string) {
-
-  const appActive = AppState.currentState === "active";
-
-  if (!appActive) return true;
-
-  return !isOnResidentThread(pathname, residentUserId);
-
+  if (isOnResidentThread(pathname, residentUserId) && AppState.currentState === "active") {
+    return false;
+  }
+  return true;
 }
 
 
 
 async function notifyGuardResidentMessage(row: SecurityChatMessage, residentUserId: string) {
-
   if (!(await shouldNotifyGuardChatMessage(row.id))) return;
+  // Nền / thoát app: chỉ nhận qua dispatch-chat-push — tránh trùng banner.
+  if (AppState.currentState !== "active") return;
 
   await markGuardChatMessageNotified(row.id);
-
   await presentLocalNotification({
-
     title: "Tin nhắn cư dân",
-
     body: chatMessagePreview(row),
-
     channelId: "chat",
-
-    data: { route: "/chat", residentId: residentUserId },
-
+    identifier: `chat-${row.id}`,
+    data: { route: "/chat", residentId: residentUserId, chatMessageId: row.id },
   });
-
 }
 
 
@@ -289,13 +281,8 @@ export function useGuardChatThreadRealtime(residentUserId: string | undefined) {
 
 
           if (row.sender_role !== "resident") return;
-
           if (!notificationsEnabled) return;
-
-          if (!shouldShowGuardChatBanner(pathname, residentUserId)) return;
-
-          void notifyGuardResidentMessage(row, residentUserId);
-
+          // Chỉ đồng bộ UI — thông báo do inbox realtime xử lý.
         },
 
       ),

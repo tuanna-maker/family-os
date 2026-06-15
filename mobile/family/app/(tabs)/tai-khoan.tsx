@@ -21,6 +21,7 @@ import { useAppPrefs } from "@mobile/hooks/useAppPrefs";
 import { useI18n } from "@mobile/i18n/useI18n";
 import { getMyContext } from "@shared/supabase/auth";
 import { uploadAvatarFromUri, updateProfileAvatar } from "@mobile/api/avatars";
+import { resolveHouseholdAvatarUrl } from "@mobile/lib/household-avatar";
 import { formatMemberName } from "@mobile/utils/displayName";
 import { toast } from "@mobile/utils/toast";
 import { showAppConfirm } from "@mobile/components/AppAlert";
@@ -56,6 +57,7 @@ export default function TaiKhoanScreen() {
   }, [profile?.full_name, user?.email, isOwner]);
 
   const avatarInitial = formatMemberName(profile?.full_name ?? user?.email ?? "T", { appendOwner: false });
+  const displayAvatarUrl = resolveHouseholdAvatarUrl({ profile, family, isOwner });
 
   const onUploadAvatar = async (uri: string) => {
     const url = await uploadAvatarFromUri(uri, "avatar");
@@ -109,7 +111,7 @@ export default function TaiKhoanScreen() {
 
       <Card style={styles.profileCard}>
         <AvatarUploadButton
-          uri={profile?.avatar_url ?? null}
+          uri={displayAvatarUrl}
           fallbackInitial={avatarInitial}
           size={64}
           onPick={onUploadAvatar}

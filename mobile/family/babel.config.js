@@ -9,6 +9,7 @@ module.exports = function (api) {
           root: ["."],
           alias: {
             "@": "../../apps/family/src",
+            "@mobile/api/avatars": "./src/api/avatars",
             "@mobile/api": "../../apps/family/src/api",
             "@mobile": "./src",
           },

@@ -173,6 +173,9 @@ export const securityFormsVi = {
     photoPermission: "Cần quyền truy cập thư viện ảnh",
     fileTooLarge: (name: string) => `${name}: vượt 10MB`,
     attachFailed: "Không ghi nhận được tệp đính kèm",
+    sentWithoutAttach: "Yêu cầu đã gửi nhưng ảnh đính kèm chưa tải lên được.",
+    partialAttach: (ok: number, total: number) =>
+      `Yêu cầu đã gửi · đính kèm ${ok}/${total} ảnh`,
     sent: (title: string) => `Đã gửi: ${title}`,
     sentSub: (mins: number) => `Bảo an phản hồi trong ~${mins} phút`,
   },
@@ -432,6 +435,9 @@ export const securityFormsEn = {
     photoPermission: "Photo library access is required",
     fileTooLarge: (name: string) => `${name}: exceeds 10MB`,
     attachFailed: "Could not save attachments",
+    sentWithoutAttach: "Request sent, but photos could not be uploaded.",
+    partialAttach: (ok: number, total: number) =>
+      `Request sent · ${ok}/${total} photos attached`,
     sent: (title: string) => `Sent: ${title}`,
     sentSub: (mins: number) => `Security will respond in ~${mins} minutes`,
   },

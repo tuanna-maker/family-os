@@ -77,13 +77,9 @@ function subscribeChannel(
 
 
 function shouldShowFamilyChatBanner(pathname: string | null) {
-
   const onChatScreen = pathname?.includes("bao-an/chat");
-
-  const appActive = AppState.currentState === "active";
-
-  return !(onChatScreen && appActive);
-
+  if (onChatScreen && AppState.currentState === "active") return false;
+  return true;
 }
 
 
@@ -101,6 +97,8 @@ async function notifyFamilyGuardMessage(row: SecurityChatMessage) {
     body: chatMessagePreview(row),
 
     channelId: "chat",
+
+    identifier: `chat-${row.id}`,
 
     data: { route: "/bao-an/chat", chatMessageId: row.id },
 

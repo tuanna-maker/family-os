@@ -13,6 +13,7 @@ import { ThemeController } from "@mobile/theme/ThemeController";
 import { ensureSupabase, getSupabaseInitError } from "@mobile/lib/supabase";
 import { usePushNotifications } from "@mobile/hooks/usePushNotifications";
 import { useGuardChatInboxRealtime } from "@mobile/hooks/useGuardChatRealtime";
+import { GuardLocaleBootstrap } from "@mobile/i18n/GuardLocaleBootstrap";
 import "../global.css";
 
 function PushBootstrap() {
@@ -53,6 +54,7 @@ export default function RootLayout() {
                   <GuardPrefsProvider>
                   <AppAlertProvider>
                   <PushBootstrap />
+                  <GuardLocaleBootstrap />
                   <GuardChatRealtimeBootstrap />
                   <Stack screenOptions={{ headerShown: false }}>
                     <Stack.Screen name="index" />
@@ -64,6 +66,7 @@ export default function RootLayout() {
                     <Stack.Screen name="incident" />
                     <Stack.Screen name="qr-scanner" />
                     <Stack.Screen name="requests" />
+                    <Stack.Screen name="request/[id]" />
                     <Stack.Screen name="chat" />
                     <Stack.Screen name="chat/[residentId]" />
                     <Stack.Screen name="account-profile" />

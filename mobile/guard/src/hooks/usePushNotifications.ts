@@ -8,6 +8,7 @@ import { useGuardPrefs } from "@mobile/hooks/useGuardPrefs";
 import { usePushPermissionResync } from "@mobile/hooks/usePushPermissionResync";
 import {
   clearGuardBackgroundCredentials,
+  markGuardChatMessageNotified,
   markGuardPlatformNotifSeen,
   markGuardSecurityRequestSeen,
   persistGuardBackgroundCredentials,
@@ -23,6 +24,7 @@ import {
 } from "@mobile/lib/stos-monitor-native";
 import {
   getPushPermissionStatus,
+  bootstrapOsNotifications,
   presentLocalNotification,
   promptPushPermissionOnFirstLaunch,
   registerNativePushToken,
@@ -49,9 +51,7 @@ async function syncGuardBackgroundDelivery(
   }
   await persistGuardBackgroundCredentials(accessToken, userId);
   startNativeBackgroundMonitor(accessToken, userId, "guard");
-  if (Platform.OS === "ios") {
-    await registerGuardBackgroundNotificationTask();
-  }
+  await registerGuardBackgroundNotificationTask();
 }
 
 export function usePushNotifications() {
@@ -64,6 +64,10 @@ export function usePushNotifications() {
   pushEnabledRef.current = notificationsEnabled;
 
   usePushPermissionResync(notificationsEnabled, setNotificationsEnabled);
+
+  useEffect(() => {
+    void bootstrapOsNotifications();
+  }, []);
 
   useEffect(() => {
     if (!prefsReady || authLoading || !session || bootstrapDone.current) return;
@@ -134,14 +138,15 @@ export function usePushNotifications() {
 
   useEffect(() => {
     if (!session || !notificationsEnabled) return;
-    const onActive = () => {
+    const onBackgroundTick = () => {
+      if (AppState.currentState === "active") return;
       void pullAndPresentGuardNotifications();
     };
-    onActive();
+    onBackgroundTick();
     const sub = AppState.addEventListener("change", (state) => {
-      if (state === "active") onActive();
+      if (state !== "active") onBackgroundTick();
     });
-    const timer = setInterval(onActive, FOREGROUND_POLL_MS);
+    const timer = setInterval(onBackgroundTick, FOREGROUND_POLL_MS);
     return () => {
       sub.remove();
       clearInterval(timer);
@@ -157,11 +162,27 @@ export function usePushNotifications() {
     void (async () => {
       try {
         const Notifications = await import("expo-notifications");
+        const last = await Notifications.getLastNotificationResponseAsync();
+        const lastData = last?.notification.request.content.data as { chatMessageId?: string };
+        if (lastData?.chatMessageId) void markGuardChatMessageNotified(lastData.chatMessageId);
+
+        const sub1 = Notifications.addNotificationReceivedListener((notification) => {
+          const data = notification.request.content.data as {
+            chatMessageId?: string;
+            requestId?: string;
+          };
+          if (data.chatMessageId) void markGuardChatMessageNotified(data.chatMessageId);
+          if (data.requestId) void markGuardSecurityRequestSeen(data.requestId);
+        });
         const sub2 = Notifications.addNotificationResponseReceivedListener((response) => {
           const data = response.notification.request.content.data as {
             route?: string;
             residentId?: string;
+            chatMessageId?: string;
+            requestId?: string;
           };
+          if (data.chatMessageId) void markGuardChatMessageNotified(data.chatMessageId);
+          if (data.requestId) void markGuardSecurityRequestSeen(data.requestId);
           if (data?.route === "/chat" && data.residentId) {
             router.push({
               pathname: "/chat/[residentId]",
@@ -172,6 +193,7 @@ export function usePushNotifications() {
           router.push("/(tabs)/notifications");
         });
         removeListeners = () => {
+          sub1.remove();
           sub2.remove();
         };
       } catch {
@@ -254,15 +276,7 @@ export function usePushNotifications() {
           );
           const row = payload.new as import("@guard/api/security").SecurityRequest;
           if (row?.id) void markGuardSecurityRequestSeen(row.id);
-          if (!pushEnabledRef.current) return;
-          if ((await getPushPermissionStatus()) !== "granted") return;
-          if (row.status !== "open") return;
-          const isSos = row.request_type === "sos" || row.request_type === "fire";
-          void presentLocalNotification({
-            title: isSos ? "SOS / Yêu cầu khẩn" : "Yêu cầu cư dân mới",
-            body: "Có yêu cầu mới cần xử lý",
-            channelId: "security",
-          });
+          // OS push do dispatch-security-request-push (webhook) — tránh banner trùng với local.
         },
       )
       .on(

@@ -66,6 +66,15 @@ export const REQUEST_TYPE_LABEL: Record<string, string> = {
   intrusion: "Người lạ / xâm nhập",
   noise: "Tiếng ồn",
   package: "Nhận hàng hộ",
+  shipping: "Gửi hàng đi",
+  delivery: "Giao tận căn hộ",
+  home_care: "Chăm sóc tại nhà",
+  escort: "Đưa đón căn hộ",
+  remote_freight: "Chuyển hàng từ xa",
+  freight_lift: "Thanh hàng / người hỗ trợ",
+  guard_handle: "Bảo vệ xử lý hộ",
+  hourly_guard: "Bảo vệ theo giờ",
+  custom_guard: "Bảo vệ theo nhu cầu",
   other: "Khác",
 };
 

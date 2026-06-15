@@ -17,10 +17,12 @@ import {
   pullAndPresentFamilyNotifications,
 } from "@mobile/lib/notification-pull";
 import {
+  shouldNotifyFamilyChatMessage,
   markFamilyChatMessageNotified,
   pullAndPresentFamilyChatNotifications,
-  shouldNotifyFamilyChatMessage,
 } from "@mobile/lib/chat-notification-pull";
+import { presentFamilyNotificationRow } from "@mobile/lib/present-family-notification";
+import { patchFamilyNotificationRow } from "@mobile/hooks/useFamilyNotificationInbox";
 import {
   registerFamilyBackgroundNotificationTask,
   unregisterFamilyBackgroundNotificationTask,
@@ -32,6 +34,7 @@ import {
 import {
   getPushPermissionStatus,
   isPushEnvironmentSupported,
+  bootstrapOsNotifications,
   presentLocalNotification,
   promptPushPermissionOnFirstLaunch,
   registerNativePushToken,
@@ -68,9 +71,7 @@ async function syncFamilyBackgroundDelivery(
   }
   await persistFamilyBackgroundCredentials(accessToken, userId);
   startNativeBackgroundMonitor(accessToken, userId, "family");
-  if (Platform.OS === "ios") {
-    await registerFamilyBackgroundNotificationTask();
-  }
+  await registerFamilyBackgroundNotificationTask();
 }
 
 async function maybePresentOs(
@@ -85,6 +86,7 @@ async function maybePresentOs(
     title: input.title,
     body: input.body,
     channelId: notificationChannelForType(input.type),
+    data: input.type ? { type: input.type } : undefined,
   });
 }
 
@@ -98,6 +100,10 @@ export function usePushNotifications() {
   pushEnabledRef.current = pushEnabled;
 
   usePushPermissionResync(pushEnabled, setPushEnabled);
+
+  useEffect(() => {
+    void bootstrapOsNotifications("family");
+  }, []);
 
   useEffect(() => {
     if (!prefsReady || authLoading || !session || bootstrapDone.current) return;
@@ -178,21 +184,20 @@ export function usePushNotifications() {
   useEffect(() => {
     if (!session || !pushEnabled) return;
 
-    const onActive = () => {
-      void syncLocalReminderSchedule(true);
-      void Promise.all([
-        pullAndPresentFamilyNotifications(),
-        pullAndPresentFamilyChatNotifications(),
-      ]).then(([showed]) => {
-        if (showed) invalidateInbox(qc);
-      });
+    const tick = async () => {
+      if (AppState.currentState === "active") {
+        void syncLocalReminderSchedule(true);
+      }
+      const showedNotif = await pullAndPresentFamilyNotifications();
+      const showedChat = await pullAndPresentFamilyChatNotifications();
+      if (showedNotif || showedChat) invalidateInbox(qc);
     };
 
-    onActive();
+    void tick();
     const sub = AppState.addEventListener("change", (state) => {
-      if (state === "active") onActive();
+      if (state === "active" || state === "background") void tick();
     });
-    const timer = setInterval(onActive, FOREGROUND_POLL_MS);
+    const timer = setInterval(tick, FOREGROUND_POLL_MS);
     return () => {
       sub.remove();
       clearInterval(timer);
@@ -208,14 +213,22 @@ export function usePushNotifications() {
     void (async () => {
       try {
         const Notifications = await import("expo-notifications");
-        const sub1 = Notifications.addNotificationReceivedListener(() => {
+        const last = await Notifications.getLastNotificationResponseAsync();
+        const lastData = last?.notification.request.content.data as { chatMessageId?: string };
+        if (lastData?.chatMessageId) await markFamilyChatMessageNotified(lastData.chatMessageId);
+
+        const sub1 = Notifications.addNotificationReceivedListener((notification) => {
           invalidateInbox(qc);
+          const data = notification.request.content.data as { chatMessageId?: string };
+          if (data.chatMessageId) void markFamilyChatMessageNotified(data.chatMessageId);
         });
         const sub2 = Notifications.addNotificationResponseReceivedListener((response) => {
           invalidateInbox(qc);
           const data = response.notification.request.content.data as {
             route?: string;
+            chatMessageId?: string;
           };
+          if (data.chatMessageId) void markFamilyChatMessageNotified(data.chatMessageId);
           if (data?.route === "/bao-an/chat") {
             router.push("/bao-an/chat");
             return;
@@ -247,30 +260,38 @@ export function usePushNotifications() {
           void qc.invalidateQueries({ queryKey: ["notifications-all"] });
 
           const row = payload.new as {
+            id?: string;
             type?: string;
             title?: string;
             body?: string | null;
+            ref_id?: string | null;
           };
           if (row.type === "security.chat") {
-            if (!pushEnabledRef.current) return;
             void (async () => {
-              const refId = (row as { ref_id?: string }).ref_id;
+              if (!pushEnabledRef.current) return;
+              const refId = row.ref_id ?? undefined;
               if (refId && !(await shouldNotifyFamilyChatMessage(refId))) return;
               if (refId) await markFamilyChatMessageNotified(refId);
               await presentLocalNotification({
                 title: row.title ?? "Đội bảo an",
                 body: row.body,
                 channelId: "chat",
-                data: { route: "/bao-an/chat", notificationId: row.id, type: row.type },
+                identifier: refId ? `chat-${refId}` : undefined,
+                data: { route: "/bao-an/chat", chatMessageId: refId, type: row.type },
               });
             })();
             return;
           }
-          void maybePresentOs(pushEnabledRef.current, {
-            type: row.type,
-            title: row.title ?? "Thông báo mới",
-            body: row.body,
-          });
+          void (async () => {
+            if (!pushEnabledRef.current) return;
+            await presentFamilyNotificationRow({
+              id: row.id ?? `rt-${Date.now()}`,
+              type: row.type,
+              ref_id: row.ref_id,
+              title: row.title,
+              body: row.body,
+            });
+          })();
         },
       )
       .on(
@@ -281,7 +302,26 @@ export function usePushNotifications() {
           table: "notifications",
           filter: `user_id=eq.${userId}`,
         },
-        () => invalidateInbox(qc),
+        (payload) => {
+          const row = payload.new as {
+            id?: string;
+            read_at?: string | null;
+            dismissed_at?: string | null;
+            title?: string | null;
+            body?: string | null;
+            type?: string;
+          };
+          if (row.id) {
+            patchFamilyNotificationRow(qc, {
+              id: row.id,
+              read_at: row.read_at,
+              dismissed_at: row.dismissed_at ?? undefined,
+              title: row.title ?? undefined,
+              body: row.body,
+              type: row.type,
+            });
+          }
+        },
       )
       .on(
         "postgres_changes",
@@ -292,18 +332,10 @@ export function usePushNotifications() {
           filter: `requester_id=eq.${userId}`,
         },
         (payload) => {
-          const row = payload.new as { status?: string; request_type?: string } | undefined;
+          const row = payload.new as { id?: string; status?: string; request_type?: string; apartment?: string | null; building?: string | null; payload?: Record<string, unknown> };
           if (payload.eventType === "UPDATE" && row?.status) {
-            void maybePresentOs(pushEnabledRef.current, {
-              type: "security.status_changed",
-              title: "Cập nhật yêu cầu bảo an",
-              body:
-                row.status === "in_progress"
-                  ? "Bảo an đang xử lý yêu cầu của bạn"
-                  : row.status === "resolved"
-                    ? "Yêu cầu đã được giải quyết"
-                    : "Trạng thái yêu cầu đã thay đổi",
-            });
+            void qc.invalidateQueries({ queryKey: ["security-requests"] });
+            void qc.invalidateQueries({ queryKey: ["security-requests", "preview"] });
           }
         },
       )

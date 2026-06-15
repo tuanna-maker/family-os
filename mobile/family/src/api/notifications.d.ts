@@ -6,6 +6,7 @@ export type NotificationRow = {
   body: string | null;
   due_at: string | null;
   read_at: string | null;
+  dismissed_at?: string | null;
   created_at: string;
 };
 

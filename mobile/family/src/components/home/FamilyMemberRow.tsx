@@ -7,6 +7,7 @@ import { useTheme } from "@mobile/theme/themeStore";
 import { useThemedStyles } from "@mobile/theme/useThemedStyles";
 import { radius } from "@mobile/theme/colors";
 import { colorFromKey, getKindMeta, statusToneStyle } from "./homeVisuals";
+import { memberRoleLabel } from "@mobile/utils/displayName";
 
 export function FamilyMemberRow({ member }: { member: FamilyTodayMember }) {
   const { colors } = useTheme();
@@ -64,6 +65,7 @@ export function FamilyMemberRow({ member }: { member: FamilyTodayMember }) {
     .slice(-2)
     .join("")
     .toUpperCase();
+  const roleLabel = memberRoleLabel(member.role, locale) ?? member.role ?? meta.label;
   const dueLabel = member.due_at
     ? new Date(member.due_at).toLocaleTimeString(localeTag(locale), { hour: "2-digit", minute: "2-digit" })
     : null;
@@ -91,7 +93,7 @@ export function FamilyMemberRow({ member }: { member: FamilyTodayMember }) {
             {member.name}
           </Text>
           <Text style={styles.role} numberOfLines={1}>
-            · {member.role ?? meta.label}
+            · {roleLabel}
           </Text>
         </View>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" }}>

@@ -13,11 +13,16 @@ import { countGuardChatUnread, listGuardChatThreads } from "@guard/api/security-
 import { getActiveShift } from "@guard/api/guard-shifts";
 import { initialsFromName, shiftLabel, shiftTimeRange } from "@mobile/utils/guardFormat";
 import { useTabScrollPadding } from "@mobile/hooks/useTabScrollPadding";
+import { useLayoutInfo } from "@mobile/hooks/useLayoutInfo";
 import { GuardHeaderActions } from "@mobile/components/GuardHeaderActions";
+import { LandscapeContent } from "@mobile/components/LandscapeContent";
 export default function DashboardScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const tabPad = useTabScrollPadding();
+  const { isLandscape } = useLayoutInfo();
+  const actionWidth = isLandscape ? "23%" : "48%";
+  const actionMinHeight = isLandscape ? 110 : 130;
   const qc = useQueryClient();
   const { user } = useAuth();
   const { badgeCount } = useGuardNotifications();
@@ -86,7 +91,11 @@ export default function DashboardScreen() {
   };
 
   return (
-    <ScrollView style={{ flex: 1 }} contentContainerStyle={tabPad}>
+    <ScrollView
+      style={{ flex: 1 }}
+      contentContainerStyle={[tabPad, isLandscape ? { alignItems: "center" as const } : null]}
+    >
+      <LandscapeContent>
       <View
         className="px-5 pb-4 flex-row items-start justify-between bg-background"
         style={{ paddingTop: Math.max(insets.top + 12, 48) }}
@@ -152,10 +161,9 @@ export default function DashboardScreen() {
 
       <View className="px-5 mt-2 flex-row flex-wrap justify-between">
         <TouchableOpacity
-          className="w-[48%] mb-4"
+          style={{ width: actionWidth, marginBottom: 16, opacity: canCheckIn ? 1 : 0.42 }}
           activeOpacity={canCheckIn ? 0.9 : 1}
           onPress={handleCheckInPress}
-          style={{ opacity: canCheckIn ? 1 : 0.42 }}
         >
           <LinearGradient
             colors={canCheckIn ? ["#22C55E", "#16A34A"] : ["#6B7280", "#4B5563"]}
@@ -163,7 +171,7 @@ export default function DashboardScreen() {
               borderRadius: 24,
               padding: 16,
               alignItems: "center",
-              minHeight: 130,
+              minHeight: actionMinHeight,
               justifyContent: "center",
             }}
           >
@@ -178,10 +186,9 @@ export default function DashboardScreen() {
         </TouchableOpacity>
 
         <TouchableOpacity
-          className="w-[48%] mb-4"
+          style={{ width: actionWidth, marginBottom: 16, opacity: canCheckOut ? 1 : 0.42 }}
           activeOpacity={canCheckOut ? 0.9 : 1}
           onPress={handleCheckOutPress}
-          style={{ opacity: canCheckOut ? 1 : 0.42 }}
         >
           <LinearGradient
             colors={canCheckOut ? ["#F43F5E", "#E11D48"] : ["#6B7280", "#4B5563"]}
@@ -189,7 +196,7 @@ export default function DashboardScreen() {
               borderRadius: 24,
               padding: 16,
               alignItems: "center",
-              minHeight: 130,
+              minHeight: actionMinHeight,
               justifyContent: "center",
             }}
           >
@@ -204,7 +211,7 @@ export default function DashboardScreen() {
         </TouchableOpacity>
 
         <TouchableOpacity
-          className="w-[48%] mb-4"
+          style={{ width: actionWidth, marginBottom: 16 }}
           activeOpacity={0.9}
           onPress={() => router.push("/(tabs)/patrol")}
         >
@@ -214,7 +221,7 @@ export default function DashboardScreen() {
                 borderRadius: 24,
                 padding: 16,
                 alignItems: "center",
-                minHeight: 130,
+                minHeight: actionMinHeight,
                 justifyContent: "center",
               }}
             >
@@ -227,7 +234,7 @@ export default function DashboardScreen() {
         </TouchableOpacity>
 
         <TouchableOpacity
-          className="w-[48%] mb-4"
+          style={{ width: actionWidth, marginBottom: 16 }}
           activeOpacity={0.9}
           onPress={() => router.push("/incident")}
         >
@@ -237,7 +244,7 @@ export default function DashboardScreen() {
                 borderRadius: 24,
                 padding: 16,
                 alignItems: "center",
-                minHeight: 130,
+                minHeight: actionMinHeight,
                 justifyContent: "center",
               }}
             >
@@ -311,6 +318,7 @@ export default function DashboardScreen() {
             </LinearGradient>
         </TouchableOpacity>
       </View>
+      </LandscapeContent>
     </ScrollView>
   );
 }

@@ -35,8 +35,17 @@ config.resolver.extraNodeModules = {
 };
 config.resolver.alias = {
   "@": path.resolve(monorepoRoot, "apps/family/src"),
+  "@mobile/api/avatars": path.resolve(projectRoot, "src/api/avatars.ts"),
   "@mobile/api": path.resolve(monorepoRoot, "apps/family/src/api"),
   "@mobile": path.resolve(projectRoot, "src"),
+  "@shared/utils/security-status-notify": path.resolve(
+    monorepoRoot,
+    "packages/shared-utils/src/security-status-notify.ts",
+  ),
+  "@shared/supabase/profile-locale": path.resolve(
+    monorepoRoot,
+    "packages/shared-supabase/src/profile-locale.ts",
+  ),
   react: path.resolve(monorepoModules, "react"),
   "react-native": path.resolve(monorepoModules, "react-native"),
   "expo-router/entry": path.resolve(monorepoModules, "expo-router/entry.js"),

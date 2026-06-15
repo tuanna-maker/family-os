@@ -3,6 +3,7 @@ import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import { BlurView } from "expo-blur";
 import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useLayoutInfo } from "@mobile/hooks/useLayoutInfo";
 import { radius } from "@mobile/theme/colors";
 import { useTheme } from "@mobile/theme/themeStore";
 import {
@@ -18,19 +19,29 @@ import { useGuardNotifications } from "@mobile/hooks/useGuardNotifications";
 export function GuardTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
   const { colors, theme } = useTheme();
+  const { isLandscape, contentMaxWidth } = useLayoutInfo();
   const { badgeCount } = useGuardNotifications();
   const isDark = theme === "dark";
   const bottomPad = Math.max(insets.bottom, TAB_BAR_FLOAT_MARGIN) + TAB_BAR_BOTTOM_OFFSET;
   const { overlay, androidSolid, border: borderColor } = tabBarGlassColors(isDark);
 
   return (
-    <View style={[styles.outer, { paddingBottom: bottomPad }]} pointerEvents="box-none">
+    <View
+      style={[
+        styles.outer,
+        { paddingBottom: bottomPad },
+        isLandscape ? { alignItems: "center" as const } : null,
+      ]}
+      pointerEvents="box-none"
+    >
       <View
         style={[
           styles.shell,
           {
             borderColor,
             backgroundColor: Platform.OS === "ios" ? "transparent" : androidSolid,
+            maxWidth: isLandscape ? contentMaxWidth : undefined,
+            width: "100%" as const,
             ...Platform.select({
               ios: {
                 shadowColor: "#000",

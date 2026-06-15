@@ -130,8 +130,9 @@ async function getJsonArray(
 type LocalAlert = {
   title: string;
   body?: string;
-  channelId: "default" | "security";
+  channelId: "default" | "security" | "chat";
   id: string;
+  kind: "security" | "platform" | "chat";
   data?: Record<string, unknown>;
 };
 
@@ -198,7 +199,7 @@ async function pollSecurityRequests(
     const place = [row.apartment, row.building].filter(Boolean).join(" · ");
     const title = type === "sos" || type === "fire" ? "SOS / Yêu cầu khẩn" : "Yêu cầu cư dân mới";
     const body = place ? `${place} — cần xử lý` : "Có yêu cầu mới cần xử lý";
-    alerts.push({ title, body, channelId: "security", id });
+    alerts.push({ title, body, channelId: "security", id, kind: "security" });
     seen.add(id);
   }
   if (alerts.length > 0) await saveSeenSet(STATE_CREDS.seenSecurityIds, seen);
@@ -246,6 +247,7 @@ async function pollPlatformNotifications(
       title: String(row.title ?? "Thông báo mới"),
       body: row.body ? String(row.body) : undefined,
       channelId: topic.startsWith("sos.") || topic.startsWith("security") ? "security" : "default",
+      kind: "platform",
     });
     seen.add(id);
   }
@@ -291,6 +293,7 @@ async function pollResidentChatMessages(
       title: "Tin nhắn cư dân",
       body: chatPreviewBody(row),
       channelId: "chat",
+      kind: "chat",
       data: { route: "/chat", residentId },
     });
     seen.add(id);
@@ -299,7 +302,7 @@ async function pollResidentChatMessages(
   return alerts;
 }
 
-/** Poll Supabase — fallback khi realtime tạm ngắt (không invalidate inbox). */
+/** Poll Supabase — fallback SOS / platform (chat do dispatch-chat-push, không poll trùng). */
 export async function pullAndPresentGuardNotifications(): Promise<boolean> {
   const creds = await loadCredentials();
   if (!creds) return false;
@@ -312,12 +315,17 @@ export async function pullAndPresentGuardNotifications(): Promise<boolean> {
     creds.token,
     creds.userId,
   );
-  const chatAlerts = await pollResidentChatMessages(creds.url, creds.anon, creds.token);
-  const all = [...securityAlerts, ...platformAlerts, ...chatAlerts];
+  const all = [...securityAlerts, ...platformAlerts];
   if (all.length === 0) return false;
 
   for (const alert of all) {
-    await presentLocalNotification(alert);
+    await presentLocalNotification({
+      title: alert.title,
+      body: alert.body,
+      channelId: alert.channelId,
+      identifier: `${alert.kind}-${alert.id}`,
+      data: alert.data,
+    });
   }
   return true;
 }

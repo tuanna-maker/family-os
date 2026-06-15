@@ -1,6 +1,5 @@
 import { z } from "zod";
 import { requireUser } from "@shared/supabase/auth";
-import { firePushDispatch } from "@shared/supabase";
 import { resolveResidentScope } from "@/lib/resident-scope";
 
 function ticketCode(prefix: string) {
@@ -35,7 +34,7 @@ async function insertServiceRequest(
     .select("id, created_at")
     .single();
   if (error) throw new Error(error.message);
-  firePushDispatch();
+  // Push OS: Database webhook → dispatch-security-request-push (không gọi thêm từ client — tránh trùng).
   return {
     id: row.id as string,
     ticket_code: (payload.ticket_code as string) ?? null,

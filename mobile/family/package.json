@@ -7,13 +7,7 @@
     "autolinking": {
       "exclude": [
         "expo-status-bar"
-      ],
-      "android": {
-        "exclude": [
-          "expo-background-fetch",
-          "expo-task-manager"
-        ]
-      }
+      ]
     }
   },
   "scripts": {

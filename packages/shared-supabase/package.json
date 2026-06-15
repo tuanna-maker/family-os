@@ -3,13 +3,14 @@
   "version": "0.0.1",
   "private": true,
   "type": "module",
-  "exports": {
+    "exports": {
     ".": "./src/index.ts",
     "./client": "./src/client.ts",
     "./auth": "./src/auth.ts",
     "./types": "./src/types.ts",
     "./create-client": "./src/create-client.ts",
-    "./get-client": "./src/get-client.ts"
+    "./get-client": "./src/get-client.ts",
+    "./profile-locale": "./src/profile-locale.ts"
   },
   "dependencies": {
     "@capacitor/preferences": "^6.0.0",

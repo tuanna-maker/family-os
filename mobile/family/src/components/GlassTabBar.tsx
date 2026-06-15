@@ -4,6 +4,7 @@ import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useLayoutInfo } from "@mobile/hooks/useLayoutInfo";
 import { radius } from "@mobile/theme/colors";
 import { useTheme } from "@mobile/theme/themeStore";
 import {
@@ -43,6 +44,7 @@ function GlassBackground({
 export function GlassTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
   const { colors, theme } = useTheme();
+  const { isLandscape, contentMaxWidth } = useLayoutInfo();
   const isDark = theme === "dark";
   const bottomPad = Math.max(insets.bottom, TAB_BAR_FLOAT_MARGIN) + TAB_BAR_BOTTOM_OFFSET;
   const glass = tabBarGlassColors(isDark);
@@ -71,8 +73,14 @@ export function GlassTabBar({ state, descriptors, navigation }: BottomTabBarProp
         <View style={[StyleSheet.absoluteFillObject, { backgroundColor: frostOverlay }]} />
       </View>
 
-      <View style={[styles.outer, { paddingBottom: bottomPad }]}>
-        <View style={[styles.shell, { borderColor, backgroundColor: shellOverlay }]}>
+      <View
+        style={[
+          styles.outer,
+          { paddingBottom: bottomPad },
+          isLandscape ? { alignItems: "center" as const } : null,
+        ]}
+      >
+        <View style={[styles.shell, { borderColor, backgroundColor: shellOverlay, maxWidth: isLandscape ? contentMaxWidth : undefined, width: "100%" as const }]}>
           <View style={styles.blurClip} pointerEvents="none">
             <GlassBackground
               isDark={isDark}

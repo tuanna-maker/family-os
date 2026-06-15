@@ -1,11 +1,13 @@
 import React from "react";
-import { View, Text, ScrollView, ActivityIndicator } from "react-native";
-import { useQuery } from "@tanstack/react-query";
+import { View, Text, ScrollView } from "react-native";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { SubHeader } from "@mobile/components/SubHeader";
+import { AvatarUploadButton } from "@mobile/components/AvatarUploadButton";
+import { showAppAlert } from "@mobile/components/AppAlert";
 import { useAuth } from "@mobile/hooks/useAuth";
 import { getMyContext } from "@guard/api/auth";
+import { uploadAvatarFromUri, updateProfileAvatar } from "@mobile/api/avatars";
 import { initialsFromName } from "@mobile/utils/guardFormat";
-import { useTheme } from "@mobile/theme/themeStore";
 
 function InfoRow({ label, value }: { label: string; value: string }) {
   return (
@@ -18,7 +20,7 @@ function InfoRow({ label, value }: { label: string; value: string }) {
 
 export default function AccountProfileScreen() {
   const { user } = useAuth();
-  const { colors } = useTheme();
+  const qc = useQueryClient();
   const { data: ctx, isLoading } = useQuery({
     queryKey: ["guard-my-context"],
     queryFn: () => getMyContext(),
@@ -32,20 +34,28 @@ export default function AccountProfileScreen() {
   const roleLabel = ctx?.roles.includes("security_admin")
     ? "Quản lý an ninh"
     : "Nhân viên bảo vệ";
+  const avatarUrl = ctx?.profile?.avatar_url ?? null;
+
+  const onUploadAvatar = async (uri: string) => {
+    const url = await uploadAvatarFromUri(uri, "avatar");
+    await updateProfileAvatar({ avatar_url: url });
+    await qc.invalidateQueries({ queryKey: ["guard-my-context"] });
+    showAppAlert({ title: "Thành công", message: "Đã cập nhật ảnh đại diện." });
+  };
 
   return (
     <View className="flex-1 bg-background">
       <SubHeader title="THÔNG TIN CÁ NHÂN" />
       <ScrollView className="flex-1 p-5">
         <View className="items-center mb-6">
-          <View className="h-20 w-20 rounded-full bg-brand/15 items-center justify-center mb-3">
-            {isLoading ? (
-              <ActivityIndicator color={colors.brand} />
-            ) : (
-              <Text className="text-xl font-bold text-brand">{initialsFromName(fullName)}</Text>
-            )}
-          </View>
-          <Text className="text-lg font-bold text-foreground">{fullName}</Text>
+          <AvatarUploadButton
+            uri={avatarUrl}
+            fallbackInitial={initialsFromName(fullName)}
+            size={88}
+            disabled={isLoading}
+            onPick={onUploadAvatar}
+          />
+          <Text className="text-lg font-bold text-foreground mt-3">{fullName}</Text>
           <Text className="text-sm text-muted-foreground mt-1">{email}</Text>
         </View>
 
@@ -58,7 +68,7 @@ export default function AccountProfileScreen() {
         </View>
 
         <Text className="text-xs text-muted-foreground text-center mt-6 px-4">
-          Liên hệ quản lý an ninh nếu cần cập nhật thông tin tài khoản.
+          Ảnh đại diện hiển thị trên chat an ninh. Liên hệ quản lý nếu cần cập nhật thông tin tài khoản.
         </Text>
       </ScrollView>
     </View>

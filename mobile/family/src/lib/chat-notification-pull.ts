@@ -308,6 +308,8 @@ export async function pullAndPresentFamilyChatNotifications(): Promise<boolean> 
 
       channelId: "chat",
 
+      identifier: `chat-${row.id}`,
+
       data: { route: "/bao-an/chat", chatMessageId: row.id },
 
     });

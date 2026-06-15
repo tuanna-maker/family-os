@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import {
+  Image,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -13,6 +14,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as ImagePicker from "expo-image-picker";
 import { ImagePlus, Paperclip, X } from "lucide-react-native";
 import { attachSecurityRequestEvidence, createSecurityRequest } from "@mobile/api/security";
+import { readLocalFileBytes } from "@mobile/lib/upload-chat-media";
 import { useFamilyContext } from "@mobile/hooks/useFamilyContext";
 import { toast } from "@mobile/utils/toast";
 import { useTheme } from "@mobile/theme/themeStore";
@@ -57,6 +59,7 @@ export function SecurityRequestSheet({
   const [apartment, setApartment] = useState("");
   const [note, setNote] = useState("");
   const [files, setFiles] = useState<PickedFile[]>([]);
+  const [previewUri, setPreviewUri] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const { colors } = useTheme();
   const { s } = useI18n();
@@ -128,7 +131,7 @@ export function SecurityRequestSheet({
       gap: 8,
       paddingVertical: 4,
     },
-    fileName: { flex: 1, fontSize: 12 * fontScale, color: c.muted },
+    fileName: { flex: 1, fontSize: 12 * fontScale, color: c.brand },
     fileRemove: { fontSize: 12 * fontScale, fontWeight: "600" as const, color: c.emergency },
     actions: {
       flexDirection: "row" as const,
@@ -204,34 +207,49 @@ export function SecurityRequestSheet({
         },
       })) as { id: string };
 
+      let attachWarning: string | null = null;
+
       if (files.length > 0 && res?.id) {
         const supabase = getSupabase();
         const uploaded: { path: string; name: string; size: number; mime: string }[] = [];
-        for (const f of files) {
-          const ext = f.name.split(".").pop() ?? "jpg";
-          const path = `${res.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-          const blob = await fetch(f.uri).then((r) => r.blob());
-          const { error } = await supabase.storage.from(BUCKET).upload(path, blob, {
-            contentType: f.mime,
-            upsert: false,
-          });
-          if (error) {
-            toast.error(`${f.name}: ${error.message}`);
-            continue;
+        let uploadError: string | null = null;
+        for (const file of files) {
+          try {
+            const ext = file.name.split(".").pop() ?? "jpg";
+            const path = `${res.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+            const bytes = await readLocalFileBytes(file.uri);
+            const { error } = await supabase.storage.from(BUCKET).upload(path, bytes, {
+              contentType: file.mime,
+              upsert: false,
+            });
+            if (error) {
+              uploadError = `${file.name}: ${error.message}`;
+              continue;
+            }
+            uploaded.push({ path, name: file.name, size: file.size, mime: file.mime });
+          } catch (e) {
+            uploadError = e instanceof Error ? e.message : rs.attachFailed;
           }
-          uploaded.push({ path, name: f.name, size: f.size, mime: f.mime });
         }
         if (uploaded.length > 0) {
           try {
             await attachSecurityRequestEvidence({ id: res.id, files: uploaded });
           } catch (e) {
-            toast.error(e instanceof Error ? e.message : rs.attachFailed);
+            uploadError = e instanceof Error ? e.message : rs.attachFailed;
           }
+        }
+        if (uploadError && uploaded.length === 0) {
+          attachWarning = rs.sentWithoutAttach;
+        } else if (uploadError) {
+          attachWarning = rs.partialAttach(uploaded.length, files.length);
         }
       }
 
       void qc.invalidateQueries({ queryKey: ["security-requests"] });
-      toast.success(rs.sent(title), rs.sentSub(securityMeta.responseTimeMinutes));
+      toast.success(
+        rs.sent(title),
+        attachWarning ?? rs.sentSub(securityMeta.responseTimeMinutes),
+      );
       onClose();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : f.sendFailed);
@@ -241,6 +259,7 @@ export function SecurityRequestSheet({
   };
 
   return (
+    <>
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <KeyboardAvoidingView style={styles.overlay} behavior={Platform.OS === "ios" ? "padding" : undefined}>
         <Pressable style={styles.backdrop} onPress={onClose} accessibilityLabel={rs.close} />
@@ -299,9 +318,11 @@ export function SecurityRequestSheet({
             {files.map((f, i) => (
               <View key={`${f.uri}-${i}`} style={styles.fileRow}>
                 <Paperclip color={colors.muted} size={14} />
-                <Text style={styles.fileName} numberOfLines={1}>
-                  {f.name}
-                </Text>
+                <Pressable style={{ flex: 1 }} onPress={() => setPreviewUri(f.uri)}>
+                  <Text style={styles.fileName} numberOfLines={1}>
+                    {f.name}
+                  </Text>
+                </Pressable>
                 <Pressable onPress={() => setFiles((p) => p.filter((_, idx) => idx !== i))}>
                   <Text style={styles.fileRemove}>{rs.remove}</Text>
                 </Pressable>
@@ -325,5 +346,20 @@ export function SecurityRequestSheet({
         </View>
       </KeyboardAvoidingView>
     </Modal>
+      <Modal visible={!!previewUri} transparent animationType="fade" onRequestClose={() => setPreviewUri(null)}>
+        <Pressable
+          style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.92)", justifyContent: "center" }}
+          onPress={() => setPreviewUri(null)}
+        >
+          {previewUri ? (
+            <Image
+              source={{ uri: previewUri }}
+              style={{ width: "100%", height: "80%" }}
+              resizeMode="contain"
+            />
+          ) : null}
+        </Pressable>
+      </Modal>
+    </>
   );
 }

@@ -10,7 +10,7 @@ export type AppRole =
 export type MyContext = {
   userId: string;
   email: string | null;
-  profile: { id: string; full_name: string | null; avatar_url: string | null } | null;
+  profile: { id: string; full_name: string | null; avatar_url: string | null; ui_locale?: string | null } | null;
   roles: AppRole[];
   family: { id: string; name: string; apartment: string | null; owner_id: string; avatar_url: string | null } | null;
   isAdmin: boolean;
@@ -32,10 +32,24 @@ export async function getMyContext(): Promise<MyContext> {
   const supabase = getSupabase();
   const { userId, user } = await requireUser();
 
-  const [{ data: profile }, { data: rolesData }] = await Promise.all([
+  const [{ data: profileRaw }, { data: rolesData }] = await Promise.all([
     supabase.from("profiles").select("id, full_name, avatar_url").eq("id", userId).maybeSingle(),
     supabase.from("user_roles").select("role, family_id").eq("user_id", userId),
   ]);
+
+  let uiLocale: string | null = null;
+  const { data: localeRow, error: localeErr } = await supabase
+    .from("profiles")
+    .select("ui_locale")
+    .eq("id", userId)
+    .maybeSingle();
+  if (!localeErr && localeRow && typeof (localeRow as { ui_locale?: string }).ui_locale === "string") {
+    uiLocale = (localeRow as { ui_locale: string }).ui_locale;
+  }
+
+  const profile = profileRaw
+    ? { ...profileRaw, ui_locale: uiLocale }
+    : null;
 
   const roles = (rolesData ?? []).map((r) => r.role as AppRole);
 

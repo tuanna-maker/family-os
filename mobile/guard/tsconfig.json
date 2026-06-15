@@ -5,7 +5,9 @@
     "paths": {
       "@/*": ["../../apps/guard/src/*"],
       "@guard/api/*": ["../../apps/guard/src/api/*"],
-      "@mobile/*": ["./src/*"]
+      "@mobile/*": ["./src/*"],
+      "@shared/utils": ["../../packages/shared-utils/src/index.ts"],
+      "@shared/utils/security-status-notify": ["../../packages/shared-utils/src/security-status-notify.ts"]
     }
   },
   "include": [

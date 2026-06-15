@@ -6,11 +6,16 @@ export function isSecurityNotificationType(type: string | undefined) {
 }
 
 export function shouldPresentOsNotification(type: string | undefined) {
-  if (!type) return false;
+  if (!type) return true;
   if (OS_PUSH_TYPES.has(type)) return true;
-  return isSecurityNotificationType(type);
+  if (isSecurityNotificationType(type)) return true;
+  if (type === "security.chat") return true;
+  return true;
 }
 
-export function notificationChannelForType(type: string | undefined): "default" | "security" {
+export function notificationChannelForType(
+  type: string | undefined,
+): "default" | "security" | "chat" {
+  if (type === "security.chat") return "chat";
   return isSecurityNotificationType(type) ? "security" : "default";
 }

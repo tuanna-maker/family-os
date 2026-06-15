@@ -16,6 +16,7 @@ import { useSecurityChatPush } from "@mobile/hooks/useSecurityChatRealtime";
 import { ensureSupabase } from "@mobile/lib/supabase";
 import { ThemeBridge, useTheme } from "@mobile/theme/themeStore";
 import { AppAlertProvider } from "@mobile/components/AppAlert";
+import { LocaleSyncBootstrap } from "@mobile/i18n/LocaleSyncBootstrap";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -97,6 +98,7 @@ export default function RootLayout() {
             <AppPrefsProvider>
               <ThemeBridge>
                 <AppAlertProvider>
+                  <LocaleSyncBootstrap />
                   <PushBootstrap />
                   <SecurityChatPushBootstrap />
                   <AuthGate />

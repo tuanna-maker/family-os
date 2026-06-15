@@ -1,12 +1,15 @@
 import * as TaskManager from "expo-task-manager";
 import * as BackgroundFetch from "expo-background-fetch";
 import { pullAndPresentFamilyNotifications } from "@mobile/lib/notification-pull";
+import { pullAndPresentFamilyChatNotifications } from "@mobile/lib/chat-notification-pull";
 
 export const FAMILY_BACKGROUND_NOTIFICATION_TASK = "stos-family-background-notification-fetch";
 
 TaskManager.defineTask(FAMILY_BACKGROUND_NOTIFICATION_TASK, async () => {
   try {
-    const showed = await pullAndPresentFamilyNotifications();
+    const showedNotif = await pullAndPresentFamilyNotifications();
+    const showedChat = await pullAndPresentFamilyChatNotifications();
+    const showed = showedNotif || showedChat;
     return showed
       ? BackgroundFetch.BackgroundFetchResult.NewData
       : BackgroundFetch.BackgroundFetchResult.NoData;

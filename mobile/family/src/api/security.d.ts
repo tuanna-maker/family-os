@@ -43,4 +43,7 @@ export declare function listSecurityRequests(data?: {
   limit?: number;
   offset?: number;
 }): Promise<SecurityRequestList>;
-export declare function getSecurityStatus(data: { family_id: string }): Promise<SecurityStatus>;
+export declare function getSecurityStatus(data: {
+  family_id: string;
+  locale?: "vi" | "en";
+}): Promise<SecurityStatus>;

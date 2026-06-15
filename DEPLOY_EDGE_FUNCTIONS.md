@@ -11,6 +11,8 @@ Repo đã có code; **deploy lên Supabase project** qua Lovable hoặc CLI.
 | `supabase/functions/health-check/` | DB/auth probe (cron 1 phút) |
 | `supabase/functions/metrics-aggregate/` | RPC metrics (cron 5 phút) |
 | `supabase/functions/dispatch-chat-push/` | Push tin chat qua Expo Push API |
+| `supabase/functions/dispatch-notification-push/` | Push thông báo `public.notifications` (Family) |
+| `supabase/functions/dispatch-security-request-push/` | Push yêu cầu mới tới Guard |
 | `supabase/config.toml` | `verify_jwt` per function |
 
 ## CLI (tùy chọn)
@@ -22,7 +24,25 @@ supabase functions deploy log-ingest
 supabase functions deploy health-check
 supabase functions deploy metrics-aggregate
 supabase functions deploy dispatch-chat-push
+supabase functions deploy dispatch-notification-push
+supabase functions deploy dispatch-security-request-push
 ```
+
+## Push khi app tắt (OS notification)
+
+1. Deploy 3 function push ở trên.
+2. User bật thông báo trong app; token Expo lưu `platform.device_token`.
+3. **Database Webhooks** (Dashboard → Database → Webhooks):
+
+| Table | Event | Function |
+|-------|-------|----------|
+| `public.security_chat_messages` | INSERT | `dispatch-chat-push` |
+| `public.notifications` | INSERT | `dispatch-notification-push` |
+| `public.security_requests` | INSERT | `dispatch-security-request-push` |
+
+App mobile cũng gọi function sau khi gửi (`fireChatPushDispatch`, `firePushDispatch`).
+
+**Android release:** cần `google-services.json` trong `mobile/family` và `mobile/guard` để FCM nhận push khi app bị kill.
 
 ## Push chat (Messenger-style)
 

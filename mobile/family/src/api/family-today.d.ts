@@ -13,4 +13,7 @@ export type FamilyTodayMember = {
   due_at: string | null;
 };
 
-export declare function getFamilyToday(data: { family_id: string }): Promise<{ members: FamilyTodayMember[] }>;
+export declare function getFamilyToday(data: {
+  family_id: string;
+  locale?: "vi" | "en";
+}): Promise<{ members: FamilyTodayMember[] }>;

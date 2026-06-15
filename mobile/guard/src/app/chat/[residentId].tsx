@@ -84,12 +84,7 @@ export default function GuardChatThreadScreen() {
       behavior={Platform.OS === "ios" ? "padding" : undefined}
       keyboardVerticalOffset={8}
     >
-      <SubHeader
-        title={title}
-        back="/chat"
-        avatarUrl={profileQ.data?.avatar_url}
-        avatarInitial={title}
-      />
+      <SubHeader title={title} back="/chat" />
 
       {q.isLoading ? (
         <View className="flex-1 items-center justify-center">

@@ -12,7 +12,7 @@ import {
   CalendarDays,
 } from "lucide-react-native";
 import { useRouter } from "expo-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "@mobile/hooks/useAuth";
 import { getMyContext } from "@guard/api/auth";
@@ -31,6 +31,8 @@ import {
 } from "@mobile/lib/push-native";
 import { markOsPushPermissionRequested } from "@mobile/lib/push-permission-state";
 import { stopNativeBackgroundMonitor } from "@mobile/lib/stos-monitor-native";
+import { AvatarUploadButton } from "@mobile/components/AvatarUploadButton";
+import { uploadAvatarFromUri, updateProfileAvatar } from "@mobile/api/avatars";
 
 type MenuItem = {
   icon: typeof User;
@@ -48,6 +50,7 @@ export default function AccountScreen() {
   const { colors, theme, toggleTheme } = useTheme();
   const { notificationsEnabled, setNotificationsEnabled } = useGuardPrefs();
   const { user, session, signOut } = useAuth();
+  const qc = useQueryClient();
   const [pushBusy, setPushBusy] = useState(false);
 
   usePushPermissionResync(notificationsEnabled, setNotificationsEnabled);
@@ -64,6 +67,14 @@ export default function AccountScreen() {
   const roleLabel = ctx?.roles.includes("security_admin")
     ? "Quản lý an ninh"
     : "Đội an ninh STOS";
+  const avatarUrl = ctx?.profile?.avatar_url ?? null;
+
+  const onUploadAvatar = async (uri: string) => {
+    const url = await uploadAvatarFromUri(uri, "avatar");
+    await updateProfileAvatar({ avatar_url: url });
+    await qc.invalidateQueries({ queryKey: ["guard-my-context"] });
+    showAppAlert({ title: "Thành công", message: "Đã cập nhật ảnh đại diện." });
+  };
 
   const onToggleNotifications = async (enabled: boolean) => {
     if (pushBusy) return;
@@ -205,13 +216,20 @@ export default function AccountScreen() {
       </View>
 
       <View className="p-5 items-center">
-        <View className="h-24 w-24 rounded-full bg-brand/15 items-center justify-center mb-4">
-          {isLoading ? (
+        {isLoading ? (
+          <View className="h-24 w-24 items-center justify-center mb-4">
             <ActivityIndicator color={colors.brand} />
-          ) : (
-            <Text className="text-2xl font-bold text-brand">{initialsFromName(fullName)}</Text>
-          )}
-        </View>
+          </View>
+        ) : (
+          <View className="mb-4">
+            <AvatarUploadButton
+              uri={avatarUrl}
+              fallbackInitial={initialsFromName(fullName)}
+              size={96}
+              onPick={onUploadAvatar}
+            />
+          </View>
+        )}
         <Text className="text-xl font-bold text-foreground">{fullName}</Text>
         <Text className="text-muted-foreground mt-1">{email}</Text>
         <View className="mt-4 bg-brand/10 px-3 py-1 rounded-full flex-row items-center border border-brand/20">

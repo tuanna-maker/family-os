@@ -1,10 +1,9 @@
 import Constants from "expo-constants";
+import { AppState } from "react-native";
 import * as SecureStore from "expo-secure-store";
+import { presentFamilyNotificationRow } from "@mobile/lib/present-family-notification";
+import { shouldPresentOsNotification } from "@mobile/lib/notification-os";
 import { presentLocalNotification } from "@mobile/lib/push-native";
-import {
-  notificationChannelForType,
-  shouldPresentOsNotification,
-} from "@mobile/lib/notification-os";
 import {
   markFamilyChatMessageNotified,
   shouldNotifyFamilyChatMessage,
@@ -148,9 +147,7 @@ export async function pullAndPresentFamilyNotifications(): Promise<boolean> {
     return false;
   }
 
-  const fresh = rows
-    .filter((r) => !seenIds.has(r.id) && shouldPresentOsNotification(r.type))
-    .reverse();
+  const fresh = rows.filter((r) => !seenIds.has(r.id) && shouldPresentOsNotification(r.type)).reverse();
 
   if (fresh.length === 0) return false;
 
@@ -162,15 +159,23 @@ export async function pullAndPresentFamilyNotifications(): Promise<boolean> {
         continue;
       }
       await markFamilyChatMessageNotified(row.ref_id);
+      await presentLocalNotification({
+        title: row.title || "Đội bảo an",
+        body: row.body,
+        channelId: "chat",
+        identifier: `chat-${row.ref_id}`,
+        data: {
+          route: "/bao-an/chat",
+          chatMessageId: row.ref_id,
+          notificationId: row.id,
+          type: row.type,
+        },
+      });
+      seenIds.add(row.id);
+      continue;
     }
-    await presentLocalNotification({
-      title: row.title || "Thông báo mới",
-      body: row.body,
-      channelId: notificationChannelForType(row.type),
-      data: isChat
-        ? { route: "/bao-an/chat", notificationId: row.id, type: row.type }
-        : { notificationId: row.id, type: row.type },
-    });
+
+    await presentFamilyNotificationRow(row);
     seenIds.add(row.id);
   }
   await saveSeenIds(seenIds);

@@ -3,18 +3,29 @@
     "name": "STOS Guard",
     "slug": "guard",
     "version": "1.0.0",
-    "orientation": "portrait",
+    "orientation": "default",
     "icon": "./assets/images/icon.png",
     "scheme": "vn.unicom.stos.guardrn",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
+      "supportsTablet": true,
       "icon": "./assets/images/icon.png",
       "bundleIdentifier": "vn.unicom.stos.guardrn",
       "infoPlist": {
         "UIBackgroundModes": [
           "remote-notification",
           "fetch"
+        ],
+        "UISupportedInterfaceOrientations": [
+          "UIInterfaceOrientationPortrait",
+          "UIInterfaceOrientationLandscapeLeft",
+          "UIInterfaceOrientationLandscapeRight"
+        ],
+        "UISupportedInterfaceOrientations~ipad": [
+          "UIInterfaceOrientationPortrait",
+          "UIInterfaceOrientationLandscapeLeft",
+          "UIInterfaceOrientationLandscapeRight"
         ]
       }
     },

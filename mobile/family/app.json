@@ -4,7 +4,7 @@
     "slug": "stos-life",
     "version": "1.0.0",
     "owner": "tuanna-unicom",
-    "orientation": "portrait",
+    "orientation": "default",
     "scheme": "vn.unicom.stos.familyrn",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -21,6 +21,16 @@
         "UIBackgroundModes": [
           "remote-notification",
           "fetch"
+        ],
+        "UISupportedInterfaceOrientations": [
+          "UIInterfaceOrientationPortrait",
+          "UIInterfaceOrientationLandscapeLeft",
+          "UIInterfaceOrientationLandscapeRight"
+        ],
+        "UISupportedInterfaceOrientations~ipad": [
+          "UIInterfaceOrientationPortrait",
+          "UIInterfaceOrientationLandscapeLeft",
+          "UIInterfaceOrientationLandscapeRight"
         ]
       }
     },

@@ -44,16 +44,53 @@ export async function unregisterPushToken(token: string) {
   return { ok: true as const };
 }
 
-/** Gọi worker FCM (best-effort sau SOS / cập nhật trạng thái). */
-export async function triggerPushDispatch() {
-  const { error } = await supabase.functions.invoke("dispatch-push", { body: {} });
+/** Gửi push yêu cầu bảo an tới app Guard (Expo Push / FCM). */
+export async function triggerSecurityRequestPush(requestId: string) {
+  const { error } = await supabase.functions.invoke("dispatch-security-request-push", {
+    body: { request_id: requestId },
+  });
   if (error) throw new Error(error.message);
   return { ok: true as const };
 }
 
-/** Fire-and-forget — không chặn luồng SOS. */
-export function firePushDispatch() {
-  void triggerPushDispatch().catch(() => {});
+/** Gửi push thông báo in-app tới app Family (Expo Push / FCM). */
+export async function triggerNotificationPush(notificationId: string) {
+  const { error } = await supabase.functions.invoke("dispatch-notification-push", {
+    body: { notification_id: notificationId },
+  });
+  if (error) throw new Error(error.message);
+  return { ok: true as const };
+}
+
+/** Fire-and-forget — không chặn luồng gửi yêu cầu / SOS. */
+export function firePushDispatch(requestId?: string | null) {
+  if (!requestId) return;
+  const invoke = () => triggerSecurityRequestPush(requestId);
+  void (async () => {
+    try {
+      await invoke();
+      return;
+    } catch {
+      // retry once
+    }
+    await new Promise((r) => setTimeout(r, 600));
+    await invoke().catch(() => {});
+  })();
+}
+
+export function fireNotificationPushDispatch(notificationId?: string | null) {
+  if (!notificationId) return;
+  const invoke = () => triggerNotificationPush(notificationId);
+  void (async () => {
+    try {
+      await invoke();
+      return;
+    } catch {
+      // retry once
+    }
+    await new Promise((r) => setTimeout(r, 600));
+    await invoke().catch(() => {});
+  })();
 }
 
 export async function initNativePush(app: PushApp) {

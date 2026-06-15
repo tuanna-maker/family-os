@@ -7,7 +7,8 @@
     ".": "./src/index.ts",
     "./formatters": "./src/formatters/index.ts",
     "./logger": "./src/logger.ts",
-    "./pii-scrub": "./src/pii-scrub.ts"
+    "./pii-scrub": "./src/pii-scrub.ts",
+    "./security-status-notify": "./src/security-status-notify.ts"
   },
   "dependencies": {
     "clsx": "^2.1.1",

@@ -13,6 +13,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Clock, Siren, RefreshCw, AlertTriangle, CheckSquare, Square } from "lucide-react-native";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "expo-router";
 import { getSupabase } from "@shared/supabase/get-client";
 import { showAppAlert } from "@mobile/components/AppAlert";
 import { SubHeader } from "@mobile/components/SubHeader";
@@ -25,6 +26,8 @@ import {
   type OpenSosRow,
   type SecurityRequest,
 } from "@guard/api/security";
+import { formatSecurityStatusMessage } from "@shared/utils/security-status-notify";
+import { guardLocale } from "@mobile/i18n/GuardLocaleBootstrap";
 import { formatAge, REQUEST_STATUS_LABEL, REQUEST_TYPE_LABEL } from "@mobile/utils/guardFormat";
 import { useTheme } from "@mobile/theme/themeStore";
 
@@ -84,29 +87,49 @@ function sortRequests(rows: SecurityRequest[]) {
   });
 }
 
-function statusAlertMessage(status: ActionStatus, ok: number, fail: number) {
-  const action =
-    status === "in_progress"
-      ? { verb: "tiếp nhận", family: "Bảo vệ đã tiếp nhận yêu cầu của bạn." }
-      : { verb: "hoàn thành", family: "Bảo vệ đã hoàn tất xử lý yêu cầu của bạn." };
+function statusAlertMessage(
+  status: ActionStatus,
+  ok: number,
+  fail: number,
+  sample?: SecurityRequest,
+) {
+  const locale = guardLocale();
+  const unit = sample ? unitLabel(sample) : undefined;
+  const friendly = formatSecurityStatusMessage({
+    audience: "guard",
+    status,
+    locale,
+    requestType: sample?.request_type,
+    unitLabel: unit,
+    requestLabel:
+      typeof (sample?.payload as Record<string, unknown> | undefined)?.label === "string"
+        ? ((sample?.payload as Record<string, unknown>).label as string)
+        : undefined,
+  });
 
   if (fail === 0) {
     return {
-      title: status === "in_progress" ? "Đã tiếp nhận" : "Đã hoàn thành",
+      title: friendly.title,
       message:
         ok === 1
-          ? `Đã ${action.verb} yêu cầu. Cư dân sẽ nhận thông báo: "${action.family}"`
-          : `Đã ${action.verb} ${ok} yêu cầu. Cư dân sẽ nhận thông báo trên app Family.`,
+          ? friendly.body
+          : locale === "en"
+            ? `Updated ${ok} requests. Residents will be notified on the Family app.`
+            : `Đã cập nhật ${ok} yêu cầu. Cư dân sẽ nhận thông báo trên app Family.`,
     };
   }
 
   return {
-    title: "Hoàn tất một phần",
-    message: `Thành công ${ok}, thất bại ${fail}. Vui lòng thử lại các yêu cầu còn lại.`,
+    title: locale === "en" ? "Partially completed" : "Hoàn tất một phần",
+    message:
+      locale === "en"
+        ? `${ok} succeeded, ${fail} failed. Please retry the remaining requests.`
+        : `Thành công ${ok}, thất bại ${fail}. Vui lòng thử lại các yêu cầu còn lại.`,
   };
 }
 
 export default function RequestsScreen() {
+  const router = useRouter();
   const qc = useQueryClient();
   const insets = useSafeAreaInsets();
   const { colors, theme } = useTheme();
@@ -224,7 +247,8 @@ export default function RequestsScreen() {
 
       if (succeeded.length > 0) {
         patchCacheMany(succeeded, status);
-        const alert = statusAlertMessage(status, succeeded.length, fail);
+        const sample = allRows.find((r) => r.id === succeeded[0]);
+        const alert = statusAlertMessage(status, succeeded.length, fail, sample);
         showAppAlert({ title: alert.title, message: alert.message });
       } else {
         const firstErr = results.find((r) => !r.ok);
@@ -420,24 +444,28 @@ export default function RequestsScreen() {
                     </Pressable>
                   ) : null}
                   <View className="flex-1">
-                    <View className="flex-row items-center gap-2">
-                      {isSos ? <Siren size={18} color="#ef4444" /> : null}
-                      <Text className="text-sm font-bold text-foreground">{unitLabel(r)}</Text>
-                    </View>
-                    {ticketCode ? (
-                      <Text className="text-xs font-mono text-red-600 mt-1">{ticketCode}</Text>
-                    ) : null}
-                    <View className={`mt-1.5 self-start px-2 py-0.5 rounded-full ${tone.bg}`}>
-                      <Text className={`text-[11px] font-medium ${tone.text}`}>
-                        {REQUEST_TYPE_LABEL[r.request_type] ?? r.request_type}
-                      </Text>
-                    </View>
-                    {isSos && p.incident_type ? (
-                      <Text className="text-xs text-muted-foreground mt-1">
-                        Loại: {String(p.incident_type)}
-                        {p.priority ? ` · Ưu tiên: ${String(p.priority)}` : ""}
-                      </Text>
-                    ) : null}
+                    <Pressable onPress={() => (isSos ? openSos(r) : router.push(`/request/${r.id}`))}>
+                      <View className="flex-row items-center gap-2">
+                        {isSos ? <Siren size={18} color="#ef4444" /> : null}
+                        <Text className="text-sm font-bold text-foreground">{unitLabel(r)}</Text>
+                      </View>
+                      {ticketCode ? (
+                        <Text className="text-xs font-mono text-red-600 mt-1">{ticketCode}</Text>
+                      ) : null}
+                      <View className={`mt-1.5 self-start px-2 py-0.5 rounded-full ${tone.bg}`}>
+                        <Text className={`text-[11px] font-medium ${tone.text}`}>
+                          {REQUEST_TYPE_LABEL[r.request_type] ?? r.request_type}
+                        </Text>
+                      </View>
+                      {isSos && p.incident_type ? (
+                        <Text className="text-xs text-muted-foreground mt-1">
+                          Loại: {String(p.incident_type)}
+                          {p.priority ? ` · Ưu tiên: ${String(p.priority)}` : ""}
+                        </Text>
+                      ) : (
+                        <Text className="text-[11px] text-primary mt-2 font-semibold">Xem chi tiết</Text>
+                      )}
+                    </Pressable>
                   </View>
                   <View className="items-end">
                     <View className="flex-row items-center">
