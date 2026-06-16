@@ -16,8 +16,9 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "unicomhub.com",
+      "bundleIdentifier": "vn.unicom.stos.familyrn",
       "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false,
         "UIBackgroundModes": [
           "remote-notification",
           "fetch"
