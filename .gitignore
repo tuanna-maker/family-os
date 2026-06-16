@@ -1,6 +1,10 @@
 # Logs
 logs
 *.log
+*_eas_log*
+_fam_libs.txt
+_gua_libs.txt
+autolink-*.txt
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
@@ -55,3 +59,6 @@ web/public/downloads/*.apk
 *.njsproj
 *.sln
 *.sw?
+
+# Cursor / agent artifacts
+agent-tools/
