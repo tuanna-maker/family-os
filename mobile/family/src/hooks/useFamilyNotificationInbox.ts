@@ -1,3 +1,4 @@
+import { markFamilyOsNotificationPresented } from "@mobile/lib/family-notification-present-state";
 import { useCallback } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -56,7 +57,10 @@ export function useFamilyNotificationInbox() {
         const rows = prev.rows.map((r) => (r.id === id ? { ...r, read_at: now } : r));
         qc.setQueryData<NotificationList>(["notifications-all"], { ...prev, rows });
         syncUnreadFromList(qc, rows);
+        const row = prev.rows.find((r) => r.id === id);
+        if (row) void markFamilyOsNotificationPresented(row);
       }
+      void qc.invalidateQueries({ queryKey: ["home-unread-notifications"] });
       return { prev };
     },
     onError: (_e, _v, ctx) => {
@@ -77,6 +81,7 @@ export function useFamilyNotificationInbox() {
         qc.setQueryData<NotificationList>(["notifications-all"], { ...prev, rows });
         qc.setQueryData(["notifications-unread"], { count: 0 });
       }
+      void qc.invalidateQueries({ queryKey: ["home-unread-notifications"] });
       return { prev };
     },
     onError: (_e, _v, ctx) => {

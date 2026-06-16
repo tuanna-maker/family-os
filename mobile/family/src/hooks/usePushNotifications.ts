@@ -17,7 +17,6 @@ import {
   pullAndPresentFamilyNotifications,
 } from "@mobile/lib/notification-pull";
 import {
-  shouldNotifyFamilyChatMessage,
   markFamilyChatMessageNotified,
   pullAndPresentFamilyChatNotifications,
 } from "@mobile/lib/chat-notification-pull";
@@ -28,7 +27,6 @@ import {
   unregisterFamilyBackgroundNotificationTask,
 } from "@mobile/tasks/background-notification-task";
 import {
-  startNativeBackgroundMonitor,
   stopNativeBackgroundMonitor,
 } from "@mobile/lib/stos-monitor-native";
 import {
@@ -59,18 +57,17 @@ async function syncFamilyBackgroundDelivery(
   accessToken: string | undefined,
   userId: string | undefined,
 ) {
+  stopNativeBackgroundMonitor();
+
   if (!enabled || !accessToken || !userId) {
-    stopNativeBackgroundMonitor();
     await unregisterFamilyBackgroundNotificationTask();
     await clearFamilyBackgroundCredentials();
     return;
   }
   if ((await getPushPermissionStatus()) !== "granted") {
-    stopNativeBackgroundMonitor();
     return;
   }
   await persistFamilyBackgroundCredentials(accessToken, userId);
-  startNativeBackgroundMonitor(accessToken, userId, "family");
   await registerFamilyBackgroundNotificationTask();
 }
 
@@ -102,6 +99,7 @@ export function usePushNotifications() {
   usePushPermissionResync(pushEnabled, setPushEnabled);
 
   useEffect(() => {
+    stopNativeBackgroundMonitor();
     void bootstrapOsNotifications("family");
   }, []);
 
@@ -258,6 +256,7 @@ export function usePushNotifications() {
         (payload) => {
           bumpUnread(qc);
           void qc.invalidateQueries({ queryKey: ["notifications-all"] });
+          void qc.invalidateQueries({ queryKey: ["home-unread-notifications"] });
 
           const row = payload.new as {
             id?: string;
@@ -267,19 +266,8 @@ export function usePushNotifications() {
             ref_id?: string | null;
           };
           if (row.type === "security.chat") {
-            void (async () => {
-              if (!pushEnabledRef.current) return;
-              const refId = row.ref_id ?? undefined;
-              if (refId && !(await shouldNotifyFamilyChatMessage(refId))) return;
-              if (refId) await markFamilyChatMessageNotified(refId);
-              await presentLocalNotification({
-                title: row.title ?? "Đội bảo an",
-                body: row.body,
-                channelId: "chat",
-                identifier: refId ? `chat-${refId}` : undefined,
-                data: { route: "/bao-an/chat", chatMessageId: refId, type: row.type },
-              });
-            })();
+            const refId = row.ref_id ?? undefined;
+            if (refId) void markFamilyChatMessageNotified(refId);
             return;
           }
           void (async () => {
@@ -290,6 +278,7 @@ export function usePushNotifications() {
               ref_id: row.ref_id,
               title: row.title,
               body: row.body,
+              created_at: (row as { created_at?: string }).created_at,
             });
           })();
         },
@@ -320,6 +309,9 @@ export function usePushNotifications() {
               body: row.body,
               type: row.type,
             });
+            if (row.read_at) {
+              void qc.invalidateQueries({ queryKey: ["home-unread-notifications"] });
+            }
           }
         },
       )

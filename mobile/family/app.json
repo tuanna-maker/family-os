@@ -19,6 +19,7 @@
       "bundleIdentifier": "vn.unicom.stos.familyrn",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
+        "UIRequiresFullScreen": true,
         "UIBackgroundModes": [
           "remote-notification",
           "fetch"

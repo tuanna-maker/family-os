@@ -13,6 +13,8 @@
       "icon": "./assets/images/icon.png",
       "bundleIdentifier": "vn.unicom.stos.guardrn",
       "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false,
+        "UIRequiresFullScreen": true,
         "UIBackgroundModes": [
           "remote-notification",
           "fetch"
@@ -26,8 +28,7 @@
           "UIInterfaceOrientationPortrait",
           "UIInterfaceOrientationLandscapeLeft",
           "UIInterfaceOrientationLandscapeRight"
-        ],
-        "ITSAppUsesNonExemptEncryption": false
+        ]
       }
     },
     "android": {

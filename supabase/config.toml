@@ -17,7 +17,7 @@ verify_jwt = false
 verify_jwt = true
 
 [functions.dispatch-chat-push]
-verify_jwt = true
+verify_jwt = false
 
 [functions.dispatch-notification-push]
 verify_jwt = false

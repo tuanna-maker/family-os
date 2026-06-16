@@ -19,7 +19,6 @@ import {
   unregisterGuardBackgroundNotificationTask,
 } from "@mobile/tasks/background-notification-task";
 import {
-  startNativeBackgroundMonitor,
   stopNativeBackgroundMonitor,
 } from "@mobile/lib/stos-monitor-native";
 import {
@@ -39,18 +38,17 @@ async function syncGuardBackgroundDelivery(
   accessToken: string | undefined,
   userId: string | undefined,
 ) {
+  stopNativeBackgroundMonitor();
+
   if (!enabled || !accessToken || !userId) {
-    stopNativeBackgroundMonitor();
     await unregisterGuardBackgroundNotificationTask();
     await clearGuardBackgroundCredentials();
     return;
   }
   if ((await getPushPermissionStatus()) !== "granted") {
-    stopNativeBackgroundMonitor();
     return;
   }
   await persistGuardBackgroundCredentials(accessToken, userId);
-  startNativeBackgroundMonitor(accessToken, userId, "guard");
   await registerGuardBackgroundNotificationTask();
 }
 
@@ -66,6 +64,7 @@ export function usePushNotifications() {
   usePushPermissionResync(notificationsEnabled, setNotificationsEnabled);
 
   useEffect(() => {
+    stopNativeBackgroundMonitor();
     void bootstrapOsNotifications();
   }, []);
 

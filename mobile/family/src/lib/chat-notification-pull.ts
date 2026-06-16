@@ -1,5 +1,4 @@
 import Constants from "expo-constants";
-
 import * as SecureStore from "expo-secure-store";
 
 import { presentLocalNotification } from "@mobile/lib/push-native";
@@ -33,17 +32,12 @@ const LEGACY_AUTO_REPLY =
 
 
 type ChatRow = {
-
   id: string;
-
   sender_role: string;
-
   body: string | null;
-
   message_type?: string | null;
-
   created_at: string;
-
+  push_dispatched_at?: string | null;
 };
 
 
@@ -204,7 +198,7 @@ async function fetchGuardChatMessages(
 
     `&sender_role=eq.guard` +
 
-    `&select=id,sender_role,body,message_type,created_at` +
+    `&select=id,sender_role,body,message_type,created_at,push_dispatched_at` +
 
     `&order=created_at.desc&limit=20`;
 
@@ -234,15 +228,10 @@ async function fetchGuardChatMessages(
 
 
 
-/** Poll tin chat bảo vệ — hiện banner khi app nền / đã thoát màn chat. */
-
+/** Poll tin chat — fallback khi Expo push không tới (app nền/tắt). Không trùng dispatch-chat-push. */
 export async function pullAndPresentFamilyChatNotifications(): Promise<boolean> {
-
   const creds = await loadCredentials();
-
   if (!creds) return false;
-
-
 
   const rows = await fetchGuardChatMessages(
 
@@ -287,9 +276,13 @@ export async function pullAndPresentFamilyChatNotifications(): Promise<boolean> 
 
 
   const fresh = rows
-
-    .filter((r) => r.id && !seenIds.has(r.id) && !isLegacyAutoReply(r))
-
+    .filter(
+      (r) =>
+        r.id &&
+        !seenIds.has(r.id) &&
+        !isLegacyAutoReply(r) &&
+        !r.push_dispatched_at,
+    )
     .reverse();
 
 

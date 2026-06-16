@@ -6,6 +6,10 @@ import {
   type SecurityStatusPhase,
 } from "@shared/utils/security-status-notify";
 import { getLocaleRef } from "@mobile/i18n/localeRef";
+import {
+  markFamilyOsNotificationPresented,
+  shouldPresentFamilyOsNotification,
+} from "@mobile/lib/family-notification-present-state";
 import { notificationChannelForType } from "@mobile/lib/notification-os";
 import { presentLocalNotification } from "@mobile/lib/push-native";
 import {
@@ -19,6 +23,8 @@ export type FamilyNotificationLike = {
   ref_id?: string | null;
   title?: string | null;
   body?: string | null;
+  created_at?: string;
+  read_at?: string | null;
 };
 
 export async function presentFamilyNotificationRow(
@@ -26,6 +32,15 @@ export async function presentFamilyNotificationRow(
   opts?: { requestType?: string | null; requestLabel?: string | null },
 ): Promise<boolean> {
   if (row.type === "security.chat") return false;
+
+  const presentable = {
+    id: row.id,
+    type: row.type,
+    ref_id: row.ref_id,
+    created_at: row.created_at,
+    read_at: row.read_at,
+  };
+  if (!(await shouldPresentFamilyOsNotification(presentable))) return false;
 
   if (isSecurityStatusNotification(row.type, row.title)) {
     const requestId = row.ref_id ?? undefined;
@@ -38,6 +53,7 @@ export async function presentFamilyNotificationRow(
         identifier: `notif-${row.id}`,
         data: { notificationId: row.id, type: row.type },
       });
+      await markFamilyOsNotificationPresented(presentable);
       return true;
     }
 
@@ -65,6 +81,7 @@ export async function presentFamilyNotificationRow(
       },
     });
     await markFamilySecurityStatusSeen(requestId, status);
+    await markFamilyOsNotificationPresented(presentable);
     return true;
   }
 
@@ -75,6 +92,7 @@ export async function presentFamilyNotificationRow(
     identifier: `notif-${row.id}`,
     data: { notificationId: row.id, type: row.type },
   });
+  await markFamilyOsNotificationPresented(presentable);
   return true;
 }
 

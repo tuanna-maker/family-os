@@ -227,6 +227,7 @@ const vi = {
     familyToday: "Gia đình hôm nay",
     noMembers: "Chưa có thành viên nào trong gia đình.",
     recentActivity: "Hoạt động gần đây",
+    newNotifications: "Thông báo mới",
     activityLoadError: "Không tải được hoạt động. Vui lòng thử lại.",
     noActivity: "Chưa có hoạt động nào.",
     defaultChips: {
@@ -1614,6 +1615,7 @@ const en = {
     familyToday: "Family today",
     noMembers: "No family members yet.",
     recentActivity: "Recent activity",
+    newNotifications: "New notifications",
     activityLoadError: "Could not load activity. Please try again.",
     noActivity: "No activity yet.",
     defaultChips: {

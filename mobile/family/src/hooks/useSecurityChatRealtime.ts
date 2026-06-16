@@ -85,8 +85,9 @@ function shouldShowFamilyChatBanner(pathname: string | null) {
 
 
 async function notifyFamilyGuardMessage(row: SecurityChatMessage) {
-
   if (!(await shouldNotifyFamilyChatMessage(row.id))) return;
+  // Nền / thoát app: chỉ nhận qua dispatch-chat-push — tránh trùng banner.
+  if (AppState.currentState !== "active") return;
 
   await markFamilyChatMessageNotified(row.id);
 

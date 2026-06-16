@@ -138,7 +138,16 @@ async function sendExpoPush(messages: ExpoPushMessage[]) {
 
 async function authorizeCaller(req: Request, admin: SupabaseClient, row: ChatRow) {
   const authHeader = req.headers.get("Authorization");
-  if (!authHeader) return false;
+  if (!authHeader) {
+    // Allow database webhook calls (no JWT) using a shared secret header.
+    // Configure:
+    // - Edge Function secret: STOS_WEBHOOK_SECRET
+    // - Webhook header: X-Stos-Webhook-Secret: <same value>
+    const expected = Deno.env.get("STOS_WEBHOOK_SECRET") ?? "";
+    const got = req.headers.get("X-Stos-Webhook-Secret") ?? "";
+    if (expected && got && expected === got) return true;
+    return false;
+  }
 
   const token = authHeader.replace(/^Bearer\s+/i, "");
   const serviceRole = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";

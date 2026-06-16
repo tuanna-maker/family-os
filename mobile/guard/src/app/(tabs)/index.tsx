@@ -6,8 +6,9 @@ import { useFocusEffect, useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useAuth } from "@mobile/hooks/useAuth";
+import { useGuardMyContext } from "@mobile/hooks/useGuardMyContext";
 import { useGuardNotifications } from "@mobile/hooks/useGuardNotifications";
+import { UserAvatar } from "@mobile/components/UserAvatar";
 import { listOpenResidentRequests } from "@guard/api/security";
 import { countGuardChatUnread, listGuardChatThreads } from "@guard/api/security-chat";
 import { getActiveShift } from "@guard/api/guard-shifts";
@@ -24,8 +25,8 @@ export default function DashboardScreen() {
   const actionWidth = isLandscape ? "23%" : "48%";
   const actionMinHeight = isLandscape ? 110 : 130;
   const qc = useQueryClient();
-  const { user } = useAuth();
   const { badgeCount } = useGuardNotifications();
+  const { data: ctx } = useGuardMyContext();
   const { data: openRequests = [] } = useQuery({
     queryKey: ["guard-open-requests"],
     queryFn: () => listOpenResidentRequests(),
@@ -46,14 +47,14 @@ export default function DashboardScreen() {
   useFocusEffect(
     useCallback(() => {
       void qc.invalidateQueries({ queryKey: ["guard-active-shift"] });
+      void qc.invalidateQueries({ queryKey: ["guard-my-context"] });
     }, [qc]),
   );
 
   const sosCount = openRequests.filter((r) => r.request_type === "sos").length;
 
-  const fullName =
-    (user?.user_metadata as { full_name?: string } | null)?.full_name ?? "Nhân viên bảo vệ";
-  const initials = initialsFromName(fullName);
+  const fullName = ctx?.profile?.full_name ?? "Nhân viên bảo vệ";
+  const avatarUrl = ctx?.profile?.avatar_url ?? null;
   const onDuty = activeShift?.status === "checked_in";
   const canCheckIn = activeShift?.status === "scheduled";
   const canCheckOut = onDuty;
@@ -127,18 +128,22 @@ export default function DashboardScreen() {
 
       <View className="px-5 mt-4 mb-4">
         <View className="flex-row items-center gap-4 bg-card p-4 rounded-2xl shadow-sm border border-border/50">
-          <LinearGradient
-            colors={["#3B82F6", "#2563EB"]}
-            style={{
-              width: 56,
-              height: 56,
-              borderRadius: 28,
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <Text className="text-white font-bold text-base">{initials}</Text>
-          </LinearGradient>
+          {avatarUrl?.trim() ? (
+            <UserAvatar uri={avatarUrl} initial={initialsFromName(fullName)} size={56} />
+          ) : (
+            <LinearGradient
+              colors={["#3B82F6", "#2563EB"]}
+              style={{
+                width: 56,
+                height: 56,
+                borderRadius: 28,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Text className="text-white font-bold text-base">{initialsFromName(fullName)}</Text>
+            </LinearGradient>
+          )}
           <View className="flex-1">
             <Text className="text-xs text-muted-foreground">Xin chào,</Text>
             <Text className="text-lg font-bold text-foreground" numberOfLines={1}>

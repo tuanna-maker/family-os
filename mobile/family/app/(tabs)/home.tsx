@@ -1,4 +1,3 @@
-import { useState } from "react";
 import {
   ImageBackground,
   Pressable,
@@ -8,7 +7,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { LinearGradient } from "expo-linear-gradient";
 import {
   ShieldCheck,
@@ -20,12 +19,10 @@ import {
   Sun,
   Clock,
   UserCheck,
-  Loader2,
 } from "lucide-react-native";
 import { useAppPrefs } from "@mobile/hooks/useAppPrefs";
 import { useI18n } from "@mobile/i18n/useI18n";
-import { unreadCount } from "@mobile/api/notifications";
-import { listNotifications } from "@mobile/api/notifications";
+import { unreadCount, listNotifications, markRead } from "@mobile/api/notifications";
 import { getFamilyToday } from "@mobile/api/family-today";
 import { getSecurityStatus, type SecurityTone } from "@mobile/api/security";
 import { Screen } from "@mobile/components/Screen";
@@ -44,10 +41,13 @@ import {
 import { cardShadow, radius } from "@mobile/theme/colors";
 import { useTheme } from "@mobile/theme/themeStore";
 import { useThemedStyles } from "@mobile/theme/useThemedStyles";
+import { displayFamilyNotificationText } from "@mobile/lib/display-family-notification";
+import { formatDateTime } from "@mobile/i18n/format";
 import { useFamilyContext } from "@mobile/hooks/useFamilyContext";
+import { patchFamilyNotificationRow } from "@mobile/hooks/useFamilyNotificationInbox";
 import { useLayoutInfo } from "@mobile/hooks/useLayoutInfo";
 
-const ACTIVITY_PAGE_SIZE = 5;
+const HOME_UNREAD_LIMIT = 8;
 
 function FeatureBadge({
   Icon,
@@ -221,11 +221,11 @@ function useHomeStyles() {
     securitySub: { fontSize: 12 * fontScale, color: colors.muted, marginTop: 2 },
     securityDivider: { height: 1, backgroundColor: colors.cardBorder, marginBottom: 2 },
     chipScroll: { marginHorizontal: -2, flexGrow: 0 },
-    chipScrollContent: { alignItems: "center" as const, paddingTop: 8, paddingBottom: 6, paddingRight: 4 },
-    chipItem: { flexDirection: "row" as const, alignItems: "center" as const, gap: 8, marginRight: 16 },
+    chipScrollContent: { alignItems: "center" as const, paddingTop: 8, paddingBottom: 6, paddingHorizontal: 4, paddingRight: 16 },
+    chipItem: { flexDirection: "row" as const, alignItems: "center" as const, gap: 8, marginRight: 20, minWidth: 120 },
     chipIconWrap: { paddingTop: 6, paddingRight: 6, position: "relative" as const },
     chipIcon: { width: 36, height: 36, borderRadius: radius.md, alignItems: "center" as const, justifyContent: "center" as const },
-    chipTextBlock: { maxWidth: 140 },
+    chipTextBlock: { flexShrink: 0, maxWidth: 160 },
     chipLabel: { fontSize: 14 * fontScale, fontWeight: "600" as const, color: colors.foreground },
     chipValue: { fontSize: 12 * fontScale },
     chipCount: {
@@ -264,37 +264,25 @@ function useHomeStyles() {
     link: { color: colors.brand, fontWeight: "700" as const, fontSize: 14 * fontScale },
     muted: { color: colors.muted, fontSize: 14 * fontScale, textAlign: "center" as const, paddingVertical: 16 },
     skeleton: { height: 64, borderRadius: radius.lg, backgroundColor: colors.mutedBg, marginBottom: 8 },
-    activityRow: {
-      flexDirection: "row" as const,
-      alignItems: "center" as const,
-      gap: 12,
-      paddingVertical: 10,
-      borderBottomWidth: 1,
-      borderBottomColor: colors.cardBorder,
-    },
-    activityIcon: { width: 36, height: 36, borderRadius: 18, alignItems: "center" as const, justifyContent: "center" as const },
-    activityTitle: { fontSize: 14 * fontScale, fontWeight: "600" as const, color: colors.foreground },
-    activityBody: { fontSize: 14 * fontScale, color: colors.muted },
-    activityTime: { fontSize: 14 * fontScale, color: colors.muted },
-    unreadDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.brand },
-    loadMore: {
-      marginTop: 12,
-      flexDirection: "row" as const,
-      alignItems: "center" as const,
-      justifyContent: "center" as const,
-      gap: 6,
+    unreadCard: {
       borderRadius: radius.lg,
       borderWidth: 1,
-      borderColor: colors.cardBorder,
+      borderColor: colors.brand,
       backgroundColor: colors.mutedBg,
-      paddingVertical: 12,
+      padding: 12,
+      marginBottom: 10,
     },
-    loadMoreText: { fontSize: 14 * fontScale, fontWeight: "600" as const, color: colors.foreground },
+    unreadTitle: { fontSize: 14 * fontScale, fontWeight: "700" as const, color: colors.foreground },
+    unreadBody: { fontSize: 13 * fontScale, color: colors.muted, marginTop: 4 },
+    unreadTime: { fontSize: 11 * fontScale, color: colors.muted, marginTop: 6 },
+    activityIcon: { width: 36, height: 36, borderRadius: 18, alignItems: "center" as const, justifyContent: "center" as const, flexShrink: 0 },
+    unreadDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.brand, marginTop: 6, flexShrink: 0 },
   }));
 }
 
 export default function HomeScreen() {
   const router = useRouter();
+  const qc = useQueryClient();
   const insets = useSafeAreaInsets();
   const { colors, theme } = useTheme();
   const { theme: prefTheme, setTheme } = useAppPrefs();
@@ -307,8 +295,6 @@ export default function HomeScreen() {
   const displayName = family?.name ?? c.defaultFamilyName;
   const services = getHomeServices(locale);
   const defaultChips = getDefaultSecurityChips(locale);
-  const [pageCount, setPageCount] = useState(1);
-  const limit = pageCount * ACTIVITY_PAGE_SIZE;
 
   const unreadQ = useQuery({
     queryKey: ["notifications-unread"],
@@ -317,10 +303,35 @@ export default function HomeScreen() {
   });
   const unread = unreadQ.data?.count ?? 0;
 
-  const activitiesQ = useQuery({
-    queryKey: ["home-activities", limit],
-    queryFn: () => listNotifications({ limit, offset: 0 }),
+  const unreadNotificationsQ = useQuery({
+    queryKey: ["home-unread-notifications"],
+    queryFn: () => listNotifications({ limit: HOME_UNREAD_LIMIT, offset: 0, only_unread: true }),
+    staleTime: 30_000,
   });
+
+  const markReadMut = useMutation({
+    mutationFn: markRead,
+    onMutate: async ({ id }) => {
+      await qc.cancelQueries({ queryKey: ["home-unread-notifications"] });
+      const now = new Date().toISOString();
+      patchFamilyNotificationRow(qc, { id, read_at: now });
+      qc.setQueryData<Awaited<ReturnType<typeof listNotifications>>>(
+        ["home-unread-notifications"],
+        (old) => {
+          if (!old) return old;
+          const rows = old.rows.filter((r) => r.id !== id);
+          return { ...old, rows, total: rows.length };
+        },
+      );
+    },
+    onSettled: () => {
+      void qc.invalidateQueries({ queryKey: ["home-unread-notifications"] });
+      void qc.invalidateQueries({ queryKey: ["notifications-all"] });
+      void qc.invalidateQueries({ queryKey: ["notifications-unread"] });
+    },
+  });
+
+  const unreadNotifications = unreadNotificationsQ.data?.rows ?? [];
 
   const todayQ = useQuery({
     queryKey: ["family-today", familyId, locale],
@@ -335,10 +346,6 @@ export default function HomeScreen() {
     staleTime: 45_000,
   });
 
-  const activities = activitiesQ.data?.rows ?? [];
-  const total = activitiesQ.data?.total ?? 0;
-  const hasMore = activities.length < total;
-      const showCollapse = pageCount > 1 && !hasMore;
   const todayMembers = todayQ.data?.members ?? [];
   const security = securityQ.data;
   const securityTone: SecurityTone = security?.overall ?? "success";
@@ -457,79 +464,79 @@ export default function HomeScreen() {
         </ImageBackground>
       </View>
 
-      <Pressable
-        style={[styles.securityCard, { borderColor: securityBorder }]}
-        onPress={() => router.push("/(tabs)/bao-an")}
-      >
-        <View style={styles.securityTop}>
-          <View style={styles.securityMain}>
-            <View style={[styles.securityIcon, { backgroundColor: securityStyle.chip }]}>
-              <ShieldCheck color={securityStyle.text} size={20} />
-              {securityTone !== "success" && (
-                <View
-                  style={{
-                    position: "absolute",
-                    top: -2,
-                    right: -2,
-                    width: 10,
-                    height: 10,
-                    borderRadius: 5,
-                    backgroundColor: securityStyle.dot,
-                    borderWidth: 2,
-                    borderColor: colors.card,
-                  }}
-                />
-              )}
-            </View>
-            <View style={styles.securityTextBlock}>
-              <Text style={styles.securityLabel}>{h.securityStatus}</Text>
-              <Text style={[styles.securityHeadline, { color: securityStyle.headline }]} numberOfLines={2}>
-                {securityHeadline}
-              </Text>
-              <Text style={styles.securitySub} numberOfLines={1}>
-                {securityUpdated}
-              </Text>
+      <View style={[styles.securityCard, { borderColor: securityBorder }]}>
+        <Pressable onPress={() => router.push("/(tabs)/bao-an")}>
+          <View style={styles.securityTop}>
+            <View style={styles.securityMain}>
+              <View style={[styles.securityIcon, { backgroundColor: securityStyle.chip }]}>
+                <ShieldCheck color={securityStyle.text} size={20} />
+                {securityTone !== "success" && (
+                  <View
+                    style={{
+                      position: "absolute",
+                      top: -2,
+                      right: -2,
+                      width: 10,
+                      height: 10,
+                      borderRadius: 5,
+                      backgroundColor: securityStyle.dot,
+                      borderWidth: 2,
+                      borderColor: colors.card,
+                    }}
+                  />
+                )}
+              </View>
+              <View style={styles.securityTextBlock}>
+                <Text style={styles.securityLabel}>{h.securityStatus}</Text>
+                <Text style={[styles.securityHeadline, { color: securityStyle.headline }]} numberOfLines={2}>
+                  {securityHeadline}
+                </Text>
+                <Text style={styles.securitySub} numberOfLines={1}>
+                  {securityUpdated}
+                </Text>
+              </View>
             </View>
           </View>
-        </View>
+        </Pressable>
         <View style={styles.securityDivider} />
         <ScrollView
           horizontal
+          nestedScrollEnabled
           showsHorizontalScrollIndicator={false}
           style={styles.chipScroll}
           contentContainerStyle={styles.chipScrollContent}
         >
-          {securityChips.map((c) => {
-            const Icon = SECURITY_CHIP_ICONS[c.key] ?? ShieldCheck;
-            const chipStyle = securityToneStyle(colors, c.tone);
+          {securityChips.map((chip) => {
+            const Icon = SECURITY_CHIP_ICONS[chip.key] ?? ShieldCheck;
+            const chipStyle = securityToneStyle(colors, chip.tone);
             return (
-              <View key={c.key} style={styles.chipItem}>
+              <View key={chip.key} style={styles.chipItem}>
                 <View style={styles.chipIconWrap}>
                   <View style={[styles.chipIcon, { backgroundColor: chipStyle.chip }]}>
                     <Icon color={chipStyle.text} size={16} />
                   </View>
-                  {c.count > 0 && (
+                  {chip.count > 0 && (
                     <View style={[styles.chipCount, { backgroundColor: chipStyle.dot }]}>
-                      <Text style={styles.chipCountText}>{c.count}</Text>
+                      <Text style={styles.chipCountText}>{chip.count}</Text>
                     </View>
                   )}
                 </View>
                 <View style={styles.chipTextBlock}>
-                  <Text style={styles.chipLabel} numberOfLines={1}>
-                    {c.label}
+                  <Text style={styles.chipLabel} numberOfLines={2}>
+                    {chip.label}
                   </Text>
                   <Text
-                    style={[styles.chipValue, { color: c.tone === "success" ? colors.muted : chipStyle.text }]}
-                    numberOfLines={1}
+                    style={[styles.chipValue, { color: chip.tone === "success" ? colors.muted : chipStyle.text }]}
+                    numberOfLines={2}
                   >
-                    {c.value}
+                    {chip.value}
                   </Text>
                 </View>
               </View>
             );
           })}
         </ScrollView>
-      </Pressable>
+      </View>
 
       <Card style={{ marginTop: 16 }}>
         <Text style={{ fontSize: 18, fontWeight: "700", color: colors.foreground, marginBottom: 12 }}>
@@ -591,78 +598,42 @@ export default function HomeScreen() {
         )}
       </Card>
 
-      <Card style={{ marginTop: 16, marginBottom: 24 }}>
-        <View style={styles.cardHeader}>
-          <SectionTitle>{h.recentActivity}</SectionTitle>
-          <Pressable onPress={() => router.push("/thong-bao")} style={{ flexDirection: "row", alignItems: "center" }}>
-            <Text style={styles.link}>{c.seeAll}</Text>
-            <ChevronRight color={colors.brand} size={14} />
-          </Pressable>
-        </View>
-        {activitiesQ.isLoading ? (
-          <>
-            <View style={[styles.skeleton, { height: 48 }]} />
-            <View style={[styles.skeleton, { height: 48 }]} />
-          </>
-        ) : activitiesQ.isError ? (
-          <Text style={styles.muted}>{h.activityLoadError}</Text>
-        ) : activities.length === 0 ? (
-          <Text style={styles.muted}>{h.noActivity}</Text>
-        ) : (
-          <>
-            {activities.map((a) => {
-              const v = getActivityVisual(a.type);
-              const ActIcon = v.Icon;
-              return (
-                <View key={a.id} style={styles.activityRow}>
+      {unreadNotifications.length > 0 ? (
+        <Card style={{ marginTop: 16, marginBottom: 24 }}>
+          <View style={styles.cardHeader}>
+            <SectionTitle>{h.newNotifications}</SectionTitle>
+            <Pressable onPress={() => router.push("/thong-bao")} style={{ flexDirection: "row", alignItems: "center" }}>
+              <Text style={styles.link}>{c.seeAll}</Text>
+              <ChevronRight color={colors.brand} size={14} />
+            </Pressable>
+          </View>
+          {unreadNotifications.map((item) => {
+            const copy = displayFamilyNotificationText(item, locale);
+            const v = getActivityVisual(item.type);
+            const ActIcon = v.Icon;
+            return (
+              <Pressable
+                key={item.id}
+                style={styles.unreadCard}
+                onPress={() => markReadMut.mutate({ id: item.id })}
+              >
+                <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 10 }}>
                   <View style={[styles.activityIcon, { backgroundColor: colorFromKey(colors, v.bgKey) }]}>
                     <ActIcon color={colorFromKey(colors, v.colorKey)} size={16} />
                   </View>
                   <View style={{ flex: 1, minWidth: 0 }}>
-                    <Text style={styles.activityTitle} numberOfLines={1}>
-                      {a.title}
-                    </Text>
-                    {a.body ? (
-                      <Text style={styles.activityBody} numberOfLines={1}>
-                        {a.body}
-                      </Text>
-                    ) : null}
+                    <Text style={styles.unreadTitle}>{copy.title}</Text>
+                    {copy.body ? <Text style={styles.unreadBody}>{copy.body}</Text> : null}
+                    <Text style={styles.unreadTime}>{formatDateTime(item.created_at, locale)}</Text>
                   </View>
-                  <Text style={styles.activityTime}>{formatActivityTime(a.created_at, locale)}</Text>
-                  {!a.read_at && <View style={styles.unreadDot} />}
+                  <View style={styles.unreadDot} />
                 </View>
-              );
-            })}
-            {hasMore && (
-              <Pressable
-                style={styles.loadMore}
-                disabled={activitiesQ.isFetching}
-                onPress={() => setPageCount((p) => p + 1)}
-              >
-                {activitiesQ.isFetching ? (
-                  <>
-                    <Loader2 color={colors.foreground} size={14} />
-                    <Text style={styles.loadMoreText}>{c.loading}</Text>
-                  </>
-                ) : (
-                  <Text style={styles.loadMoreText}>
-                    {c.loadMore(activities.length, total)}
-                  </Text>
-                )}
               </Pressable>
-            )}
-            {showCollapse && (
-              <Pressable
-                style={styles.loadMore}
-                disabled={activitiesQ.isFetching}
-                onPress={() => setPageCount(1)}
-              >
-                <Text style={styles.loadMoreText}>{c.showLess}</Text>
-              </Pressable>
-            )}
-          </>
-        )}
-      </Card>
+            );
+          })}
+        </Card>
+      ) : null}
+
     </Screen>
   );
 }

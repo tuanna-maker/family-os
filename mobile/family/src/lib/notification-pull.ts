@@ -1,12 +1,14 @@
 import Constants from "expo-constants";
 import { AppState } from "react-native";
 import * as SecureStore from "expo-secure-store";
+import {
+  markFamilyOsNotificationPresented,
+  shouldPresentFamilyOsNotification,
+} from "@mobile/lib/family-notification-present-state";
 import { presentFamilyNotificationRow } from "@mobile/lib/present-family-notification";
 import { shouldPresentOsNotification } from "@mobile/lib/notification-os";
-import { presentLocalNotification } from "@mobile/lib/push-native";
 import {
   markFamilyChatMessageNotified,
-  shouldNotifyFamilyChatMessage,
 } from "@mobile/lib/chat-notification-pull";
 
 const AUTH_CREDS = {
@@ -147,35 +149,31 @@ export async function pullAndPresentFamilyNotifications(): Promise<boolean> {
     return false;
   }
 
-  const fresh = rows.filter((r) => !seenIds.has(r.id) && shouldPresentOsNotification(r.type)).reverse();
+  const fresh = rows
+    .filter(
+      (r) =>
+        !seenIds.has(r.id) &&
+        !r.read_at &&
+        shouldPresentOsNotification(r.type),
+    )
+    .reverse();
 
   if (fresh.length === 0) return false;
 
   for (const row of fresh) {
+    if (!(await shouldPresentFamilyOsNotification(row))) {
+      seenIds.add(row.id);
+      continue;
+    }
     const isChat = row.type === "security.chat";
     if (isChat && row.ref_id) {
-      if (!(await shouldNotifyFamilyChatMessage(row.ref_id))) {
-        seenIds.add(row.id);
-        continue;
-      }
       await markFamilyChatMessageNotified(row.ref_id);
-      await presentLocalNotification({
-        title: row.title || "Đội bảo an",
-        body: row.body,
-        channelId: "chat",
-        identifier: `chat-${row.ref_id}`,
-        data: {
-          route: "/bao-an/chat",
-          chatMessageId: row.ref_id,
-          notificationId: row.id,
-          type: row.type,
-        },
-      });
       seenIds.add(row.id);
       continue;
     }
 
     await presentFamilyNotificationRow(row);
+    await markFamilyOsNotificationPresented(row);
     seenIds.add(row.id);
   }
   await saveSeenIds(seenIds);
