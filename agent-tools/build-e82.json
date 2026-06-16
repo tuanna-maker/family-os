@@ -1,0 +1,51 @@
+﻿{
+  "id": "e82b259b-e973-4707-a4a0-ca8ae3a1c43c",
+  "status": "ERRORED",
+  "platform": "IOS",
+  "error": {
+    "errorCode": "EAS_BUILD_UNKNOWN_FASTLANE_ERROR",
+    "message": "The \"Run fastlane\" step failed with an unknown error. Refer to \"Xcode Logs\" below for additional, more detailed logs."
+  },
+  "artifacts": {
+    "xcodeBuildLogsUrl": "https://storage.googleapis.com/eas-workflows-production/logs/498d3d55-e61f-4d53-9891-27e92dd9c5cc/e82b259b-e973-4707-a4a0-ca8ae3a1c43c/2026-06-15T09%3A24%3A20Z-e82b259b-e973-4707-a4a0-ca8ae3a1c43c-xcode.txt?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=www-production%40exponentjs.iam.gserviceaccount.com%2F20260615%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20260615T093600Z&X-Goog-Expires=900&X-Goog-SignedHeaders=host&X-Goog-Signature=8d1c23a89334ecf02327b9e50c53cb2c178ee00001438e9f8f57177d343e647cb88618d0cbaf198bd57e788aba3b75966d76603df0539f6e9c20b9df2f39e8827bd0d6589568fcde1eb3d6160fcd3a2b3a23ae38d7c125bd0f42dd5d1862b8847eb7e15b08956d1ed9df835377365e8b62c3bacdf5accf9db67b21fd7825ef2263890541aa3ad9bdd4bcf3b50d1de3f764128b74aaa871d4ee48ee999e1e10001106e535e92052529a52243e2e278ccc3f185fe099bcae56f6dd901b930bcb327a0a65038245fd24ee3aae6378d811f4c54f8a502314b502a4789b703735f4a49f17a3ed5cf7829921cbd9c4ebd95598909551288848d04eb9003e6f87d08045"
+  },
+  "fingerprint": {
+    "id": "019eca87-9a8e-7796-809a-e44916fd3d7f",
+    "hash": "28a65fae91213852c9faf4aa0fb74b9f70100bb0"
+  },
+  "initiatingActor": {
+    "id": "596797b9-d575-4b97-9efe-bf78dcc93903",
+    "displayName": "tuanna-unicom"
+  },
+  "logFiles": [
+    "https://storage.googleapis.com/eas-workflows-production/logs/498d3d55-e61f-4d53-9891-27e92dd9c5cc/e82b259b-e973-4707-a4a0-ca8ae3a1c43c/2026-06-15T09%3A24%3A20Z-669b84aa-cb39-4d1a-ad3d-bfec1e70a43b.txt?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=www-production%40exponentjs.iam.gserviceaccount.com%2F20260615%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20260615T093600Z&X-Goog-Expires=900&X-Goog-SignedHeaders=host&X-Goog-Signature=0073e68530e03da1f5fe0cc0e6d2006f857b730d219599b321aa6e5b52ce6496d6729b42c28b076172e75ee4cac1607093d0336ea01abd1a551adcbb81ffd6290ee3f03d538067dc63428aaf1e02a63d1bfcd053a17086c897ee48babcf972c190b16e018a065330f2102f61a512b41818c88585ebf0a95fd8367015c3710cb79029919648be8fe666085fa39b20789aee4b21db8e41874775f65d0fae16d72e262aab356bf8401629d5a5001c48819a6069d63d5f5415fcc8553df3c63b75011689625843dc62d474baeaf210fa044bff6540a3adb6af7e1de1b33f638b7994a488de0b94f80b2ae275d184ffe9b7bd6553492b9ff218d2c340a7d048a2401d",
+    "https://storage.googleapis.com/eas-workflows-production/logs/498d3d55-e61f-4d53-9891-27e92dd9c5cc/e82b259b-e973-4707-a4a0-ca8ae3a1c43c/2026-06-15T09%3A24%3A20Z-e82b259b-e973-4707-a4a0-ca8ae3a1c43c-xcode.txt?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=www-production%40exponentjs.iam.gserviceaccount.com%2F20260615%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20260615T093600Z&X-Goog-Expires=900&X-Goog-SignedHeaders=host&X-Goog-Signature=8d1c23a89334ecf02327b9e50c53cb2c178ee00001438e9f8f57177d343e647cb88618d0cbaf198bd57e788aba3b75966d76603df0539f6e9c20b9df2f39e8827bd0d6589568fcde1eb3d6160fcd3a2b3a23ae38d7c125bd0f42dd5d1862b8847eb7e15b08956d1ed9df835377365e8b62c3bacdf5accf9db67b21fd7825ef2263890541aa3ad9bdd4bcf3b50d1de3f764128b74aaa871d4ee48ee999e1e10001106e535e92052529a52243e2e278ccc3f185fe099bcae56f6dd901b930bcb327a0a65038245fd24ee3aae6378d811f4c54f8a502314b502a4789b703735f4a49f17a3ed5cf7829921cbd9c4ebd95598909551288848d04eb9003e6f87d08045"
+  ],
+  "project": {
+    "id": "498d3d55-e61f-4d53-9891-27e92dd9c5cc",
+    "name": "stos-life",
+    "slug": "stos-life",
+    "ownerAccount": {
+      "id": "64e13547-ae79-4903-9153-d027187a679c",
+      "name": "unicom-vibe-coding-team"
+    }
+  },
+  "distribution": "STORE",
+  "buildProfile": "production",
+  "sdkVersion": "56.0.0",
+  "appVersion": "0.0.1",
+  "appBuildVersion": "13",
+  "gitCommitHash": "3023939f9a1c05b077fd188d1737238db3131e6f",
+  "gitCommitMessage": "Fix Family and Guard mobile: notifications, avatars, i18n, and landscape.\n\nUnify household avatar sync, fix expo-file-system legacy uploads, dedupe push/chat notifications, add security status i18n, landscape layout, guard resident requests, and Supabase migrations for locale and chat avatars.\n\nCo-authored-by: Cursor <cursoragent@cursor.com>",
+  "priority": "HIGH",
+  "createdAt": "2026-06-15T09:24:17.006Z",
+  "updatedAt": "2026-06-15T09:31:41.032Z",
+  "completedAt": "2026-06-15T09:31:36.688Z",
+  "expirationDate": "2026-07-15T09:24:17.026Z",
+  "isForIosSimulator": false,
+  "metrics": {
+    "buildWaitTime": 2063,
+    "buildQueueTime": 40598,
+    "buildDuration": 397021
+  }
+}
