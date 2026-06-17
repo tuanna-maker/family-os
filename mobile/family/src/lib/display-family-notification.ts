@@ -22,6 +22,14 @@ export function displayFamilyNotificationText(
   if (!isSecurityStatusNotification(row.type, row.title)) {
     return { title: row.title ?? defaultNotificationTitle(lang), body: row.body };
   }
+  const raw = `${row.title ?? ""} ${row.body ?? ""}`;
+  if (
+    row.type === "security.status_changed" &&
+    row.title &&
+    !/→\s*(open|in_progress|resolved)/i.test(raw)
+  ) {
+    return { title: row.title, body: row.body };
+  }
   const status = parseSecurityStatusPhase(row.body, row.title);
   if (!status) {
     return { title: row.title ?? defaultSecurityNotificationTitle(lang), body: row.body };

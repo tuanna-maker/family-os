@@ -1,5 +1,5 @@
 import { Tabs } from "expo-router";
-import { Home, CalendarDays, Bell, User, Shield } from "lucide-react-native";
+import { Home, CalendarDays, Bell, User, ShieldCheck } from "lucide-react-native";
 import { GuardTabBar } from "@mobile/components/GuardTabBar";
 import { GuardNotificationsProvider } from "@mobile/hooks/useGuardNotifications";
 import { useTheme } from "@mobile/theme/themeStore";
@@ -39,7 +39,7 @@ export default function TabLayout() {
         options={{
           title: "Tuần tra",
           tabBarIcon: ({ color, size, focused }) => (
-            <Shield color={color} size={size ?? 18} strokeWidth={focused ? 2.4 : 2} />
+            <ShieldCheck color={color} size={size ?? 20} strokeWidth={focused ? 2.4 : 2.2} />
           ),
         }}
       />

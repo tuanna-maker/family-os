@@ -21,6 +21,14 @@ import {
   pullAndPresentFamilyChatNotifications,
 } from "@mobile/lib/chat-notification-pull";
 import { presentFamilyNotificationRow } from "@mobile/lib/present-family-notification";
+import {
+  parseSecurityStatusPhase,
+  shouldSkipLocalOsSecurityStatusNotification,
+} from "@shared/utils/security-status-notify";
+import {
+  markFamilyOsNotificationPresented,
+} from "@mobile/lib/family-notification-present-state";
+import { markFamilySecurityStatusSeen } from "@mobile/lib/security-status-notify-state";
 import { patchFamilyNotificationRow } from "@mobile/hooks/useFamilyNotificationInbox";
 import {
   registerFamilyBackgroundNotificationTask,
@@ -268,6 +276,22 @@ export function usePushNotifications() {
           if (row.type === "security.chat") {
             const refId = row.ref_id ?? undefined;
             if (refId) void markFamilyChatMessageNotified(refId);
+            return;
+          }
+          if (shouldSkipLocalOsSecurityStatusNotification(row.type)) {
+            const status = parseSecurityStatusPhase(row.body, row.title);
+            const requestId = row.ref_id ?? undefined;
+            void (async () => {
+              if (requestId && status) await markFamilySecurityStatusSeen(requestId, status);
+              if (row.id) {
+                await markFamilyOsNotificationPresented({
+                  id: row.id,
+                  type: row.type,
+                  ref_id: row.ref_id,
+                  created_at: (row as { created_at?: string }).created_at,
+                });
+              }
+            })();
             return;
           }
           void (async () => {

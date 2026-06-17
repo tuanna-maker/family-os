@@ -7,6 +7,7 @@ import {
 } from "@mobile/lib/family-notification-present-state";
 import { presentFamilyNotificationRow } from "@mobile/lib/present-family-notification";
 import { shouldPresentOsNotification } from "@mobile/lib/notification-os";
+import { shouldSkipLocalOsSecurityStatusNotification } from "@shared/utils/security-status-notify";
 import {
   markFamilyChatMessageNotified,
 } from "@mobile/lib/chat-notification-pull";
@@ -154,7 +155,8 @@ export async function pullAndPresentFamilyNotifications(): Promise<boolean> {
       (r) =>
         !seenIds.has(r.id) &&
         !r.read_at &&
-        shouldPresentOsNotification(r.type),
+        shouldPresentOsNotification(r.type) &&
+        !shouldSkipLocalOsSecurityStatusNotification(r.type),
     )
     .reverse();
 

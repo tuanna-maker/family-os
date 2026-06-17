@@ -183,7 +183,19 @@ export async function getActiveShift(): Promise<GuardShift | null> {
     .limit(1)
     .maybeSingle();
   if (schedErr) throw new Error(schedErr.message);
-  return (scheduled as GuardShift | null) ?? null;
+  if (scheduled) return scheduled as GuardShift;
+
+  const { data: completed, error: doneErr } = await supabase
+    .from("guard_shifts")
+    .select("*")
+    .in("guard_id", scope.lookup_guard_ids)
+    .eq("status", "checked_out")
+    .eq("shift_date", today)
+    .order("check_out_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (doneErr) throw new Error(doneErr.message);
+  return (completed as GuardShift | null) ?? null;
 }
 
 export async function checkInShift(input?: {
@@ -221,6 +233,20 @@ export async function checkInShift(input?: {
     .maybeSingle();
 
   if (!scheduled) {
+    const { data: completed } = await supabase
+      .from("guard_shifts")
+      .select("id")
+      .in("guard_id", scope.lookup_guard_ids)
+      .eq("status", "checked_out")
+      .eq("shift_date", today)
+      .order("check_out_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (completed) {
+      throw new Error("Ca trực hôm nay đã hoàn thành. Bạn không thể check-in lại.");
+    }
+
     throw new Error(
       "Hôm nay bạn không có ca trực được phân công. Vui lòng liên hệ quản lý an ninh.",
     );

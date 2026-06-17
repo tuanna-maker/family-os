@@ -1,12 +1,13 @@
-import { Image, Pressable, Text, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
+import { Image } from "expo-image";
 
-import { appAlert } from "@mobile/utils/alert";
+// delete album UI removed from this screen
 
 import { useLocalSearchParams, useRouter } from "expo-router";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 
-import { Camera, Pencil, Trash2 } from "lucide-react-native";
+import { Camera } from "lucide-react-native";
 
 import { Screen } from "@mobile/components/Screen";
 
@@ -16,11 +17,9 @@ import { EmptyState, LoadingState } from "@mobile/components/states";
 
 import { useFamilyContext } from "@mobile/hooks/useFamilyContext";
 
-import { deleteAlbum, getAlbum } from "@mobile/api/albums";
+import { getAlbum } from "@mobile/api/albums";
 
-import { toast } from "@mobile/utils/toast";
-
-import { invalidateMomentQueries } from "@mobile/constants/momentQueryKeys";
+//
 
 import { useTheme } from "@mobile/theme/themeStore";
 
@@ -62,8 +61,6 @@ export default function AlbumDetailScreen() {
 
   const { familyId } = useFamilyContext();
 
-  const qc = useQueryClient();
-
   const { locale, s } = useI18n();
 
   const mem = s.screens.memories;
@@ -84,25 +81,7 @@ export default function AlbumDetailScreen() {
 
 
 
-  const delMut = useMutation({
-
-    mutationFn: () => deleteAlbum({ id: albumId!, family_id: familyId! }),
-
-    onSuccess: () => {
-
-      qc.invalidateQueries({ queryKey: ["family-albums", familyId] });
-
-      if (familyId) invalidateMomentQueries(qc, familyId);
-
-      toast.success(c.albumDeleted);
-
-      router.replace("/ky-niem-gia-dinh/album");
-
-    },
-
-    onError: (e: Error) => toast.error(e.message),
-
-  });
+  // delete album action removed from this screen (handled in album list)
 
 
 
@@ -144,55 +123,25 @@ export default function AlbumDetailScreen() {
 
       <PageHeader
 
-        eyebrow={mem.albumList}
-
-        title={displayAlbumTitle(album.title, locale)}
+        title={`${album.cover_emoji} ${displayAlbumTitle(album.title, locale)}${categoryLabel ? ` · ${categoryLabel}` : ""}`}
 
         back="/ky-niem-gia-dinh/album"
-
-        right={
-
-          <Pressable onPress={() => router.push(`/ky-niem-gia-dinh/album/sua/${albumId}`)}>
-
-            <Pencil color={colors.brand} size={20} />
-
-          </Pressable>
-
-        }
+        alignTitleWithContent
 
       />
 
-      <Text style={styles.headerEmoji}>{album.cover_emoji}</Text>
-
-      {categoryLabel ? <Text style={styles.category}>{categoryLabel}</Text> : null}
-
-
-
       <Pressable
-
         style={styles.uploadBanner}
-
         onPress={() =>
-
           router.push({
-
             pathname: "/ky-niem-gia-dinh/upload",
-
             params: { album_id: albumId },
-
           })
-
         }
-
       >
-
         <Camera color={colors.brand} size={20} />
-
         <Text style={styles.uploadText}>{c.uploadToAlbum}</Text>
-
       </Pressable>
-
-
 
       {moments.length === 0 ? (
 
@@ -201,20 +150,6 @@ export default function AlbumDetailScreen() {
           title={c.emptyAlbum}
 
           description={c.emptyAlbumDesc}
-
-          actionLabel={c.uploadToAlbum}
-
-          onAction={() =>
-
-            router.push({
-
-              pathname: "/ky-niem-gia-dinh/upload",
-
-              params: { album_id: albumId },
-
-            })
-
-          }
 
         />
 
@@ -227,9 +162,11 @@ export default function AlbumDetailScreen() {
             <Pressable key={m.id} style={styles.cell} onPress={() => router.push(`/ky-niem-gia-dinh/${m.id}`)}>
 
               <Image
-                source={{ uri: momentThumbUrl(m.media_url, m.thumbnail_url) }}
+                source={momentThumbUrl(m.media_url, m.thumbnail_url)}
                 style={styles.img}
-                resizeMode="cover"
+                contentFit="cover"
+                cachePolicy="memory-disk"
+                transition={180}
               />
 
             </Pressable>
@@ -241,30 +178,6 @@ export default function AlbumDetailScreen() {
       )}
 
 
-
-      <Pressable
-
-        style={styles.delBtn}
-
-        onPress={() =>
-
-          appAlert(c.deleteAlbum, c.deleteAlbumConfirm, [
-
-            { text: c.cancel, style: "cancel" },
-
-            { text: c.deleteAlbum, style: "destructive", onPress: () => delMut.mutate() },
-
-          ])
-
-        }
-
-      >
-
-        <Trash2 color={colors.emergency} size={18} />
-
-        <Text style={styles.delText}>{c.deleteAlbum}</Text>
-
-      </Pressable>
 
       <View style={{ height: 32 }} />
 
@@ -279,29 +192,16 @@ export default function AlbumDetailScreen() {
 function useAlbumDetailStyles() {
 
   return useThemedStyles((c, fontScale) => ({
-
-    headerEmoji: { fontSize: 28, marginBottom: 8 },
-
-    category: { fontSize: 12 * fontScale, color: c.muted, marginBottom: 12 },
-
     uploadBanner: {
-
       flexDirection: "row" as const,
-
       alignItems: "center" as const,
-
       gap: 10,
-
       backgroundColor: c.tintOrange,
-
       padding: 12,
-
       borderRadius: radius.lg,
-
+      marginTop: 12,
       marginBottom: 16,
-
     },
-
     uploadText: { fontWeight: "700" as const, color: c.foreground, fontSize: 14 * fontScale },
 
     grid: { flexDirection: "row" as const, flexWrap: "wrap" as const, gap: 8 },
@@ -309,24 +209,6 @@ function useAlbumDetailStyles() {
     cell: { width: "48%" as const },
 
     img: { width: "100%" as const, aspectRatio: 1, borderRadius: radius.md },
-
-    delBtn: {
-
-      flexDirection: "row" as const,
-
-      alignItems: "center" as const,
-
-      justifyContent: "center" as const,
-
-      gap: 8,
-
-      marginTop: 24,
-
-      paddingVertical: 12,
-
-    },
-
-    delText: { color: c.emergency, fontWeight: "600" as const },
 
   }));
 

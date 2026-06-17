@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { ActivityIndicator, Linking, Pressable, ScrollView, Text, View } from "react-native";
+import { ActivityIndicator, Image, Linking, Pressable, ScrollView, Text, View } from "react-native";
 import { useQuery } from "@tanstack/react-query";
 import { Calendar, CheckCircle2, Clock, Phone, Shield } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -39,6 +39,52 @@ function isUnscopedError(err: unknown) {
   return ((err as Error)?.message ?? "").includes("chưa được liên kết với căn hộ");
 }
 
+function guardInitials(name: string | null | undefined, fallback: string) {
+  return (name ?? fallback)
+    .split(/\s+/)
+    .map((s) => s[0])
+    .filter(Boolean)
+    .slice(-2)
+    .join("")
+    .toUpperCase();
+}
+
+function GuardAvatar({
+  uri,
+  name,
+  fallback,
+  size,
+  boxStyle,
+  textStyle,
+}: {
+  uri?: string | null;
+  name?: string | null;
+  fallback: string;
+  size: number;
+  boxStyle: { width: number; height: number; borderRadius: number; backgroundColor: string; alignItems: "center"; justifyContent: "center" };
+  textStyle: { fontSize: number; fontWeight: "700"; color: string };
+}) {
+  const imageUri = uri?.trim();
+  if (imageUri) {
+    return (
+      <Image
+        source={{ uri: imageUri }}
+        style={{
+          width: size,
+          height: size,
+          borderRadius: boxStyle.borderRadius,
+          backgroundColor: boxStyle.backgroundColor,
+        }}
+      />
+    );
+  }
+  return (
+    <View style={boxStyle}>
+      <Text style={textStyle}>{guardInitials(name, fallback)}</Text>
+    </View>
+  );
+}
+
 function GuardCard({
   g,
   guards,
@@ -52,20 +98,19 @@ function GuardCard({
   styles: ReturnType<typeof useStyles>;
   colors: ReturnType<typeof useTheme>["colors"];
 }) {
-  const initials = (g.full_name ?? guards.defaultName)
-    .split(/\s+/)
-    .map((s) => s[0])
-    .slice(-2)
-    .join("")
-    .toUpperCase();
   const roleLabel = g.role === "security_admin" ? guards.roleAdmin : guards.roleGuard;
 
   return (
     <Card style={{ marginBottom: 10, padding: 14 }}>
       <View style={styles.guardRow}>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>{initials}</Text>
-        </View>
+        <GuardAvatar
+          uri={g.avatar_url}
+          name={g.full_name}
+          fallback={guards.defaultName}
+          size={48}
+          boxStyle={styles.avatar}
+          textStyle={styles.avatarText}
+        />
         <View style={{ flex: 1 }}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
             <Text style={styles.name}>{g.full_name ?? guards.defaultName}</Text>
@@ -152,15 +197,14 @@ function ShiftDetailPanel({
         dayShifts.map((s) => (
           <Card key={s.shift_id} style={{ marginBottom: 8, padding: 14 }}>
             <View style={styles.shiftRow}>
-              <View style={styles.shiftAvatar}>
-                <Text style={styles.shiftAvatarText}>
-                  {(s.guard_name ?? guards.defaultName)
-                    .split(/\s+/)
-                    .slice(-1)[0]
-                    ?.slice(0, 2)
-                    .toUpperCase() ?? guards.defaultName.slice(0, 2).toUpperCase()}
-                </Text>
-              </View>
+              <GuardAvatar
+                uri={s.guard_avatar}
+                name={s.guard_name}
+                fallback={guards.defaultName}
+                size={40}
+                boxStyle={styles.shiftAvatar}
+                textStyle={styles.shiftAvatarText}
+              />
               <View style={{ flex: 1 }}>
                 <Text style={styles.name}>{s.guard_name ?? guards.defaultName}</Text>
                 <Text style={styles.role}>{shiftLabel(guards, s.shift_type)}</Text>

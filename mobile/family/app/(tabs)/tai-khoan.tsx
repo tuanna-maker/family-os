@@ -10,6 +10,7 @@ import {
   LogOut,
   Moon,
   Settings,
+  User,
 } from "lucide-react-native";
 import type { LucideIcon } from "lucide-react-native";
 import { Screen } from "@mobile/components/Screen";
@@ -21,6 +22,7 @@ import { useAppPrefs } from "@mobile/hooks/useAppPrefs";
 import { useI18n } from "@mobile/i18n/useI18n";
 import { getMyContext } from "@shared/supabase/auth";
 import { uploadAvatarFromUri, updateProfileAvatar } from "@mobile/api/avatars";
+import { getUserProfileDetails } from "@mobile/api/profile";
 import { resolveHouseholdAvatarUrl } from "@mobile/lib/household-avatar";
 import { formatMemberName } from "@mobile/utils/displayName";
 import { toast } from "@mobile/utils/toast";
@@ -49,6 +51,7 @@ export default function TaiKhoanScreen() {
   const [signingOut, setSigningOut] = useState(false);
 
   const ctxQ = useQuery({ queryKey: ["my-context"], queryFn: () => getMyContext() });
+  const profileQ = useQuery({ queryKey: ["user-profile-details"], queryFn: () => getUserProfileDetails() });
   const isOwner = !!ctxQ.data?.userId && family?.owner_id === ctxQ.data.userId;
 
   const displayName = useMemo(() => {
@@ -68,6 +71,11 @@ export default function TaiKhoanScreen() {
   };
 
   const links: LinkItem[] = [
+    {
+      icon: User,
+      label: s.account.profile.menuLabel,
+      onPress: () => router.push("/cai-dat/thong-tin" as Href),
+    },
     {
       icon: Settings,
       label: `${s.settings.notifications.eyebrow} · ${s.settings.notifications.title}`,
@@ -123,6 +131,16 @@ export default function TaiKhoanScreen() {
           <Text style={styles.email} numberOfLines={1}>
             {user?.email ?? ctxQ.data?.email ?? ""}
           </Text>
+          {profileQ.data?.phone ? (
+            <Text style={styles.meta} numberOfLines={1}>
+              {profileQ.data.phone}
+            </Text>
+          ) : null}
+          {family?.apartment ? (
+            <Text style={styles.meta} numberOfLines={1}>
+              {family.apartment}
+            </Text>
+          ) : null}
         </View>
       </Card>
 
@@ -180,6 +198,7 @@ function useAccountStyles() {
     profileText: { flex: 1, minWidth: 0 },
     name: { fontSize: 16 * fontScale, fontWeight: "700" as const, color: c.foreground },
     email: { fontSize: 12 * fontScale, color: c.muted, marginTop: 4 },
+    meta: { fontSize: 11 * fontScale, color: c.muted, marginTop: 2 },
     menuCard: { padding: 0, overflow: "hidden" as const, marginBottom: 12 },
     menuRow: {
       flexDirection: "row" as const,

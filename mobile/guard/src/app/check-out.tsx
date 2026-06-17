@@ -1,14 +1,16 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, Pressable } from "react-native";
+import { View, Text, Pressable, ScrollView, StyleSheet } from "react-native";
 import { showAppAlert } from "@mobile/components/AppAlert";
 import { useRouter } from "expo-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { SubHeader } from "@mobile/components/SubHeader";
 import { MapPin, AlertTriangle, Check } from "lucide-react-native";
 import { checkOutShift, getActiveShift } from "@guard/api/guard-shifts";
+import { listOpenResidentRequests } from "@guard/api/security";
 import { invalidateShiftQueries, resolveGuardLocation, type GuardCoords } from "@mobile/utils/guardGeo";
 import { shiftLabel, shiftTimeRange } from "@mobile/utils/guardFormat";
 import { useTheme } from "@mobile/theme/themeStore";
+import { radius } from "@mobile/theme/colors";
 
 function useLiveClock() {
   const [now, setNow] = useState(new Date());
@@ -19,12 +21,13 @@ function useLiveClock() {
   return now;
 }
 
-const CHECKLIST = [
+const MANUAL_CHECKLIST = [
   "Không còn sự cố chờ xử lý",
   "Đã bàn giao chìa khoá / bộ đàm",
   "Đã hoàn thành tuần tra",
-  "Không còn yêu cầu cư dân đang mở",
 ] as const;
+
+const RESIDENT_CHECK_LABEL = "Không còn yêu cầu cư dân đang mở";
 
 export default function CheckOutScreen() {
   const router = useRouter();
@@ -35,14 +38,24 @@ export default function CheckOutScreen() {
   const [loading, setLoading] = useState(true);
   const [checkingOut, setCheckingOut] = useState(false);
   const [geoError, setGeoError] = useState<string | null>(null);
-  const [checks, setChecks] = useState<boolean[]>([true, true, true, true]);
+  const [manualChecks, setManualChecks] = useState<boolean[]>([false, false, false]);
 
   const { data: activeShift, isLoading: shiftLoading } = useQuery({
     queryKey: ["guard-active-shift"],
     queryFn: () => getActiveShift(),
   });
 
+  const { data: openRequests = [] } = useQuery({
+    queryKey: ["guard-open-requests"],
+    queryFn: () => listOpenResidentRequests(),
+    refetchInterval: 30_000,
+  });
+
   const onDuty = activeShift?.status === "checked_in";
+  const residentClear = openRequests.length === 0;
+  const manualDone = manualChecks.every(Boolean);
+  const canCheckOut = onDuty && manualDone && residentClear;
+  const btnBusy = checkingOut || shiftLoading;
 
   useEffect(() => {
     void (async () => {
@@ -65,17 +78,7 @@ export default function CheckOutScreen() {
   }, [shiftLoading, onDuty, router]);
 
   const handleCheckOut = async () => {
-    if (!onDuty) {
-      showAppAlert({ title: "Chưa vào ca", message: "Bạn chưa check-in ca trực." });
-      return;
-    }
-    if (!checks.every(Boolean)) {
-      showAppAlert({
-        title: "Chưa hoàn tất",
-        message: "Vui lòng xác nhận đủ các mục trong checklist trước khi kết thúc ca.",
-      });
-      return;
-    }
+    if (!canCheckOut) return;
     setCheckingOut(true);
     try {
       await checkOutShift({ location: coords ?? undefined });
@@ -96,76 +99,200 @@ export default function CheckOutScreen() {
   const dateStr = now.toLocaleDateString("vi-VN");
 
   return (
-    <View className="flex-1 bg-background">
+    <View style={[styles.screen, { backgroundColor: colors.background }]}>
       <SubHeader title="Kết thúc ca" back="/(tabs)" />
-      <View className="flex-1 px-5 pt-4 pb-8">
-        <View className="items-center mb-6">
-          <View className="h-36 w-36 rounded-full border-2 border-red-400/50 items-center justify-center bg-card">
-            <View className="h-28 w-28 rounded-full bg-red-500/10 items-center justify-center">
-              <MapPin size={40} color="#ef4444" />
+      <View style={styles.body}>
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+        <View style={styles.hero}>
+          <View style={[styles.mapRing, { borderColor: colors.emergency, backgroundColor: colors.card }]}>
+            <View style={[styles.mapInner, { backgroundColor: colors.tintRed }]}>
+              <MapPin size={40} color={colors.emergency} />
             </View>
           </View>
           {loading ? (
-            <Text className="text-muted-foreground mt-4">Đang lấy vị trí…</Text>
+            <Text style={[styles.geoText, { color: colors.muted }]}>Đang lấy vị trí…</Text>
           ) : coords ? (
-            <Text className="text-muted-foreground mt-4 text-sm">Vị trí hiện tại đã ghi nhận</Text>
+            <Text style={[styles.geoText, { color: colors.success }]}>Vị trí hiện tại đã ghi nhận</Text>
           ) : (
-            <Text className="text-amber-600 mt-4 text-center px-4">{geoError}</Text>
+            <Text style={[styles.geoText, { color: colors.warning }]}>{geoError}</Text>
           )}
           {onDuty && activeShift ? (
-            <Text className="text-xs text-muted-foreground mt-2">
+            <Text style={[styles.shiftMeta, { color: colors.muted }]}>
               {shiftLabel(activeShift.shift_type)} · {shiftTimeRange(activeShift.shift_type)}
             </Text>
           ) : null}
         </View>
 
-        <View className="items-center mb-6">
-          <Text className="text-4xl font-bold text-red-500 tracking-wider">{timeStr}</Text>
-          <Text className="text-sm text-muted-foreground mt-1">{dateStr}</Text>
+        <View style={styles.clockWrap}>
+          <Text style={[styles.clock, { color: colors.emergency }]}>{timeStr}</Text>
+          <Text style={[styles.date, { color: colors.muted }]}>{dateStr}</Text>
         </View>
 
-        <Text className="text-base font-bold text-foreground mb-3">Xác nhận kết thúc ca</Text>
-        <View className="rounded-2xl bg-card border border-border p-4 mb-6 gap-3">
-          {CHECKLIST.map((label, i) => (
-            <Pressable
-              key={label}
-              className="flex-row items-center gap-3"
-              onPress={() =>
-                setChecks((prev) => prev.map((v, idx) => (idx === i ? !v : v)))
-              }
-            >
-              <View
-                className={`h-6 w-6 rounded-full items-center justify-center ${
-                  checks[i] ? "bg-green-500" : "border-2 border-muted"
-                }`}
+        <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Xác nhận kết thúc ca</Text>
+        <View style={[styles.checklist, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
+          {MANUAL_CHECKLIST.map((label, i) => {
+            const checked = manualChecks[i];
+            return (
+              <Pressable
+                key={label}
+                style={styles.checkRow}
+                onPress={() =>
+                  setManualChecks((prev) => prev.map((v, idx) => (idx === i ? !v : v)))
+                }
               >
-                {checks[i] ? <Check size={14} color="white" /> : null}
-              </View>
-              <Text className={`flex-1 text-sm ${checks[i] ? "text-foreground" : "text-muted-foreground"}`}>
-                {label}
+                <View
+                  style={[
+                    styles.checkCircle,
+                    checked
+                      ? { backgroundColor: colors.success, borderColor: colors.success }
+                      : { borderColor: colors.foreground, backgroundColor: colors.surfaceElevated },
+                  ]}
+                >
+                  {checked ? <Check size={14} color={colors.white} /> : null}
+                </View>
+                <Text style={[styles.checkLabel, { color: colors.foreground, opacity: checked ? 1 : 0.88 }]}>
+                  {label}
+                </Text>
+              </Pressable>
+            );
+          })}
+
+          <View style={styles.checkRow}>
+            <View
+              style={[
+                styles.checkCircle,
+                residentClear
+                  ? { backgroundColor: colors.success, borderColor: colors.success }
+                  : { borderColor: colors.warning, backgroundColor: colors.tintOrange },
+              ]}
+            >
+              {residentClear ? <Check size={14} color={colors.white} /> : null}
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.checkLabel, { color: residentClear ? colors.foreground : colors.warning }]}>
+                {RESIDENT_CHECK_LABEL}
               </Text>
-            </Pressable>
-          ))}
+              {!residentClear ? (
+                <Pressable onPress={() => router.push("/requests")}>
+                  <Text style={[styles.checkHint, { color: colors.brand }]}>
+                    Còn {openRequests.length} yêu cầu đang mở — nhấn để xử lý
+                  </Text>
+                </Pressable>
+              ) : null}
+            </View>
+          </View>
         </View>
 
-        {!onDuty && !shiftLoading ? (
-          <View className="items-center py-2 mb-4">
-            <AlertTriangle size={28} color="#f59e0b" />
-            <Text className="text-amber-600 text-center mt-2">Bạn chưa vào ca trực.</Text>
-          </View>
+        {!canCheckOut && onDuty && !shiftLoading ? (
+          <Text style={[styles.hint, { color: colors.muted }]}>
+            {!manualDone
+              ? "Tick đủ 3 mục xác nhận phía trên."
+              : `Còn ${openRequests.length} yêu cầu cư dân — xử lý xong mới kết thúc ca.`}
+          </Text>
         ) : null}
 
-        <Pressable
-          onPress={() => void handleCheckOut()}
-          disabled={checkingOut || shiftLoading || !onDuty}
-          className={`mt-auto rounded-2xl py-4 items-center ${onDuty ? "bg-red-500" : "bg-muted"}`}
-          style={{ opacity: checkingOut || shiftLoading ? 0.7 : 1 }}
-        >
-          <Text className="text-white font-bold text-base uppercase tracking-wide">
-            {checkingOut ? "Đang xử lý…" : "Xác nhận kết thúc ca"}
-          </Text>
-        </Pressable>
+        {!onDuty && !shiftLoading ? (
+          <View style={styles.warnBox}>
+            <AlertTriangle size={28} color={colors.warning} />
+            <Text style={[styles.warnText, { color: colors.warning }]}>Bạn chưa vào ca trực.</Text>
+          </View>
+        ) : null}
+        </ScrollView>
+
+        <View style={[styles.footer, { borderTopColor: colors.cardBorder }]}>
+          <Pressable
+            onPress={() => void handleCheckOut()}
+            disabled={btnBusy || !canCheckOut}
+            style={[
+              styles.submitBtn,
+              {
+                backgroundColor: canCheckOut && !btnBusy ? colors.emergency : colors.mutedBg,
+                borderColor: canCheckOut && !btnBusy ? colors.emergency : colors.cardBorder,
+                opacity: btnBusy ? 0.7 : canCheckOut ? 1 : 0.55,
+              },
+            ]}
+          >
+            <Text
+              style={[
+                styles.submitText,
+                { color: canCheckOut && !btnBusy ? colors.white : colors.muted },
+              ]}
+            >
+              {checkingOut ? "Đang xử lý…" : "Xác nhận kết thúc ca"}
+            </Text>
+          </Pressable>
+        </View>
       </View>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  screen: { flex: 1 },
+  body: { flex: 1 },
+  scroll: { flex: 1 },
+  scrollContent: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 16 },
+  footer: {
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 32,
+    borderTopWidth: StyleSheet.hairlineWidth,
+  },
+  hero: { alignItems: "center", marginBottom: 20 },
+  mapRing: {
+    height: 144,
+    width: 144,
+    borderRadius: 72,
+    borderWidth: 2,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  mapInner: {
+    height: 112,
+    width: 112,
+    borderRadius: 56,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  geoText: { marginTop: 16, fontSize: 14, textAlign: "center", paddingHorizontal: 16 },
+  shiftMeta: { marginTop: 8, fontSize: 12 },
+  clockWrap: { alignItems: "center", marginBottom: 20 },
+  clock: { fontSize: 40, fontWeight: "700", letterSpacing: 1 },
+  date: { marginTop: 4, fontSize: 14 },
+  sectionTitle: { fontSize: 16, fontWeight: "700", marginBottom: 12 },
+  checklist: {
+    borderRadius: radius.xl,
+    borderWidth: 1,
+    padding: 16,
+    gap: 14,
+    marginBottom: 12,
+    flexShrink: 0,
+  },
+  checkRow: { flexDirection: "row", alignItems: "flex-start", gap: 12 },
+  checkCircle: {
+    height: 26,
+    width: 26,
+    borderRadius: 13,
+    borderWidth: 2,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 1,
+  },
+  checkLabel: { flex: 1, fontSize: 14, lineHeight: 20, fontWeight: "500" },
+  checkHint: { fontSize: 12, marginTop: 4, fontWeight: "600" },
+  hint: { fontSize: 12, textAlign: "center", marginBottom: 12 },
+  warnBox: { alignItems: "center", paddingVertical: 8, marginBottom: 8 },
+  warnText: { marginTop: 8, textAlign: "center" },
+  submitBtn: {
+    borderRadius: radius.xl,
+    borderWidth: 1,
+    paddingVertical: 16,
+    alignItems: "center",
+  },
+  submitText: { fontSize: 15, fontWeight: "700", textTransform: "uppercase", letterSpacing: 0.5 },
+});

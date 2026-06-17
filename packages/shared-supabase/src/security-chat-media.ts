@@ -1,6 +1,7 @@
 import { getSupabase } from "./get-client";
 
 export const SECURITY_CHAT_BUCKET = "security-chat";
+const SIGNED_TTL = 60 * 60 * 24 * 365;
 
 export type SecurityChatMessageType = "text" | "image" | "audio" | "emoji";
 
@@ -16,6 +17,9 @@ export async function uploadSecurityChatBytes(
     upsert: false,
   });
   if (error) throw new Error(error.message);
-  const { data } = supabase.storage.from(SECURITY_CHAT_BUCKET).getPublicUrl(path);
-  return data.publicUrl;
+  const { data, error: signErr } = await supabase.storage
+    .from(SECURITY_CHAT_BUCKET)
+    .createSignedUrl(path, SIGNED_TTL);
+  if (signErr || !data?.signedUrl) throw new Error(signErr?.message ?? "Không tạo được link file");
+  return data.signedUrl;
 }

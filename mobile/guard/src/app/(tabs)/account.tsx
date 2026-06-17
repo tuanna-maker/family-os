@@ -40,6 +40,7 @@ type MenuItem = {
   onPress?: () => void;
   value?: string;
   danger?: boolean;
+  centered?: boolean;
   trailing?: React.ReactNode;
 };
 
@@ -199,6 +200,7 @@ export default function AccountScreen() {
           icon: LogOut,
           label: "Đăng xuất",
           danger: true,
+          centered: true,
           onPress: handleLogout,
         },
       ],
@@ -249,32 +251,43 @@ export default function AccountScreen() {
             {section.items.map((item, idx) => (
               <TouchableOpacity
                 key={item.label}
-                className={`flex-row items-center p-4 ${idx < section.items.length - 1 ? "border-b border-border" : ""}`}
+                className={`flex-row items-center p-4 ${item.centered ? "justify-center" : ""} ${idx < section.items.length - 1 ? "border-b border-border" : ""}`}
                 onPress={item.onPress}
                 disabled={!item.onPress && !item.trailing}
                 activeOpacity={item.onPress ? 0.7 : 1}
               >
-                <View
-                  className={`h-8 w-8 rounded-full items-center justify-center mr-3 ${
-                    item.danger ? "bg-emergency/15" : "bg-muted"
-                  }`}
-                >
-                  <item.icon
-                    size={16}
-                    color={item.danger ? colors.emergency : colors.foreground}
-                  />
-                </View>
-                <Text
-                  className={`flex-1 text-base font-medium ${
-                    item.danger ? "text-emergency" : "text-foreground"
-                  }`}
-                >
-                  {item.label}
-                </Text>
-                {item.value ? (
-                  <Text className="text-sm text-muted-foreground mr-2">{item.value}</Text>
-                ) : null}
-                {item.trailing ?? (item.onPress ? <ChevronRight size={20} color={colors.muted} /> : null)}
+                {item.centered ? (
+                  <>
+                    <View className="h-8 w-8 rounded-full items-center justify-center mr-2 bg-emergency/15">
+                      <item.icon size={16} color={colors.emergency} />
+                    </View>
+                    <Text className="text-base font-medium text-emergency">{item.label}</Text>
+                  </>
+                ) : (
+                  <>
+                    <View
+                      className={`h-8 w-8 rounded-full items-center justify-center mr-3 ${
+                        item.danger ? "bg-emergency/15" : "bg-muted"
+                      }`}
+                    >
+                      <item.icon
+                        size={16}
+                        color={item.danger ? colors.emergency : colors.foreground}
+                      />
+                    </View>
+                    <Text
+                      className={`flex-1 text-base font-medium ${
+                        item.danger ? "text-emergency" : "text-foreground"
+                      }`}
+                    >
+                      {item.label}
+                    </Text>
+                    {item.value ? (
+                      <Text className="text-sm text-muted-foreground mr-2">{item.value}</Text>
+                    ) : null}
+                    {item.trailing ?? (item.onPress ? <ChevronRight size={20} color={colors.muted} /> : null)}
+                  </>
+                )}
               </TouchableOpacity>
             ))}
           </View>

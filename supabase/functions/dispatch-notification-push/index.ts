@@ -213,8 +213,16 @@ Deno.serve(async (req) => {
     }
 
     const localized = await localizedSecurityStatusCopy(admin, notif);
-    const pushTitle = localized?.title ?? notif.title || "Thông báo mới";
-    const pushBody = localized?.body ?? notif.body ?? "";
+    const useStoredCopy =
+      notif.type === "security.status_changed" &&
+      notif.title &&
+      !/→\s*(open|in_progress|resolved)/i.test(`${notif.title} ${notif.body ?? ""}`);
+    const pushTitle = useStoredCopy
+      ? notif.title
+      : (localized?.title ?? notif.title || "Thông báo mới");
+    const pushBody = useStoredCopy
+      ? (notif.body ?? "")
+      : (localized?.body ?? notif.body ?? "");
 
     const apps = await resolveApps(admin, notif.user_id);
     const tokens = await fetchTokens(admin, notif.user_id, apps);

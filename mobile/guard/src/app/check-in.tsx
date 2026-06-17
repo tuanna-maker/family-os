@@ -35,6 +35,7 @@ export default function CheckInScreen() {
   });
 
   const onDuty = activeShift?.status === "checked_in";
+  const shiftCompletedToday = activeShift?.status === "checked_out";
   const canCheckIn = activeShift?.status === "scheduled";
   const noShiftToday = !shiftLoading && !activeShift;
 
@@ -55,6 +56,12 @@ export default function CheckInScreen() {
         message: "Bạn đang trong ca trực, không cần check-in lại.",
         buttons: [{ text: "OK", onPress: () => router.replace("/(tabs)") }],
       });
+    } else if (shiftCompletedToday) {
+      showAppAlert({
+        title: "Ca đã hoàn thành",
+        message: "Ca trực hôm nay đã kết thúc. Bạn không thể check-in lại.",
+        buttons: [{ text: "OK", onPress: () => router.back() }],
+      });
     } else if (noShiftToday) {
       showAppAlert({
         title: "Không có ca trực",
@@ -62,15 +69,17 @@ export default function CheckInScreen() {
         buttons: [{ text: "OK", onPress: () => router.back() }],
       });
     }
-  }, [shiftLoading, onDuty, noShiftToday, router]);
+  }, [shiftLoading, onDuty, shiftCompletedToday, noShiftToday, router]);
 
   const handleCheckIn = async () => {
     if (!canCheckIn) {
       showAppAlert({
-        title: "Không thể vào ca",
-        message: noShiftToday
-          ? "Hôm nay bạn không có ca trực được phân công."
-          : "Bạn đang trong ca hoặc đã kết thúc ca hôm nay.",
+        title: shiftCompletedToday ? "Ca đã hoàn thành" : "Không thể vào ca",
+        message: shiftCompletedToday
+          ? "Ca trực hôm nay đã kết thúc. Bạn không thể check-in lại."
+          : noShiftToday
+            ? "Hôm nay bạn không có ca trực được phân công."
+            : "Bạn đang trong ca hoặc đã kết thúc ca hôm nay.",
       });
       return;
     }
@@ -132,7 +141,14 @@ export default function CheckInScreen() {
           </Text>
         </View>
 
-        {noShiftToday ? (
+        {shiftCompletedToday ? (
+          <View className="items-center py-4">
+            <AlertTriangle size={28} color="#3b82f6" />
+            <Text className="text-blue-600 text-center mt-2 px-4">
+              Ca trực hôm nay đã kết thúc. Bạn không thể check-in lại.
+            </Text>
+          </View>
+        ) : noShiftToday ? (
           <View className="items-center py-4">
             <AlertTriangle size={28} color="#f59e0b" />
             <Text className="text-amber-600 text-center mt-2 px-4">

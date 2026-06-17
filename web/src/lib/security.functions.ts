@@ -312,7 +312,7 @@ export const getSecurityStatus = createServerFn({ method: "POST" })
     if (fam?.owner_id) userIds.add(fam.owner_id);
     for (const r of roles ?? []) if (r.user_id) userIds.add(r.user_id);
 
-    // 2) Open/in-progress security requests from any family member
+    // 2) Security requests not yet finished (any family member)
     let openReqs: Array<{
       request_type: string;
       status: string;
@@ -323,10 +323,16 @@ export const getSecurityStatus = createServerFn({ method: "POST" })
         .from("security_requests")
         .select("request_type, status, created_at")
         .in("requester_id", Array.from(userIds))
-        .in("status", ["open", "in_progress"])
+        // Treat anything not resolved/cancelled as still needing attention.
+        .not("status", "in", "(resolved,cancelled)")
         .order("created_at", { ascending: false })
         .limit(100);
-      openReqs = reqs ?? [];
+      const nowMs = Date.now();
+      const STALE_REQ_MS = 24 * 60 * 60 * 1000;
+      openReqs = (reqs ?? []).filter((r) => {
+        const t = new Date(r.created_at).getTime();
+        return Number.isFinite(t) ? nowMs - t <= STALE_REQ_MS : true;
+      });
     }
 
     // 3) Elderly safety alerts → treat as emergency/warning signal
@@ -341,7 +347,11 @@ export const getSecurityStatus = createServerFn({ method: "POST" })
     // 4) Latest update timestamp
     const candidates: string[] = [];
     if (openReqs[0]?.created_at) candidates.push(openReqs[0].created_at);
-    for (const e of elders ?? []) if (e.safe_last_at) candidates.push(e.safe_last_at);
+    for (const e of elders ?? []) {
+      if ((e.safe_status === "alert" || e.safe_status === "warn") && e.safe_last_at) {
+        candidates.push(e.safe_last_at);
+      }
+    }
     const updated_at = candidates.sort().reverse()[0] ?? null;
 
     // 5) Build chips

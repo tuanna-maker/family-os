@@ -56,10 +56,13 @@ export default function DashboardScreen() {
   const fullName = ctx?.profile?.full_name ?? "Nhân viên bảo vệ";
   const avatarUrl = ctx?.profile?.avatar_url ?? null;
   const onDuty = activeShift?.status === "checked_in";
+  const shiftCompletedToday = activeShift?.status === "checked_out";
   const canCheckIn = activeShift?.status === "scheduled";
   const canCheckOut = onDuty;
   const shiftLine = activeShift
-    ? `${shiftLabel(activeShift.shift_type)}: ${shiftTimeRange(activeShift.shift_type)}`
+    ? shiftCompletedToday
+      ? `${shiftLabel(activeShift.shift_type)}: ${shiftTimeRange(activeShift.shift_type)} · Đã kết thúc ca`
+      : `${shiftLabel(activeShift.shift_type)}: ${shiftTimeRange(activeShift.shift_type)}`
     : "Chưa có ca trực hôm nay";
 
   const handleCheckInPress = () => {
@@ -74,6 +77,13 @@ export default function DashboardScreen() {
       });
       return;
     }
+    if (shiftCompletedToday) {
+      showAppAlert({
+        title: "Ca đã hoàn thành",
+        message: "Ca trực hôm nay đã kết thúc. Bạn không thể check-in lại.",
+      });
+      return;
+    }
     showAppAlert({
       title: "Không có ca trực",
       message: "Hôm nay bạn không có ca trực được phân công. Vui lòng liên hệ quản lý an ninh.",
@@ -83,6 +93,13 @@ export default function DashboardScreen() {
   const handleCheckOutPress = () => {
     if (canCheckOut) {
       router.push("/check-out");
+      return;
+    }
+    if (shiftCompletedToday) {
+      showAppAlert({
+        title: "Ca đã hoàn thành",
+        message: "Ca trực hôm nay đã kết thúc.",
+      });
       return;
     }
     showAppAlert({
@@ -155,9 +172,11 @@ export default function DashboardScreen() {
                 className={`h-2 w-2 rounded-full mr-1.5 ${onDuty ? "bg-green-500" : "bg-gray-300"}`}
               />
               <Text
-                className={`text-[11px] font-medium ${onDuty ? "text-green-600" : "text-muted-foreground"}`}
+                className={`text-[11px] font-medium ${
+                  onDuty ? "text-green-600" : shiftCompletedToday ? "text-blue-600" : "text-muted-foreground"
+                }`}
               >
-                {onDuty ? "Đang làm việc" : "Chưa vào ca"}
+                {onDuty ? "Đang làm việc" : shiftCompletedToday ? "Đã hoàn thành ca" : "Chưa vào ca"}
               </Text>
             </View>
           </View>
@@ -185,7 +204,7 @@ export default function DashboardScreen() {
             </View>
             <Text className="text-sm font-bold text-white tracking-wide">VÀO CA</Text>
             <Text className="text-[11px] text-white/80 mt-0.5">
-              {onDuty ? "Đã vào ca" : canCheckIn ? "Check-in" : "Không có ca"}
+              {onDuty ? "Đã vào ca" : canCheckIn ? "Check-in" : shiftCompletedToday ? "Đã xong ca" : "Không có ca"}
             </Text>
           </LinearGradient>
         </TouchableOpacity>
@@ -210,7 +229,7 @@ export default function DashboardScreen() {
             </View>
             <Text className="text-sm font-bold text-white tracking-wide">KẾT THÚC CA</Text>
             <Text className="text-[11px] text-white/80 mt-0.5">
-              {canCheckOut ? "Check-out" : "Chưa vào ca"}
+              {canCheckOut ? "Check-out" : shiftCompletedToday ? "Đã xong ca" : "Chưa vào ca"}
             </Text>
           </LinearGradient>
         </TouchableOpacity>

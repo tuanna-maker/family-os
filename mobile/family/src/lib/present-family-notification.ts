@@ -3,6 +3,7 @@ import {
   isSecurityStatusNotification,
   parseSecurityStatusPhase,
   parseUnitLabelFromBody,
+  shouldSkipLocalOsSecurityStatusNotification,
   type SecurityStatusPhase,
 } from "@shared/utils/security-status-notify";
 import { getLocaleRef } from "@mobile/i18n/localeRef";
@@ -41,6 +42,14 @@ export async function presentFamilyNotificationRow(
     read_at: row.read_at,
   };
   if (!(await shouldPresentFamilyOsNotification(presentable))) return false;
+
+  if (shouldSkipLocalOsSecurityStatusNotification(row.type)) {
+    const status = parseSecurityStatusPhase(row.body, row.title);
+    const requestId = row.ref_id ?? undefined;
+    if (requestId && status) await markFamilySecurityStatusSeen(requestId, status);
+    await markFamilyOsNotificationPresented(presentable);
+    return false;
+  }
 
   if (isSecurityStatusNotification(row.type, row.title)) {
     const requestId = row.ref_id ?? undefined;

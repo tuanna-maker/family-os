@@ -3,7 +3,8 @@ import { Pressable, Share, Text, View } from "react-native";
 import { appAlert } from "@mobile/utils/alert";
 import { useRouter } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronLeft, Eye, EyeOff, Sparkles } from "lucide-react-native";
+import { ChevronLeft, Eye, EyeOff } from "lucide-react-native";
+import { Image } from "expo-image";
 import { listExpenses } from "@mobile/api/expenses";
 import { Screen } from "@mobile/components/Screen";
 import { Card } from "@mobile/components/ui";
@@ -117,6 +118,11 @@ export default function ChiTieuScreen() {
     return bullets.slice(0, 3);
   }, [catSums, prevRows, categoryStats, dash, locale, budgetUsedPct, budgetOver, cats]);
 
+  const aiIcon = useMemo(
+    () => require("../../assets/gemini-1781685677184-Photoroom.png"),
+    [],
+  );
+
   const formatTxTime = (spentOn: string, createdAt: string) => {
     const d = new Date(spentOn.length > 10 ? spentOn : createdAt);
     const today = new Date();
@@ -208,9 +214,20 @@ export default function ChiTieuScreen() {
         <View style={styles.aiCard}>
           <View style={styles.aiHeader}>
             <View style={styles.aiIcon}>
-              <Sparkles color={colors.brand} size={16} />
+              <Image source={aiIcon} style={styles.aiIconImg} contentFit="contain" cachePolicy="memory-disk" />
             </View>
             <Text style={styles.aiTitle}>{dash.aiTitle}</Text>
+            <Pressable
+              onPress={() =>
+                router.push({
+                  pathname: "/chi-tieu/ai",
+                  params: { year: String(year), month: String(month) },
+                })
+              }
+              hitSlop={8}
+            >
+              <Text style={styles.aiDetail}>{dash.viewDetail} ›</Text>
+            </Pressable>
           </View>
           {insights.map((line, i) => (
             <Text key={i} style={styles.aiBullet}>
@@ -366,7 +383,14 @@ function useExpenseStyles() {
       borderColor: c.brand,
       backgroundColor: c.tintBlue,
     },
-    aiHeader: { flexDirection: "row" as const, alignItems: "center" as const, gap: 8, marginBottom: 8 },
+    aiHeader: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      justifyContent: "space-between" as const,
+      gap: 10,
+      marginBottom: 8,
+    },
+    aiTitle: { flex: 1, fontSize: 14 * fontScale, fontWeight: "700" as const, color: c.brand },
     aiIcon: {
       width: 32,
       height: 32,
@@ -375,7 +399,8 @@ function useExpenseStyles() {
       alignItems: "center" as const,
       justifyContent: "center" as const,
     },
-    aiTitle: { fontSize: 14 * fontScale, fontWeight: "700" as const, color: c.brand },
+    aiIconImg: { width: 22, height: 22 },
+    aiDetail: { fontSize: 13 * fontScale, fontWeight: "700" as const, color: c.brand },
     aiBullet: { fontSize: 13 * fontScale, color: c.foreground, lineHeight: 20, marginTop: 4 },
     sectionHead: {
       flexDirection: "row" as const,

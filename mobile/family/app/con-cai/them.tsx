@@ -3,11 +3,12 @@ import { ScrollView, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Screen } from "@mobile/components/Screen";
+import { AvatarUploadButton } from "@mobile/components/AvatarUploadButton";
 import { FieldLabel, PageHeader, PrimaryButton, SelectChip, TextField } from "@mobile/components/ui";
 import { DateField, DateTimeField, TimeField, toLocalIso, toDateOnly } from "@mobile/components/DateTimeField";
-import { EmojiPicker } from "@mobile/components/EmojiPicker";
 import { LoadingState } from "@mobile/components/states";
 import { useFamilyContext } from "@mobile/hooks/useFamilyContext";
+import { uploadAvatarFromUri } from "@mobile/api/avatars";
 import {
   listChildren,
   upsertAchievement,
@@ -16,6 +17,7 @@ import {
   upsertParentReminder,
   upsertSchedule,
 } from "@mobile/api/children";
+import { isChildAvatarUrl } from "@mobile/utils/childAvatar";
 import { toast } from "@mobile/utils/toast";
 import { useThemedStyles } from "@mobile/theme/useThemedStyles";
 import { useI18n } from "@mobile/i18n/useI18n";
@@ -64,7 +66,7 @@ export default function ConCaiThemScreen() {
   const [name, setName] = useState("");
   const [school, setSchool] = useState("");
   const [grade, setGrade] = useState("");
-  const [avatar, setAvatar] = useState("🧒");
+  const [avatar, setAvatar] = useState("");
   const [dob, setDob] = useState("");
   const [notes, setNotes] = useState("");
   const [title, setTitle] = useState("");
@@ -90,7 +92,7 @@ export default function ConCaiThemScreen() {
         setName(child.name);
         setSchool(child.school ?? "");
         setGrade(child.grade ?? "");
-        setAvatar(child.avatar?.trim() || "🧒");
+        setAvatar(isChildAvatarUrl(child.avatar) ? child.avatar!.trim() : "");
         setDob(child.dob ?? "");
         setNotes((child as { notes?: string | null }).notes ?? "");
       }
@@ -141,7 +143,7 @@ export default function ConCaiThemScreen() {
           name: name.trim(),
           school: school.trim() || null,
           grade: grade.trim() || null,
-          avatar: avatar.trim() || "🧒",
+          avatar: isChildAvatarUrl(avatar) ? avatar.trim() : null,
           dob: dob || null,
           notes: notes.trim() || null,
         });
@@ -204,7 +206,19 @@ export default function ConCaiThemScreen() {
 
       {formType === "child" && (
         <>
-          <EmojiPicker value={avatar} onChange={setAvatar} />
+          <View style={styles.avatarSection}>
+            <AvatarUploadButton
+              uri={isChildAvatarUrl(avatar) ? avatar : null}
+              fallbackInitial={name || "B"}
+              size={96}
+              hint={ch.avatarPhoto}
+              onPick={async (uri) => {
+                const url = await uploadAvatarFromUri(uri, `child-${id ?? "new"}`);
+                setAvatar(url);
+                toast.success(c.avatarUpdated);
+              }}
+            />
+          </View>
           <TextField label={f.childName} value={name} onChangeText={setName} placeholder="Bé Minh" />
           <DateField label={f.dob} value={dob} onChange={setDob} />
           <TextField label={f.schoolField} value={school} onChangeText={setSchool} placeholder="TH Nguyễn Du" />
@@ -283,5 +297,6 @@ export default function ConCaiThemScreen() {
 function useFormStyles() {
   return useThemedStyles(() => ({
     chipRow: { flexDirection: "row" as const, gap: 8, paddingBottom: 4 },
+    avatarSection: { alignItems: "center" as const, marginBottom: 12 },
   }));
 }

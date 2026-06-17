@@ -48,6 +48,7 @@ config.resolver.extraNodeModules = {
 config.resolver.alias = {
   "@": path.resolve(monorepoRoot, "apps/family/src"),
   "@mobile/api/avatars": path.resolve(projectRoot, "src/api/avatars.ts"),
+  "@mobile/api/profile": path.resolve(projectRoot, "src/api/profile.ts"),
   "@mobile/api": path.resolve(monorepoRoot, "apps/family/src/api"),
   "@mobile": path.resolve(projectRoot, "src"),
   "@shared/utils/security-status-notify": path.resolve(

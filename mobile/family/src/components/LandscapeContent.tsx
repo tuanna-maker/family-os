@@ -14,7 +14,7 @@ export function LandscapeContent({
   return (
     <View
       style={[
-        { width: "100%" },
+        { width: "100%", flex: 1 },
         isLandscape ? { maxWidth: contentMaxWidth, alignSelf: "center" as const } : null,
         style,
       ]}

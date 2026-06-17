@@ -66,10 +66,6 @@ export default function AccountProfileScreen() {
           <InfoRow label="Mã nhân viên" value={ctx?.userId?.slice(0, 8).toUpperCase() ?? "—"} />
           <InfoRow label="Dự án" value="STOS Residence" />
         </View>
-
-        <Text className="text-xs text-muted-foreground text-center mt-6 px-4">
-          Ảnh đại diện hiển thị trên chat an ninh. Liên hệ quản lý nếu cần cập nhật thông tin tài khoản.
-        </Text>
       </ScrollView>
     </View>
   );

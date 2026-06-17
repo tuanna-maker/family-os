@@ -5,6 +5,9 @@ export const TAB_BAR_ICON_SLOT = 22;
 
 export const TAB_BAR_ICON_SIZE = 18;
 
+/** Nút nổi bật giữa thanh tab (Tuần tra) — cùng kích thước app Family. */
+export const TAB_BAR_FEATURED_SIZE = 40;
+
 /** Chiều cao hàng tab (web min-h-14 ≈ 56px). */
 export const TAB_BAR_CONTENT_HEIGHT = 58;
 

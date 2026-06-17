@@ -10,6 +10,7 @@ module.exports = function (api) {
           alias: {
             "@": "../../apps/family/src",
             "@mobile/api/avatars": "./src/api/avatars",
+            "@mobile/api/profile": "./src/api/profile",
             "@mobile/api": "../../apps/family/src/api",
             "@mobile": "./src",
           },

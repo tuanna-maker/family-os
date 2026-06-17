@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 
-import { Image, Pressable, Text, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
+import { Image } from "expo-image";
 
 import { appAlert } from "@mobile/utils/alert";
 
@@ -202,7 +203,7 @@ export default function KyNiemDetailScreen() {
 
 
 
-      <Image source={{ uri: moment.media_url }} style={styles.hero} />
+      <Image source={moment.media_url} style={styles.hero} cachePolicy="memory-disk" transition={180} />
 
       <Text style={styles.caption}>{caption}</Text>
 

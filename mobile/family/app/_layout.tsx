@@ -80,7 +80,16 @@ function AuthGate() {
   return (
     <>
       <StatusBar style={theme === "light" ? "dark" : "light"} />
-      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }} />
+      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
+        <Stack.Screen
+          name="con-cai/khoanh-khac/sua/[albumId]"
+          options={{
+            presentation: "transparentModal",
+            animation: "slide_from_bottom",
+            contentStyle: { backgroundColor: "transparent" },
+          }}
+        />
+      </Stack>
     </>
   );
 }

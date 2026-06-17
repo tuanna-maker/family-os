@@ -145,8 +145,18 @@ export function parseUnitLabelFromBody(body?: string | null): string | undefined
   return undefined;
 }
 
+/** OS push do webhook `dispatch-notification-push` gửi — app không bắn banner local thêm. */
+export const SECURITY_STATUS_SERVER_PUSH_TYPES = new Set([
+  "security.status_changed",
+  "security.request_status",
+]);
+
+export function shouldSkipLocalOsSecurityStatusNotification(type?: string | null) {
+  return SECURITY_STATUS_SERVER_PUSH_TYPES.has(type ?? "");
+}
+
 export function isSecurityStatusNotification(type?: string | null, title?: string | null) {
-  if (type === "security.status_changed" || type === "security.request_status") return true;
+  if (shouldSkipLocalOsSecurityStatusNotification(type)) return true;
   const t = (title ?? "").toLowerCase();
   return (
     t.includes("tiếp nhận") ||

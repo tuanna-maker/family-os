@@ -1,6 +1,7 @@
 import type { ReactElement } from "react";
 import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import { BlurView } from "expo-blur";
+import { LinearGradient } from "expo-linear-gradient";
 import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLayoutInfo } from "@mobile/hooks/useLayoutInfo";
@@ -9,6 +10,7 @@ import { useTheme } from "@mobile/theme/themeStore";
 import {
   TAB_BAR_BOTTOM_OFFSET,
   TAB_BAR_CONTENT_HEIGHT,
+  TAB_BAR_FEATURED_SIZE,
   TAB_BAR_FLOAT_MARGIN,
   TAB_BAR_ICON_SIZE,
   TAB_BAR_ICON_SLOT,
@@ -73,6 +75,7 @@ export function GuardTabBar({ state, descriptors, navigation }: BottomTabBarProp
                 ? options.tabBarLabel
                 : (options.title ?? route.name);
             const isFocused = state.index === index;
+            const isFeatured = route.name === "patrol";
             const isNotifications = route.name === "notifications";
             const showBadge = isNotifications && badgeCount > 0;
 
@@ -87,12 +90,13 @@ export function GuardTabBar({ state, descriptors, navigation }: BottomTabBarProp
               }
             };
 
-            const tint = isFocused ? colors.brand : colors.muted;
+            const tint = isFeatured ? colors.emergency : isFocused ? colors.brand : colors.muted;
+            const iconSize = isFeatured ? 20 : TAB_BAR_ICON_SIZE;
             const icon = options.tabBarIcon
               ? (options.tabBarIcon({
                   focused: isFocused,
-                  color: tint,
-                  size: TAB_BAR_ICON_SIZE,
+                  color: isFeatured ? colors.white : tint,
+                  size: iconSize,
                 }) as ReactElement)
               : null;
 
@@ -105,8 +109,27 @@ export function GuardTabBar({ state, descriptors, navigation }: BottomTabBarProp
                 onPress={onPress}
                 style={styles.tab}
               >
-                <View style={styles.iconSlot}>
-                  <View style={styles.iconWrap}>{icon}</View>
+                <View style={[styles.iconSlot, isFeatured && styles.featuredIconSlot]}>
+                  {isFeatured ? (
+                    <LinearGradient
+                      colors={[colors.emergency, colors.pink]}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={[
+                        styles.featuredBtn,
+                        {
+                          borderColor: isDark
+                            ? colors.cardBorder
+                            : "rgba(255, 255, 255, 0.55)",
+                        },
+                        isFocused && styles.featuredBtnActive,
+                      ]}
+                    >
+                      {icon}
+                    </LinearGradient>
+                  ) : (
+                    <View style={styles.iconWrap}>{icon}</View>
+                  )}
                   {showBadge ? (
                     <View style={[styles.badge, { backgroundColor: colors.emergency }]}>
                       <Text style={styles.badgeText}>{badgeCount > 9 ? "9+" : badgeCount}</Text>
@@ -118,7 +141,7 @@ export function GuardTabBar({ state, descriptors, navigation }: BottomTabBarProp
                     styles.label,
                     {
                       color: tint,
-                      fontWeight: isFocused ? "700" : "500",
+                      fontWeight: isFeatured || isFocused ? "700" : "500",
                     },
                   ]}
                   numberOfLines={1}
@@ -169,6 +192,30 @@ const styles = StyleSheet.create({
     height: TAB_BAR_ICON_SLOT,
     alignItems: "center",
     justifyContent: "center",
+  },
+  featuredIconSlot: {
+    height: TAB_BAR_FEATURED_SIZE,
+    justifyContent: "center",
+  },
+  featuredBtn: {
+    width: TAB_BAR_FEATURED_SIZE,
+    height: TAB_BAR_FEATURED_SIZE,
+    borderRadius: TAB_BAR_FEATURED_SIZE / 2,
+    borderWidth: 2,
+    alignItems: "center",
+    justifyContent: "center",
+    ...Platform.select({
+      ios: {
+        shadowColor: "#EF4444",
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.35,
+        shadowRadius: 6,
+      },
+      android: { elevation: 4 },
+    }),
+  },
+  featuredBtnActive: {
+    transform: [{ scale: 1.05 }],
   },
   iconWrap: {
     width: TAB_BAR_ICON_SLOT,

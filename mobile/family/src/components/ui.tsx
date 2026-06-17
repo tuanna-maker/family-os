@@ -193,6 +193,7 @@ export function PageHeader({
   back,
   showBack,
   right,
+  alignTitleWithContent,
 }: {
   title: string;
   eyebrow?: string;
@@ -201,6 +202,8 @@ export function PageHeader({
   /** Tab gốc: false để ẩn nút back dù stack có history. */
   showBack?: boolean;
   right?: ReactNode;
+  /** Canh title/subtitle theo mép trái nội dung bên dưới (back button không đẩy text). */
+  alignTitleWithContent?: boolean;
 }) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -212,21 +215,38 @@ export function PageHeader({
     else if (back) router.replace(back as never);
   };
 
+  const showBackBtn = showBack !== false && (back !== undefined || router.canGoBack());
+  const leftPad = showBackBtn && alignTitleWithContent ? 48 : 0; // 40 back btn + 8 gap
+
   return (
     <View style={[styles.wrap, { paddingTop: insets.top + 8 }]}>
       <View style={styles.headerRow}>
-        {showBack !== false && (back !== undefined || router.canGoBack()) && (
+        {showBackBtn && !alignTitleWithContent && (
           <Pressable onPress={goBack} style={styles.backBtn} hitSlop={8}>
             <ChevronLeft color={colors.foreground} size={24} />
           </Pressable>
         )}
-        <View style={styles.headerText}>
+        <View
+          style={[
+            styles.headerText,
+            alignTitleWithContent ? { alignSelf: "flex-start", paddingLeft: leftPad } : null,
+          ]}
+        >
           {eyebrow ? <Text style={styles.eyebrow}>{eyebrow}</Text> : null}
           <Text style={styles.title}>{title}</Text>
           {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
         </View>
         {right}
       </View>
+      {showBackBtn && alignTitleWithContent ? (
+        <Pressable
+          onPress={goBack}
+          style={[styles.backBtn, { position: "absolute", left: 16, top: insets.top + 8 }]}
+          hitSlop={8}
+        >
+          <ChevronLeft color={colors.foreground} size={24} />
+        </Pressable>
+      ) : null}
     </View>
   );
 }
