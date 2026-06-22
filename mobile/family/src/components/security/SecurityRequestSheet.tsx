@@ -246,6 +246,7 @@ export function SecurityRequestSheet({
       }
 
       void qc.invalidateQueries({ queryKey: ["security-requests"] });
+      void qc.invalidateQueries({ queryKey: ["security-status"] });
       toast.success(
         rs.sent(title),
         attachWarning ?? rs.sentSub(securityMeta.responseTimeMinutes),

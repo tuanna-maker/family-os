@@ -21,6 +21,7 @@ import { listChildren } from "@mobile/api/children";
 import { listChildAlbums } from "@mobile/api/child-albums";
 import { LoadingState, EmptyState, ErrorState } from "@mobile/components/states";
 import { useFamilyContext } from "@mobile/hooks/useFamilyContext";
+import { useSignedStorageUrls } from "@mobile/hooks/useSignedStorageUrls";
 import { useI18n } from "@mobile/i18n/useI18n";
 import { useTheme } from "@mobile/theme/themeStore";
 import { useThemedStyles } from "@mobile/theme/useThemedStyles";
@@ -107,6 +108,13 @@ export function ChildrenCompanionScreen() {
 
   const activeChild = q.data?.children.find((x) => x.id === activeChildId) ?? null;
   const childName = activeChild?.name ?? "Bé";
+  const allAlbums = albumsQ.data?.albums ?? [];
+  const signedCovers = useSignedStorageUrls(
+    "child-moments",
+    allAlbums.map((a) => a.cover_url),
+  );
+  const resolveCover = (url: string | null) =>
+    url ? (signedCovers.data?.get(url) ?? url) : null;
 
   const metrics = useMemo(() => {
     const hw = (q.data?.homeworks ?? []).filter((h) => h.child_id === activeChildId);
@@ -384,7 +392,7 @@ export function ChildrenCompanionScreen() {
                       onPress={() => router.push(`/con-cai/khoanh-khac/${a.id}?childId=${activeChildId}`)}
                     >
                       {a.cover_url ? (
-                        <Image source={{ uri: a.cover_url }} style={styles.momentImg} />
+                        <Image source={{ uri: resolveCover(a.cover_url) ?? a.cover_url }} style={styles.momentImg} />
                       ) : (
                         <View style={[styles.momentImg, styles.albumFallback]}>
                           <FolderOpen color={colors.muted} size={24} />
@@ -683,7 +691,7 @@ function useStyles() {
     aiCheck: { color: c.success, fontWeight: "800" as const, fontSize: 12 },
     aiText: { flex: 1, fontSize: 12 * fontScale, color: c.foreground, lineHeight: 18 },
     toolsRow: { gap: 10, paddingBottom: 8 },
-    toolTile: { width: 72, alignItems: "center" as const },
+    toolTile: { width: 56, alignItems: "center" as const },
     toolIcon: {
       width: 56,
       height: 56,
@@ -695,7 +703,14 @@ function useStyles() {
       justifyContent: "center" as const,
       ...cardShadow(c),
     },
-    toolLabel: { fontSize: 10 * fontScale, color: c.foreground, textAlign: "center" as const, marginTop: 6, lineHeight: 13 },
+    toolLabel: {
+      width: 72,
+      fontSize: 10 * fontScale,
+      color: c.foreground,
+      textAlign: "center" as const,
+      marginTop: 6,
+      lineHeight: 13,
+    },
     muted: { fontSize: 12 * fontScale, color: c.muted },
   }));
 }

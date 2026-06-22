@@ -34,6 +34,7 @@ import { radius } from "@mobile/theme/colors";
 import { useI18n } from "@mobile/i18n/useI18n";
 
 import { formatDateTime } from "@mobile/i18n/format";
+import { useSignedStorageUrls } from "@mobile/hooks/useSignedStorageUrls";
 
 
 
@@ -155,6 +156,12 @@ export default function KyNiemDetailScreen() {
 
 
 
+  const moment = q.data?.moment;
+
+  const signed = useSignedStorageUrls("family-moments", moment ? [moment.media_url, moment.thumbnail_url] : []);
+
+
+
   if (q.isLoading) {
 
     return (
@@ -170,8 +177,6 @@ export default function KyNiemDetailScreen() {
   }
 
 
-
-  const moment = q.data?.moment;
 
   if (!moment) {
 
@@ -203,7 +208,13 @@ export default function KyNiemDetailScreen() {
 
 
 
-      <Image source={moment.media_url} style={styles.hero} cachePolicy="memory-disk" transition={180} />
+      <Image
+        source={signed.data?.get(moment.media_url) ?? moment.media_url}
+        style={styles.hero}
+        contentFit="cover"
+        cachePolicy="memory-disk"
+        transition={180}
+      />
 
       <Text style={styles.caption}>{caption}</Text>
 

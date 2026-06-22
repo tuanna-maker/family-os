@@ -241,7 +241,6 @@ export default function ChiTieuScreen() {
             <View style={styles.sectionHead}>
               <Text style={styles.sectionTitleInline}>{dash.categoryGroups}</Text>
             </View>
-            <View style={{ marginHorizontal: 16 }}>
             <CategoryPager
               items={categoryStats.map((cat) => ({
                 key: cat.name,
@@ -250,7 +249,6 @@ export default function ChiTieuScreen() {
                 amount: amt(cat.amount),
               }))}
             />
-            </View>
           </>
         )}
 
@@ -345,7 +343,6 @@ function useExpenseStyles() {
     header: {
       flexDirection: "row" as const,
       alignItems: "center" as const,
-      paddingHorizontal: 16,
       paddingBottom: 12,
       gap: 8,
     },
@@ -354,7 +351,7 @@ function useExpenseStyles() {
     headerTitle: { flex: 1, fontSize: 18 * fontScale, fontWeight: "700" as const, color: c.foreground },
     monthBtn: { paddingVertical: 4, paddingHorizontal: 2 },
     monthText: { fontSize: 14 * fontScale, fontWeight: "600" as const, color: c.foreground },
-    summaryCard: { marginHorizontal: 16, marginBottom: 12, padding: 16 },
+    summaryCard: { marginBottom: 12, padding: 16 },
     summaryRow: { flexDirection: "row" as const, gap: 12 },
     summaryLabel: { fontSize: 12 * fontScale, color: c.muted, fontWeight: "600" as const },
     summaryAmount: { fontSize: 26 * fontScale, fontWeight: "800" as const, color: c.foreground, marginTop: 4 },
@@ -375,7 +372,6 @@ function useExpenseStyles() {
     legendLabel: { flex: 1, fontSize: 12 * fontScale, color: c.muted },
     legendPct: { fontSize: 12 * fontScale, fontWeight: "700" as const, color: c.foreground },
     aiCard: {
-      marginHorizontal: 16,
       marginBottom: 16,
       padding: 14,
       borderRadius: radius.xl,
@@ -406,7 +402,6 @@ function useExpenseStyles() {
       flexDirection: "row" as const,
       justifyContent: "space-between" as const,
       alignItems: "center" as const,
-      marginHorizontal: 16,
       marginBottom: 10,
     },
     sectionTitleInline: {

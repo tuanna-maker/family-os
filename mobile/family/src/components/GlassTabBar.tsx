@@ -11,7 +11,7 @@ import {
   TAB_BAR_BOTTOM_OFFSET,
   TAB_BAR_CONTENT_HEIGHT,
   TAB_BAR_FEATURED_SIZE,
-  TAB_BAR_FLOAT_MARGIN,
+  TAB_BAR_FROST_EXTRA,
   TAB_BAR_ICON_SLOT,
 } from "@mobile/theme/tabBar";
 import { tabBarGlassColors } from "@mobile/theme/tabBarGlass";
@@ -46,10 +46,10 @@ export function GlassTabBar({ state, descriptors, navigation }: BottomTabBarProp
   const { colors, theme } = useTheme();
   const { isLandscape, contentMaxWidth } = useLayoutInfo();
   const isDark = theme === "dark";
-  const bottomPad = Math.max(insets.bottom, TAB_BAR_FLOAT_MARGIN) + TAB_BAR_BOTTOM_OFFSET;
+  const bottomPad = insets.bottom + TAB_BAR_BOTTOM_OFFSET;
   const glass = tabBarGlassColors(isDark);
   const { shellOverlay, frostOverlay, border: borderColor } = glass;
-  const frostZoneHeight = TAB_BAR_CONTENT_HEIGHT + bottomPad + 72;
+  const frostZoneHeight = TAB_BAR_CONTENT_HEIGHT + bottomPad + TAB_BAR_FROST_EXTRA;
 
   return (
     <View style={styles.root} pointerEvents="box-none" collapsable={false}>

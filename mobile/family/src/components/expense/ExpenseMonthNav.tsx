@@ -44,7 +44,6 @@ function useNavStyles() {
     bar: {
       flexDirection: "row" as const,
       alignItems: "center" as const,
-      marginHorizontal: 16,
       marginBottom: 12,
       paddingVertical: 12,
       paddingHorizontal: 8,

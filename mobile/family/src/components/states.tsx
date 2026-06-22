@@ -1,4 +1,5 @@
 import { ActivityIndicator, Pressable, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "@mobile/theme/themeStore";
 import { useThemedStyles } from "@mobile/theme/useThemedStyles";
 import { useI18n } from "@mobile/i18n/useI18n";
@@ -24,11 +25,16 @@ function useStateStyles() {
   }));
 }
 
-export function LoadingState() {
+export function LoadingState({ variant = "inline" }: { variant?: "inline" | "screen" }) {
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const styles = useStateStyles();
+  const wrapStyle =
+    variant === "screen"
+      ? [styles.wrap, { paddingTop: insets.top + 48, paddingBottom: 32 }]
+      : styles.wrap;
   return (
-    <View style={styles.wrap}>
+    <View style={wrapStyle}>
       <ActivityIndicator color={colors.brand} size="large" />
     </View>
   );

@@ -230,7 +230,7 @@ function ShiftDetailPanel({
 
 function useStyles() {
   return useThemedStyles((c, fontScale) => ({
-    tabs: { flexDirection: "row" as const, gap: 8, paddingHorizontal: 16, marginBottom: 12 },
+    tabs: { flexDirection: "row" as const, gap: 8, marginBottom: 12 },
     tab: {
       flex: 1,
       paddingVertical: 10,
@@ -242,7 +242,6 @@ function useStyles() {
     tabText: { fontSize: 14 * fontScale, fontWeight: "600" as const, color: c.muted },
     tabTextActive: { color: c.white },
     warn: {
-      marginHorizontal: 16,
       marginBottom: 12,
       padding: 14,
       borderRadius: radius.lg,
@@ -385,7 +384,7 @@ export default function BaoVeScreen() {
       ) : null}
 
       <ScrollView
-        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: getTabBarBottomInset(insets) }}
+        contentContainerStyle={{ paddingBottom: getTabBarBottomInset(insets) }}
         showsVerticalScrollIndicator={false}
       >
         {tab === "team" && !unscoped ? (

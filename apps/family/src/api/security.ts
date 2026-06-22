@@ -341,27 +341,30 @@ export async function getSecurityStatus(data: { family_id: string; locale?: stri
     if (fam?.owner_id) userIds.add(fam.owner_id);
     for (const r of roles ?? []) if (r.user_id) userIds.add(r.user_id);
 
-    // 2) Security requests not yet finished (whole family)
+    // 2) Security requests not yet finished (whole family — by requester in household)
     let openReqs: Array<{
       request_type: string;
       status: string;
       created_at: string;
     }> = [];
     {
-      const q = supabase
-        .from("security_requests")
-        .select("request_type, status, created_at")
-        .eq("family_id", fid)
-        // Treat anything not resolved/cancelled as still needing attention.
-        // (Some deployments add intermediate states like "assigned"/"pending".)
-        .not("status", "in", "(resolved,cancelled)")
-        .order("created_at", { ascending: false })
-        .limit(100);
-      const { data: reqs } = await q;
-      openReqs = (reqs ?? []).filter((r) => {
-        const t = new Date(r.created_at).getTime();
-        return Number.isFinite(t) ? nowMs - t <= STALE_REQ_MS : true;
-      });
+      const memberIds = [...userIds];
+      if (memberIds.length > 0) {
+        const q = supabase
+          .from("security_requests")
+          .select("request_type, status, created_at")
+          .in("requester_id", memberIds)
+          // Treat anything not resolved/cancelled as still needing attention.
+          // (Some deployments add intermediate states like "assigned"/"pending".)
+          .not("status", "in", "(resolved,cancelled)")
+          .order("created_at", { ascending: false })
+          .limit(100);
+        const { data: reqs } = await q;
+        openReqs = (reqs ?? []).filter((r) => {
+          const t = new Date(r.created_at).getTime();
+          return Number.isFinite(t) ? nowMs - t <= STALE_REQ_MS : true;
+        });
+      }
     }
 
     // 3) Elderly safety alerts → treat as emergency/warning signal

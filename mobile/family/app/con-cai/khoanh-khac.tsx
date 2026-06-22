@@ -23,6 +23,7 @@ import { spacing } from "@mobile/theme/colors";
 import { appAlert } from "@mobile/utils/alert";
 import { toast } from "@mobile/utils/toast";
 import { usePickChildMomentPhoto } from "@mobile/hooks/usePickChildMomentPhoto";
+import { useSignedStorageUrls } from "@mobile/hooks/useSignedStorageUrls";
 
 function paramId(value?: string | string[]) {
   return Array.isArray(value) ? value[0] : value;
@@ -116,6 +117,12 @@ export default function ChildAlbumListScreen() {
 
   const title = ch.momentsAlbum;
   const albums = albumsQ.data?.albums ?? [];
+  const signedCovers = useSignedStorageUrls(
+    "child-moments",
+    albums.map((a) => a.cover_url),
+  );
+  const resolveCover = (url: string | null) =>
+    url ? (signedCovers.data?.get(url) ?? url) : null;
 
   if (!familyId || !childId) return <Screen><LoadingState /></Screen>;
 
@@ -181,7 +188,12 @@ export default function ChildAlbumListScreen() {
                   delayLongPress={380}
                   style={({ pressed }) => [pressed && !toolsOpen && { opacity: 0.9 }]}
                 >
-                  <ChildAlbumGridCard album={a} width={cardSize.width} height={cardSize.height} />
+                  <ChildAlbumGridCard
+                    album={a}
+                    width={cardSize.width}
+                    height={cardSize.height}
+                    coverUri={resolveCover(a.cover_url)}
+                  />
                 </Pressable>
               </View>
             );

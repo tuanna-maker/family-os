@@ -11,11 +11,14 @@ type Props = {
   width: number;
   height: number;
   elevated?: boolean;
+  /** Signed URL when bucket is private; falls back to album.cover_url */
+  coverUri?: string | null;
 };
 
-export function ChildAlbumGridCard({ album, width, height, elevated }: Props) {
+export function ChildAlbumGridCard({ album, width, height, elevated, coverUri }: Props) {
   const { colors } = useTheme();
   const styles = useCardStyles();
+  const uri = coverUri ?? album.cover_url;
 
   const shell = [
     styles.card,
@@ -23,10 +26,10 @@ export function ChildAlbumGridCard({ album, width, height, elevated }: Props) {
     elevated && styles.cardElevated,
   ];
 
-  if (album.cover_url) {
+  if (uri) {
     return (
       <View style={shell}>
-        <ImageBackground source={{ uri: album.cover_url }} style={styles.cardBg} imageStyle={styles.cardImg}>
+        <ImageBackground source={{ uri }} style={styles.cardBg} imageStyle={styles.cardImg}>
           <LinearGradient colors={["transparent", "rgba(0,0,0,0.78)"]} style={styles.cardGrad}>
             <Text style={styles.cardTitle} numberOfLines={2}>
               {album.title}

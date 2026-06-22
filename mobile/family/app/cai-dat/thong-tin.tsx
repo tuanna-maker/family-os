@@ -3,6 +3,7 @@ import { Text, View } from "react-native";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Screen } from "@mobile/components/Screen";
 import { Card, PageHeader, PrimaryButton, TextField } from "@mobile/components/ui";
+import { LoadingState } from "@mobile/components/states";
 import { SectionHeader } from "@mobile/components/SectionHeader";
 import { useI18n } from "@mobile/i18n/useI18n";
 import { useFamilyContext } from "@mobile/hooks/useFamilyContext";
@@ -61,6 +62,14 @@ export default function ThongTinTaiKhoanScreen() {
 
   const isOwner = !!family?.owner_id && family.owner_id === profileQ.data?.id;
 
+  if (profileQ.isLoading) {
+    return (
+      <Screen scroll={false} contentStyle={{ paddingTop: 0 }}>
+        <LoadingState variant="screen" />
+      </Screen>
+    );
+  }
+
   return (
     <Screen contentStyle={{ paddingTop: 0 }}>
       <PageHeader title={p.title} eyebrow={p.eyebrow} back="/(tabs)/tai-khoan" />
@@ -94,7 +103,9 @@ export default function ThongTinTaiKhoanScreen() {
         />
       </Card>
 
-      <SectionHeader title={p.sectionReadonly} subtitle={p.sectionReadonlySub} />
+      <View style={{ marginTop: 20 }}>
+        <SectionHeader title={p.sectionReadonly} subtitle={p.sectionReadonlySub} />
+      </View>
 
       <Card style={{ padding: 0, overflow: "hidden" }}>
         <InfoRow label={p.email} value={profileQ.data?.email ?? ""} />

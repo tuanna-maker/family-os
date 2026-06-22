@@ -5,6 +5,7 @@ dist/
 release/
 *.jks
 *.keystore
+*.p8
 .env
 .env.local
 

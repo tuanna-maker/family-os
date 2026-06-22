@@ -105,7 +105,7 @@ export default function CaiDatNganSachScreen() {
         onPressLabel={() => setPickerOpen(true)}
       />
 
-      <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 24 }}>
+      <ScrollView contentContainerStyle={{ paddingBottom: 24 }}>
         <View style={styles.totalRow}>
           <Text style={styles.totalLabel}>{bud.totalBudget}</Text>
           <AmountInput value={totalStr} onChangeValue={setTotalStr} placeholder="0" />
@@ -153,7 +153,6 @@ function useStyles() {
       flexDirection: "row" as const,
       alignItems: "center" as const,
       justifyContent: "space-between" as const,
-      paddingHorizontal: 16,
       paddingTop: 52,
       paddingBottom: 6,
     },

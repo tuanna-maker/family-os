@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Linking, Pressable, ScrollView, Text, View } from "react-native";
+import { Pressable, ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useQueryClient } from "@tanstack/react-query";
@@ -30,6 +30,7 @@ import { useTheme } from "@mobile/theme/themeStore";
 import { useThemedStyles } from "@mobile/theme/useThemedStyles";
 import { radius } from "@mobile/theme/colors";
 import { useAppAlert } from "@mobile/components/AppAlert";
+import { openPhoneDialer } from "@mobile/utils/phone";
 
 function colorFromKey(
   colors: ReturnType<typeof useTheme>["colors"],
@@ -65,7 +66,7 @@ export default function BaoAnScreen() {
   const [sendingLabel, setSendingLabel] = useState<string | null>(null);
   const [dialog, setDialog] = useState<DialogState>(null);
   const styles = useThemedStyles((c, fontScale) => ({
-    header: { paddingHorizontal: 16, paddingTop: insets.top + 12, paddingBottom: 4 },
+    header: { paddingTop: insets.top + 12, paddingBottom: 4 },
     eyebrow: {
       flexDirection: "row" as const,
       alignItems: "center" as const,
@@ -143,6 +144,7 @@ export default function BaoAnScreen() {
     try {
       await createSecurityRequest({ request_type: type, payload });
       void qc.invalidateQueries({ queryKey: ["security-requests"] });
+      void qc.invalidateQueries({ queryKey: ["security-status"] });
       setSendingLabel(null);
       toast.success(sec.requestSent(label, securityMeta.responseTimeMinutes));
     } catch (e) {
@@ -198,7 +200,7 @@ export default function BaoAnScreen() {
       return;
     }
     if (item.action === "call") {
-      Linking.openURL(`tel:${securityMeta.hotline.replace(/\s/g, "")}`);
+      openPhoneDialer(securityMeta.hotline);
       return;
     }
     if (item.action === "navigate" && item.route) {
@@ -242,7 +244,7 @@ export default function BaoAnScreen() {
         <Pressable
           onPress={confirmSos}
           disabled={pending === "sos"}
-          style={{ marginHorizontal: 16, marginBottom: 4 }}
+          style={{ marginBottom: 4 }}
         >
           <LinearGradient
             colors={[colors.emergency, colors.pink]}
@@ -260,7 +262,7 @@ export default function BaoAnScreen() {
           </LinearGradient>
         </Pressable>
 
-        <View style={{ paddingHorizontal: 16 }}>
+        <View>
           <Pressable onPress={() => router.push("/bao-an/bao-ve" as never)}>
             <Card style={styles.guardCard}>
               <Text style={{ fontSize: 22 }}>🛡️</Text>

@@ -111,45 +111,45 @@ export function AppAlertProvider({ children }: { children: ReactNode }) {
   return (
     <AlertContext.Provider value={{ show, confirm }}>
       {children}
-      <Modal visible={visible} transparent animationType="fade" onRequestClose={dismiss}>
-        <Pressable style={styles.backdrop} onPress={dismiss}>
-          <Pressable style={styles.card} onPress={(e) => e.stopPropagation()}>
-            <Text style={styles.title}>{payload?.title}</Text>
-            {payload?.message ? (
-              <Text style={styles.message}>{payload.message}</Text>
-            ) : null}
+      {visible && payload ? (
+        <Modal visible transparent animationType="fade" onRequestClose={dismiss}>
+          <Pressable style={styles.backdrop} onPress={dismiss}>
+            <Pressable style={styles.card} onPress={(e) => e.stopPropagation()}>
+              <Text style={styles.title}>{payload.title}</Text>
+              {payload.message ? <Text style={styles.message}>{payload.message}</Text> : null}
 
-            <View style={styles.btnArea}>
-              {buttons.length === 1 ? (
-                <Pressable style={styles.singleBtn} onPress={() => onButtonPress(buttons[0])}>
-                  <Text style={[styles.btnText, styles.btnDefault]}>{buttons[0].text}</Text>
-                </Pressable>
-              ) : (
-                <View style={styles.btnRow}>
-                  {buttons.map((btn, i) => (
-                    <Pressable
-                      key={`${btn.text}-${i}`}
-                      style={[styles.btnCell, i > 0 && styles.btnCellBorder]}
-                      onPress={() => onButtonPress(btn)}
-                    >
-                      <Text
-                        style={[
-                          styles.btnText,
-                          btn.style === "destructive" && styles.btnDestructive,
-                          btn.style === "cancel" && styles.btnCancel,
-                          (!btn.style || btn.style === "default") && styles.btnDefault,
-                        ]}
+              <View style={styles.btnArea}>
+                {buttons.length === 1 ? (
+                  <Pressable style={styles.singleBtn} onPress={() => onButtonPress(buttons[0])}>
+                    <Text style={[styles.btnText, styles.btnDefault]}>{buttons[0].text}</Text>
+                  </Pressable>
+                ) : (
+                  <View style={styles.btnRow}>
+                    {buttons.map((btn, i) => (
+                      <Pressable
+                        key={`${btn.text}-${i}`}
+                        style={[styles.btnCell, i > 0 && styles.btnCellBorder]}
+                        onPress={() => onButtonPress(btn)}
                       >
-                        {btn.text}
-                      </Text>
-                    </Pressable>
-                  ))}
-                </View>
-              )}
-            </View>
+                        <Text
+                          style={[
+                            styles.btnText,
+                            btn.style === "destructive" && styles.btnDestructive,
+                            btn.style === "cancel" && styles.btnCancel,
+                            (!btn.style || btn.style === "default") && styles.btnDefault,
+                          ]}
+                        >
+                          {btn.text}
+                        </Text>
+                      </Pressable>
+                    ))}
+                  </View>
+                )}
+              </View>
+            </Pressable>
           </Pressable>
-        </Pressable>
-      </Modal>
+        </Modal>
+      ) : null}
     </AlertContext.Provider>
   );
 }

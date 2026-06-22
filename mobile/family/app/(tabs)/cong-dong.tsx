@@ -225,8 +225,14 @@ export default function CongDongScreen() {
 
 function useCongDongStyles() {
   return useThemedStyles((c, fontScale) => ({
-    grid: { flexDirection: "row" as const, flexWrap: "wrap" as const, gap: 10, marginBottom: 24 },
-    serviceWrap: { width: "47%" as const },
+    grid: {
+      flexDirection: "row" as const,
+      flexWrap: "wrap" as const,
+      justifyContent: "space-between" as const,
+      rowGap: 10,
+      marginBottom: 24,
+    },
+    serviceWrap: { width: "48%" as const },
     service: { padding: 14, minHeight: 132 },
     serviceTop: {
       flexDirection: "row" as const,

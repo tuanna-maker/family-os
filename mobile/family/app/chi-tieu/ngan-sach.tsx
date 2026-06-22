@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
-import { AlertTriangle, ChevronRight, SlidersHorizontal } from "lucide-react-native";
+import { AlertTriangle, SlidersHorizontal } from "lucide-react-native";
 import { Screen } from "@mobile/components/Screen";
 import { PageHeader } from "@mobile/components/ui";
 import { ExpenseMonthNav } from "@mobile/components/expense/ExpenseMonthNav";
@@ -121,7 +121,7 @@ export default function NganSachScreen() {
         onPressLabel={() => setPickerOpen(true)}
       />
 
-      <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 24 }}>
+      <ScrollView contentContainerStyle={{ paddingBottom: 24 }}>
         {rows.map((row, i) => {
           const over = row.budget > 0 && row.spent > row.budget;
           const pct =
@@ -131,7 +131,7 @@ export default function NganSachScreen() {
 
           return (
             <View key={row.key}>
-              <Pressable style={[styles.row, i > 0 && styles.rowBorder]} onPress={() => {}}>
+              <Pressable style={[styles.row, i > 0 && styles.rowBorder]} disabled>
                 <View style={styles.rowTop}>
                   <View style={styles.rowLeft}>
                     {row.icon ? <Text style={styles.icon}>{row.icon}</Text> : null}
@@ -163,7 +163,6 @@ export default function NganSachScreen() {
                     {bud.spentLine(formatCurrency(row.spent, locale))}
                   </Text>
                 </View>
-                {!isTotal ? <ChevronRight size={16} color={colors.muted} style={styles.chevron} /> : null}
               </Pressable>
 
               {isTotal && totalOver ? (
@@ -219,10 +218,8 @@ function useStyles() {
       flexDirection: "row" as const,
       justifyContent: "space-between" as const,
       marginTop: 4,
-      paddingRight: 20,
     },
     sub: { fontSize: 11 * fontScale, color: c.muted },
-    chevron: { position: "absolute" as const, right: 0, top: "50%" as const },
     warnBox: {
       flexDirection: "row" as const,
       alignItems: "flex-start" as const,

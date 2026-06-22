@@ -112,6 +112,7 @@ export default function DashboardScreen() {
     <ScrollView
       style={{ flex: 1 }}
       contentContainerStyle={[tabPad, isLandscape ? { alignItems: "center" as const } : null]}
+      showsVerticalScrollIndicator={false}
     >
       <LandscapeContent>
       <View

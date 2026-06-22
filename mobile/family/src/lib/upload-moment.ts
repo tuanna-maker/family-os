@@ -1,6 +1,7 @@
 import { getSupabase } from "@shared/supabase/get-client";
 
 const BUCKET = "family-moments";
+const SIGNED_TTL = 60 * 60 * 24 * 365;
 
 export async function uploadMomentFromUri(familyId: string, uri: string) {
   const supabase = getSupabase();
@@ -21,6 +22,7 @@ export async function uploadMomentFromUri(familyId: string, uri: string) {
     contentType: blob.type || "image/jpeg",
   });
   if (error) throw new Error(error.message);
-  const { data: urlData } = supabase.storage.from(BUCKET).getPublicUrl(path);
-  return { publicUrl: urlData.publicUrl };
+  const { data: signed, error: signErr } = await supabase.storage.from(BUCKET).createSignedUrl(path, SIGNED_TTL);
+  if (signErr || !signed?.signedUrl) throw new Error(signErr?.message ?? "Không tạo được link ảnh");
+  return { publicUrl: signed.signedUrl };
 }

@@ -46,6 +46,8 @@ import { formatDateTime } from "@mobile/i18n/format";
 import { useFamilyContext } from "@mobile/hooks/useFamilyContext";
 import { patchFamilyNotificationRow } from "@mobile/hooks/useFamilyNotificationInbox";
 import { useLayoutInfo } from "@mobile/hooks/useLayoutInfo";
+import { securityMeta } from "@mobile/constants/security";
+import { openPhoneDialer } from "@mobile/utils/phone";
 
 const HOME_UNREAD_LIMIT = 8;
 
@@ -59,7 +61,7 @@ function FeatureBadge({
   sub: string;
 }) {
   return (
-    <View
+      <View
       style={{
         flexDirection: "row",
         alignItems: "center",
@@ -68,9 +70,10 @@ function FeatureBadge({
         backgroundColor: "rgba(255,255,255,0.1)",
         borderWidth: 1,
         borderColor: "rgba(255,255,255,0.15)",
-        paddingHorizontal: 8,
+        paddingHorizontal: 10,
         paddingVertical: 6,
-        maxWidth: 160,
+        flexShrink: 1,
+        maxWidth: "100%",
       }}
     >
       <View
@@ -81,13 +84,18 @@ function FeatureBadge({
           backgroundColor: "rgba(37,99,235,0.4)",
           alignItems: "center",
           justifyContent: "center",
+          flexShrink: 0,
         }}
       >
         <Icon color="#fff" size={12} />
       </View>
-      <View>
-        <Text style={{ color: "#fff", fontSize: 11, fontWeight: "600" }}>{title}</Text>
-        <Text style={{ color: "rgba(255,255,255,0.7)", fontSize: 11 }}>{sub}</Text>
+      <View style={{ flexShrink: 1, minWidth: 0 }}>
+        <Text style={{ color: "#fff", fontSize: 11, fontWeight: "600" }} numberOfLines={2}>
+          {title}
+        </Text>
+        <Text style={{ color: "rgba(255,255,255,0.7)", fontSize: 11 }} numberOfLines={1}>
+          {sub}
+        </Text>
       </View>
     </View>
   );
@@ -154,7 +162,7 @@ function useHomeStyles() {
       letterSpacing: 0.6,
     },
     heroTitle: { color: colors.white, fontSize: 24 * fontScale, fontWeight: "800" as const, marginTop: 8, lineHeight: 30, maxWidth: 280 },
-    badgeRow: { flexDirection: "row" as const, flexWrap: "wrap" as const, gap: 8, marginTop: 14, maxWidth: 300 },
+    badgeRow: { flexDirection: "row" as const, flexWrap: "wrap" as const, gap: 8, marginTop: 14 },
     ctaIcon: {
       width: 40,
       height: 40,
@@ -437,7 +445,7 @@ export default function HomeScreen() {
                 <FeatureBadge Icon={Clock} title={h.quickArrival} sub={h.quickArrivalSub} />
                 <FeatureBadge Icon={UserCheck} title={h.proTeam} sub={h.proTeamSub} />
               </View>
-              <Pressable style={styles.sosBtn} onPress={() => router.push("/(tabs)/bao-an")}>
+              <Pressable style={styles.sosBtn} onPress={() => openPhoneDialer(securityMeta.hotline)}>
                 <View style={styles.ctaIcon}>
                   <Phone color={colors.white} size={20} fill={colors.white} />
                 </View>

@@ -27,6 +27,8 @@ export function SecuritySendingOverlay({ visible, label }: Props) {
     }).start();
   }, [visible, progress]);
 
+  if (!visible) return null;
+
   const fillWidth = progress.interpolate({
     inputRange: [0, 1],
     outputRange: ["0%", "100%"],
@@ -44,7 +46,7 @@ export function SecuritySendingOverlay({ visible, label }: Props) {
   const scrim = isDark ? "rgba(15, 23, 42, 0.72)" : "rgba(255, 251, 235, 0.92)";
 
   return (
-    <Modal visible={visible} transparent animationType="fade" statusBarTranslucent>
+    <Modal visible transparent animationType="fade" statusBarTranslucent onRequestClose={() => undefined}>
       <View style={[styles.scrim, { backgroundColor: scrim }]}>
         <View style={styles.center}>
           <View style={[styles.track, { borderColor: trackBorder, backgroundColor: trackBg }]}>

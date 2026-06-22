@@ -23,7 +23,8 @@ import { useThemedStyles } from "@mobile/theme/useThemedStyles";
 import { cardShadow, radius } from "@mobile/theme/colors";
 import { useI18n } from "@mobile/i18n/useI18n";
 import type { I18nStrings } from "@mobile/i18n/strings";
-import { momentThumbUrl } from "@mobile/utils/momentMedia";
+import { resolveMomentThumbUrl } from "@mobile/utils/momentMedia";
+import { useSignedStorageUrls } from "@mobile/hooks/useSignedStorageUrls";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 function groupByMonth(moments: Moment[], common: I18nStrings["common"]) {
@@ -40,16 +41,17 @@ function groupByMonth(moments: Moment[], common: I18nStrings["common"]) {
 function MomentThumb({
   moment,
   caption,
+  thumbUri,
   onPress,
 }: {
   moment: Moment;
   caption: string;
+  thumbUri: string;
   onPress: () => void;
 }) {
   const styles = useKyNiemStyles();
   const { colors } = useTheme();
   const [imgFailed, setImgFailed] = useState(false);
-  const thumbUri = momentThumbUrl(moment.media_url, moment.thumbnail_url);
   const showImage = thumbUri && !imgFailed;
 
   return (
@@ -102,6 +104,11 @@ export default function KyNiemScreen() {
   });
 
   const grouped = useMemo(() => groupByMonth(q.data?.moments ?? [], c), [q.data, c]);
+  const moments = q.data?.moments ?? [];
+  const signed = useSignedStorageUrls(
+    "family-moments",
+    moments.flatMap((m) => [m.thumbnail_url, m.media_url]),
+  );
 
   const onRefresh = useCallback(() => {
     void q.refetch();
@@ -179,6 +186,7 @@ export default function KyNiemScreen() {
                         key={m.id}
                         moment={m}
                         caption={caption}
+                        thumbUri={resolveMomentThumbUrl(m.media_url, m.thumbnail_url, signed.data, 320)}
                         onPress={() => router.push(`/ky-niem-gia-dinh/${m.id}`)}
                       />
                     );

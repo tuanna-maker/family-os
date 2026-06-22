@@ -127,9 +127,15 @@ function useGiaDinhStyles() {
       marginBottom: 12,
       letterSpacing: -0.2,
     },
-    grid: { flexDirection: "row" as const, flexWrap: "wrap" as const, gap: 10, marginBottom: 20 },
+    grid: {
+      flexDirection: "row" as const,
+      flexWrap: "wrap" as const,
+      justifyContent: "space-between" as const,
+      rowGap: 10,
+      marginBottom: 20,
+    },
     gridCard: {
-      width: "47.5%" as const,
+      width: "48%" as const,
       borderRadius: 22,
       padding: 14,
       minHeight: 128,

@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { Pressable, Text, View } from "react-native";
 import { Image } from "expo-image";
 
@@ -19,6 +20,8 @@ import { useFamilyContext } from "@mobile/hooks/useFamilyContext";
 
 import { getAlbum } from "@mobile/api/albums";
 
+import { useSignedStorageUrls } from "@mobile/hooks/useSignedStorageUrls";
+
 //
 
 import { useTheme } from "@mobile/theme/themeStore";
@@ -29,7 +32,7 @@ import { radius } from "@mobile/theme/colors";
 
 import { useI18n } from "@mobile/i18n/useI18n";
 import { displayAlbumTitle } from "@mobile/utils/displayContent";
-import { momentThumbUrl } from "@mobile/utils/momentMedia";
+import { resolveMomentThumbUrl } from "@mobile/utils/momentMedia";
 
 
 
@@ -88,6 +91,19 @@ export default function AlbumDetailScreen() {
   const album = q.data?.album;
 
   const moments = q.data?.moments ?? [];
+
+  const signed = useSignedStorageUrls(
+    "family-moments",
+    moments.flatMap((m) => [m.thumbnail_url, m.media_url]),
+  );
+
+  const thumbByMoment = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const m of moments) {
+      map.set(m.id, resolveMomentThumbUrl(m.media_url, m.thumbnail_url, signed.data, 320));
+    }
+    return map;
+  }, [moments, signed.data]);
 
 
 
@@ -162,11 +178,12 @@ export default function AlbumDetailScreen() {
             <Pressable key={m.id} style={styles.cell} onPress={() => router.push(`/ky-niem-gia-dinh/${m.id}`)}>
 
               <Image
-                source={momentThumbUrl(m.media_url, m.thumbnail_url)}
+                source={thumbByMoment.get(m.id) ?? m.media_url}
                 style={styles.img}
                 contentFit="cover"
                 cachePolicy="memory-disk"
                 transition={180}
+                recyclingKey={m.id}
               />
 
             </Pressable>
