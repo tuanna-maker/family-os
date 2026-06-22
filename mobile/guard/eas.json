@@ -45,7 +45,10 @@
     "production": {
       "ios": {
         "appleId": "tuanna@unicomhub.com",
-        "appleTeamId": "QYN6C6RJ47"
+        "appleTeamId": "QYN6C6RJ47",
+        "ascApiKeyPath": "../asc-keys/AuthKey_8PJF35R72F.p8",
+        "ascApiKeyId": "8PJF35R72F",
+        "ascApiKeyIssuerId": "6c7d5137-21b1-4bae-96d2-3cc761483dbc"
       }
     }
   }
