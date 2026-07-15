@@ -1,0 +1,12 @@
+services:
+  app:
+    image: registry-harbor.ubos.vn/github-demo/securitytech:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: securitytech
+    restart: unless-stopped
+    ports:
+      - "3011:3000"
+    env_file:
+      - .env

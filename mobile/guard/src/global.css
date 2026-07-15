@@ -1,0 +1,41 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 246 248 252;
+    --foreground: 12 27 54;
+    --card: 255 255 255;
+    --card-foreground: 12 27 54;
+    --muted: 241 245 249;
+    --muted-foreground: 100 116 139;
+    --border: 231 236 245;
+    --brand: 37 99 235;
+    --success: 34 197 94;
+    --warning: 249 115 22;
+    --emergency: 239 68 68;
+    --info: 37 99 235;
+    --pink: 236 72 153;
+    --navy: 7 26 61;
+  }
+
+  .dark:root,
+  :root.dark,
+  .dark {
+    --background: 11 15 23;
+    --foreground: 232 237 245;
+    --card: 21 28 40;
+    --card-foreground: 232 237 245;
+    --muted: 26 35 50;
+    --muted-foreground: 139 155 181;
+    --border: 255 255 255;
+    --brand: 91 156 245;
+    --success: 74 222 128;
+    --warning: 251 146 60;
+    --emergency: 248 113 113;
+    --info: 147 197 253;
+    --pink: 244 114 182;
+    --navy: 232 237 245;
+  }
+}

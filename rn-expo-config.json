@@ -1,0 +1,103 @@
+﻿{
+  root: [32m'D:\\family-app\\mobile\\family'[39m,
+  reactNativePath: [32m'D:\\family-app\\node_modules\\react-native'[39m,
+  dependencies: [Object: null prototype] {
+    [32m'@react-native-async-storage/async-storage'[39m: {
+      root: [32m'D:\\family-app\\node_modules\\@react-native-async-storage\\async-storage'[39m,
+      name: [32m'@react-native-async-storage/async-storage'[39m,
+      platforms: {
+        ios: {
+          podspecPath: [32m'D:\\family-app\\node_modules\\@react-native-async-storage\\async-storage\\RNCAsyncStorage.podspec'[39m,
+          version: [32m'1.23.1'[39m,
+          configurations: [],
+          scriptPhases: []
+        }
+      }
+    },
+    [32m'@react-native-community/datetimepicker'[39m: {
+      root: [32m'D:\\family-app\\mobile\\family\\node_modules\\@react-native-community\\datetimepicker'[39m,
+      name: [32m'@react-native-community/datetimepicker'[39m,
+      platforms: {
+        ios: {
+          podspecPath: [32m'D:\\family-app\\mobile\\family\\node_modules\\@react-native-community\\datetimepicker\\RNDateTimePicker.podspec'[39m,
+          version: [32m'8.2.0'[39m,
+          configurations: [],
+          scriptPhases: []
+        }
+      }
+    },
+    expo: {
+      root: [32m'D:\\family-app\\node_modules\\expo'[39m,
+      name: [32m'expo'[39m,
+      platforms: {
+        ios: {
+          podspecPath: [32m'D:\\family-app\\node_modules\\expo\\Expo.podspec'[39m,
+          version: [32m'56.0.9'[39m,
+          configurations: [],
+          scriptPhases: []
+        }
+      }
+    },
+    [32m'react-native-gesture-handler'[39m: {
+      root: [32m'D:\\family-app\\node_modules\\react-native-gesture-handler'[39m,
+      name: [32m'react-native-gesture-handler'[39m,
+      platforms: {
+        ios: {
+          podspecPath: [32m'D:\\family-app\\node_modules\\react-native-gesture-handler\\RNGestureHandler.podspec'[39m,
+          version: [32m'2.31.2'[39m,
+          configurations: [],
+          scriptPhases: []
+        }
+      }
+    },
+    [32m'react-native-safe-area-context'[39m: {
+      root: [32m'D:\\family-app\\mobile\\guard\\node_modules\\react-native-safe-area-context'[39m,
+      name: [32m'react-native-safe-area-context'[39m,
+      platforms: {
+        ios: {
+          podspecPath: [32m'D:\\family-app\\mobile\\guard\\node_modules\\react-native-safe-area-context\\react-native-safe-area-context.podspec'[39m,
+          version: [32m'5.7.0'[39m,
+          configurations: [],
+          scriptPhases: []
+        }
+      }
+    },
+    [32m'react-native-screens'[39m: {
+      root: [32m'D:\\family-app\\node_modules\\react-native-screens'[39m,
+      name: [32m'react-native-screens'[39m,
+      platforms: {
+        ios: {
+          podspecPath: [32m'D:\\family-app\\node_modules\\react-native-screens\\RNScreens.podspec'[39m,
+          version: [32m'4.25.2'[39m,
+          configurations: [],
+          scriptPhases: []
+        }
+      }
+    },
+    [32m'react-native-svg'[39m: {
+      root: [32m'D:\\family-app\\node_modules\\react-native-svg'[39m,
+      name: [32m'react-native-svg'[39m,
+      platforms: {
+        ios: {
+          podspecPath: [32m'D:\\family-app\\node_modules\\react-native-svg\\RNSVG.podspec'[39m,
+          version: [32m'15.8.0'[39m,
+          configurations: [],
+          scriptPhases: []
+        }
+      }
+    },
+    [32m'@capacitor/preferences'[39m: {
+      root: [32m'D:\\family-app\\node_modules\\@capacitor\\preferences'[39m,
+      name: [32m'@capacitor/preferences'[39m,
+      platforms: {
+        ios: {
+          podspecPath: [32m'D:\\family-app\\node_modules\\@capacitor\\preferences\\CapacitorPreferences.podspec'[39m,
+          version: [32m'6.0.4'[39m,
+          configurations: [],
+          scriptPhases: []
+        }
+      }
+    }
+  },
+  project: { ios: { sourceDir: [32m'D:\\family-app\\mobile\\family\\ios'[39m } }
+}

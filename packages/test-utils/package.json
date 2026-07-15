@@ -1,0 +1,15 @@
+{
+  "name": "@shared/test-utils",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./test-accounts": "./src/test-accounts.ts",
+    "./mock-supabase": "./src/mock-supabase.ts",
+    "./capacitor-mocks": "./src/capacitor-mocks.ts"
+  },
+  "devDependencies": {
+    "vitest": "^3.2.4"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "expo": {
+    "name": "family",
+    "slug": "family",
+    "owner": "tuanna-unicom",
+    "extra": {
+      "eas": {
+        "projectId": "29b5786e-10b8-41e9-88dd-dddbe1af9e56"
+      }
+    }
+  }
+}

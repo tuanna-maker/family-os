@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
-import { SecurityShell, buildingStatus, securityMeta, securityServiceGrid, SecurityRequestsTracker } from "@/features/security-core";
+import { SecurityShell, buildingStatus, securityMeta, securityServiceGrid, securityServiceCatalog, SecurityRequestsTracker } from "@/features/security-core";
 import { createSecurityRequest } from "@/lib/security.functions";
 import { useAuth } from "@/hooks/use-auth";
 import { requireAuth } from "@/lib/require-auth";
@@ -98,6 +98,62 @@ function SecurityPage() {
           );
         })}
       </section>
+
+      <section className="px-4 mt-6 space-y-5">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-semibold">Dịch vụ Bảo An</h2>
+          <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+            {securityServiceCatalog.length} nhóm
+          </span>
+        </div>
+
+        {securityServiceCatalog.map((group) => {
+          const GroupIcon = group.icon;
+          return (
+            <div
+              key={group.id}
+              className="rounded-3xl bg-card border border-border overflow-hidden"
+            >
+              <div className="flex items-start gap-3 p-4">
+                <div className={`h-10 w-10 rounded-2xl grid place-items-center shrink-0 ${group.tint}`}>
+                  <GroupIcon className={`h-5 w-5 ${group.accent}`} />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold leading-tight">{group.title}</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">{group.subtitle}</p>
+                </div>
+              </div>
+              <ul className="divide-y divide-border">
+                {group.items.map((it) => {
+                  const ItIcon = it.icon;
+                  return (
+                    <li key={it.id}>
+                      <button
+                        onClick={() =>
+                          trigger("other", `${group.title} · ${it.label}`)
+                        }
+                        disabled={pending === "other"}
+                        className="w-full flex items-center gap-3 p-4 text-left active:bg-muted/40 transition disabled:opacity-70"
+                      >
+                        <div className={`h-9 w-9 rounded-xl grid place-items-center shrink-0 ${group.tint}`}>
+                          <ItIcon className={`h-4 w-4 ${group.accent}`} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[13px] font-semibold truncate">{it.label}</p>
+                          <p className="text-[11px] text-muted-foreground truncate">{it.desc}</p>
+                        </div>
+                        <span className="text-muted-foreground text-lg leading-none">›</span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          );
+        })}
+      </section>
+
+
 
       <section className="px-4 mt-6">
         <div className="rounded-3xl bg-card border border-border p-5">

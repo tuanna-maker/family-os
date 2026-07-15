@@ -1,0 +1,22 @@
+FROM node:22-alpine AS build
+
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm install
+
+COPY . .
+RUN npm run build
+RUN if [ ! -f dist/server/server.js ] && [ -f dist/server/index.js ]; then cp dist/server/index.js dist/server/server.js; fi
+
+FROM node:22-alpine AS runtime
+
+WORKDIR /app
+ENV NODE_ENV=production
+
+# vite preview is defined in package.json and serves the built app.
+COPY --from=build /app ./
+
+EXPOSE 3000
+
+CMD ["npm", "run", "preview", "--", "--host", "0.0.0.0", "--port", "3000"]

@@ -1,0 +1,20 @@
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": true,
+    "paths": {
+      "@/*": ["../../apps/guard/src/*"],
+      "@guard/api/*": ["../../apps/guard/src/api/*"],
+      "@mobile/*": ["./src/*"],
+      "@shared/utils": ["../../packages/shared-utils/src/index.ts"],
+      "@shared/utils/security-status-notify": ["../../packages/shared-utils/src/security-status-notify.ts"]
+    }
+  },
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    ".expo/types/**/*.ts",
+    "expo-env.d.ts",
+    "nativewind-env.d.ts"
+  ]
+}

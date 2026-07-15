@@ -67,10 +67,14 @@ import { Route as OpsSlaRouteImport } from './routes/ops.sla'
 import { Route as OpsOccupancyRouteImport } from './routes/ops.occupancy'
 import { Route as OpsFeeRouteImport } from './routes/ops.fee'
 import { Route as OpsComplaintsRouteImport } from './routes/ops.complaints'
-import { Route as GuardTasksRouteImport } from './routes/guard.tasks'
-import { Route as GuardScanRouteImport } from './routes/guard.scan'
+import { Route as GuardScheduleRouteImport } from './routes/guard.schedule'
+import { Route as GuardRequestsRouteImport } from './routes/guard.requests'
 import { Route as GuardPatrolRouteImport } from './routes/guard.patrol'
-import { Route as GuardMeRouteImport } from './routes/guard.me'
+import { Route as GuardNotificationsRouteImport } from './routes/guard.notifications'
+import { Route as GuardIncidentRouteImport } from './routes/guard.incident'
+import { Route as GuardCheckOutRouteImport } from './routes/guard.check-out'
+import { Route as GuardCheckInRouteImport } from './routes/guard.check-in'
+import { Route as GuardAccountRouteImport } from './routes/guard.account'
 import { Route as ChiTieuScanRouteImport } from './routes/chi-tieu_.scan'
 import { Route as ChamSocOngBaNhatKyRouteImport } from './routes/cham-soc-ong-ba.nhat-ky'
 import { Route as CaiDatThongBaoRouteImport } from './routes/cai-dat.thong-bao'
@@ -95,6 +99,7 @@ import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminSuperRouteImport } from './routes/admin.super'
 import { Route as AdminSecurityRouteImport } from './routes/admin.security'
 import { Route as AdminRolesRouteImport } from './routes/admin.roles'
+import { Route as AdminProjectsRouteImport } from './routes/admin.projects'
 import { Route as AdminMemoriesRouteImport } from './routes/admin.memories'
 import { Route as AdminHelpersRouteImport } from './routes/admin.helpers'
 import { Route as AdminFamilyRouteImport } from './routes/admin.family'
@@ -393,14 +398,14 @@ const OpsComplaintsRoute = OpsComplaintsRouteImport.update({
   path: '/complaints',
   getParentRoute: () => OpsRoute,
 } as any)
-const GuardTasksRoute = GuardTasksRouteImport.update({
-  id: '/tasks',
-  path: '/tasks',
+const GuardScheduleRoute = GuardScheduleRouteImport.update({
+  id: '/schedule',
+  path: '/schedule',
   getParentRoute: () => GuardRoute,
 } as any)
-const GuardScanRoute = GuardScanRouteImport.update({
-  id: '/scan',
-  path: '/scan',
+const GuardRequestsRoute = GuardRequestsRouteImport.update({
+  id: '/requests',
+  path: '/requests',
   getParentRoute: () => GuardRoute,
 } as any)
 const GuardPatrolRoute = GuardPatrolRouteImport.update({
@@ -408,9 +413,29 @@ const GuardPatrolRoute = GuardPatrolRouteImport.update({
   path: '/patrol',
   getParentRoute: () => GuardRoute,
 } as any)
-const GuardMeRoute = GuardMeRouteImport.update({
-  id: '/me',
-  path: '/me',
+const GuardNotificationsRoute = GuardNotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
+  getParentRoute: () => GuardRoute,
+} as any)
+const GuardIncidentRoute = GuardIncidentRouteImport.update({
+  id: '/incident',
+  path: '/incident',
+  getParentRoute: () => GuardRoute,
+} as any)
+const GuardCheckOutRoute = GuardCheckOutRouteImport.update({
+  id: '/check-out',
+  path: '/check-out',
+  getParentRoute: () => GuardRoute,
+} as any)
+const GuardCheckInRoute = GuardCheckInRouteImport.update({
+  id: '/check-in',
+  path: '/check-in',
+  getParentRoute: () => GuardRoute,
+} as any)
+const GuardAccountRoute = GuardAccountRouteImport.update({
+  id: '/account',
+  path: '/account',
   getParentRoute: () => GuardRoute,
 } as any)
 const ChiTieuScanRoute = ChiTieuScanRouteImport.update({
@@ -533,6 +558,11 @@ const AdminRolesRoute = AdminRolesRouteImport.update({
   path: '/admin/roles',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminProjectsRoute = AdminProjectsRouteImport.update({
+  id: '/admin/projects',
+  path: '/admin/projects',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminMemoriesRoute = AdminMemoriesRouteImport.update({
   id: '/admin/memories',
   path: '/admin/memories',
@@ -610,6 +640,7 @@ export interface FileRoutesByFullPath {
   '/admin/family': typeof AdminFamilyRoute
   '/admin/helpers': typeof AdminHelpersRoute
   '/admin/memories': typeof AdminMemoriesRoute
+  '/admin/projects': typeof AdminProjectsRoute
   '/admin/roles': typeof AdminRolesRoute
   '/admin/security': typeof AdminSecurityRoute
   '/admin/super': typeof AdminSuperRoute
@@ -634,10 +665,14 @@ export interface FileRoutesByFullPath {
   '/cai-dat/thong-bao': typeof CaiDatThongBaoRoute
   '/cham-soc-ong-ba/nhat-ky': typeof ChamSocOngBaNhatKyRoute
   '/chi-tieu/scan': typeof ChiTieuScanRoute
-  '/guard/me': typeof GuardMeRoute
+  '/guard/account': typeof GuardAccountRoute
+  '/guard/check-in': typeof GuardCheckInRoute
+  '/guard/check-out': typeof GuardCheckOutRoute
+  '/guard/incident': typeof GuardIncidentRoute
+  '/guard/notifications': typeof GuardNotificationsRoute
   '/guard/patrol': typeof GuardPatrolRoute
-  '/guard/scan': typeof GuardScanRoute
-  '/guard/tasks': typeof GuardTasksRoute
+  '/guard/requests': typeof GuardRequestsRoute
+  '/guard/schedule': typeof GuardScheduleRoute
   '/ops/complaints': typeof OpsComplaintsRoute
   '/ops/fee': typeof OpsFeeRoute
   '/ops/occupancy': typeof OpsOccupancyRoute
@@ -698,6 +733,7 @@ export interface FileRoutesByTo {
   '/admin/family': typeof AdminFamilyRoute
   '/admin/helpers': typeof AdminHelpersRoute
   '/admin/memories': typeof AdminMemoriesRoute
+  '/admin/projects': typeof AdminProjectsRoute
   '/admin/roles': typeof AdminRolesRoute
   '/admin/security': typeof AdminSecurityRoute
   '/admin/super': typeof AdminSuperRoute
@@ -722,10 +758,14 @@ export interface FileRoutesByTo {
   '/cai-dat/thong-bao': typeof CaiDatThongBaoRoute
   '/cham-soc-ong-ba/nhat-ky': typeof ChamSocOngBaNhatKyRoute
   '/chi-tieu/scan': typeof ChiTieuScanRoute
-  '/guard/me': typeof GuardMeRoute
+  '/guard/account': typeof GuardAccountRoute
+  '/guard/check-in': typeof GuardCheckInRoute
+  '/guard/check-out': typeof GuardCheckOutRoute
+  '/guard/incident': typeof GuardIncidentRoute
+  '/guard/notifications': typeof GuardNotificationsRoute
   '/guard/patrol': typeof GuardPatrolRoute
-  '/guard/scan': typeof GuardScanRoute
-  '/guard/tasks': typeof GuardTasksRoute
+  '/guard/requests': typeof GuardRequestsRoute
+  '/guard/schedule': typeof GuardScheduleRoute
   '/ops/complaints': typeof OpsComplaintsRoute
   '/ops/fee': typeof OpsFeeRoute
   '/ops/occupancy': typeof OpsOccupancyRoute
@@ -794,6 +834,7 @@ export interface FileRoutesById {
   '/admin/family': typeof AdminFamilyRoute
   '/admin/helpers': typeof AdminHelpersRoute
   '/admin/memories': typeof AdminMemoriesRoute
+  '/admin/projects': typeof AdminProjectsRoute
   '/admin/roles': typeof AdminRolesRoute
   '/admin/security': typeof AdminSecurityRoute
   '/admin/super': typeof AdminSuperRoute
@@ -818,10 +859,14 @@ export interface FileRoutesById {
   '/cai-dat/thong-bao': typeof CaiDatThongBaoRoute
   '/cham-soc-ong-ba/nhat-ky': typeof ChamSocOngBaNhatKyRoute
   '/chi-tieu_/scan': typeof ChiTieuScanRoute
-  '/guard/me': typeof GuardMeRoute
+  '/guard/account': typeof GuardAccountRoute
+  '/guard/check-in': typeof GuardCheckInRoute
+  '/guard/check-out': typeof GuardCheckOutRoute
+  '/guard/incident': typeof GuardIncidentRoute
+  '/guard/notifications': typeof GuardNotificationsRoute
   '/guard/patrol': typeof GuardPatrolRoute
-  '/guard/scan': typeof GuardScanRoute
-  '/guard/tasks': typeof GuardTasksRoute
+  '/guard/requests': typeof GuardRequestsRoute
+  '/guard/schedule': typeof GuardScheduleRoute
   '/ops/complaints': typeof OpsComplaintsRoute
   '/ops/fee': typeof OpsFeeRoute
   '/ops/occupancy': typeof OpsOccupancyRoute
@@ -891,6 +936,7 @@ export interface FileRouteTypes {
     | '/admin/family'
     | '/admin/helpers'
     | '/admin/memories'
+    | '/admin/projects'
     | '/admin/roles'
     | '/admin/security'
     | '/admin/super'
@@ -915,10 +961,14 @@ export interface FileRouteTypes {
     | '/cai-dat/thong-bao'
     | '/cham-soc-ong-ba/nhat-ky'
     | '/chi-tieu/scan'
-    | '/guard/me'
+    | '/guard/account'
+    | '/guard/check-in'
+    | '/guard/check-out'
+    | '/guard/incident'
+    | '/guard/notifications'
     | '/guard/patrol'
-    | '/guard/scan'
-    | '/guard/tasks'
+    | '/guard/requests'
+    | '/guard/schedule'
     | '/ops/complaints'
     | '/ops/fee'
     | '/ops/occupancy'
@@ -979,6 +1029,7 @@ export interface FileRouteTypes {
     | '/admin/family'
     | '/admin/helpers'
     | '/admin/memories'
+    | '/admin/projects'
     | '/admin/roles'
     | '/admin/security'
     | '/admin/super'
@@ -1003,10 +1054,14 @@ export interface FileRouteTypes {
     | '/cai-dat/thong-bao'
     | '/cham-soc-ong-ba/nhat-ky'
     | '/chi-tieu/scan'
-    | '/guard/me'
+    | '/guard/account'
+    | '/guard/check-in'
+    | '/guard/check-out'
+    | '/guard/incident'
+    | '/guard/notifications'
     | '/guard/patrol'
-    | '/guard/scan'
-    | '/guard/tasks'
+    | '/guard/requests'
+    | '/guard/schedule'
     | '/ops/complaints'
     | '/ops/fee'
     | '/ops/occupancy'
@@ -1074,6 +1129,7 @@ export interface FileRouteTypes {
     | '/admin/family'
     | '/admin/helpers'
     | '/admin/memories'
+    | '/admin/projects'
     | '/admin/roles'
     | '/admin/security'
     | '/admin/super'
@@ -1098,10 +1154,14 @@ export interface FileRouteTypes {
     | '/cai-dat/thong-bao'
     | '/cham-soc-ong-ba/nhat-ky'
     | '/chi-tieu_/scan'
-    | '/guard/me'
+    | '/guard/account'
+    | '/guard/check-in'
+    | '/guard/check-out'
+    | '/guard/incident'
+    | '/guard/notifications'
     | '/guard/patrol'
-    | '/guard/scan'
-    | '/guard/tasks'
+    | '/guard/requests'
+    | '/guard/schedule'
     | '/ops/complaints'
     | '/ops/fee'
     | '/ops/occupancy'
@@ -1170,6 +1230,7 @@ export interface RootRouteChildren {
   AdminFamilyRoute: typeof AdminFamilyRoute
   AdminHelpersRoute: typeof AdminHelpersRoute
   AdminMemoriesRoute: typeof AdminMemoriesRoute
+  AdminProjectsRoute: typeof AdminProjectsRoute
   AdminRolesRoute: typeof AdminRolesRoute
   AdminSecurityRoute: typeof AdminSecurityRoute
   AdminSuperRoute: typeof AdminSuperRoute
@@ -1587,18 +1648,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OpsComplaintsRouteImport
       parentRoute: typeof OpsRoute
     }
-    '/guard/tasks': {
-      id: '/guard/tasks'
-      path: '/tasks'
-      fullPath: '/guard/tasks'
-      preLoaderRoute: typeof GuardTasksRouteImport
+    '/guard/schedule': {
+      id: '/guard/schedule'
+      path: '/schedule'
+      fullPath: '/guard/schedule'
+      preLoaderRoute: typeof GuardScheduleRouteImport
       parentRoute: typeof GuardRoute
     }
-    '/guard/scan': {
-      id: '/guard/scan'
-      path: '/scan'
-      fullPath: '/guard/scan'
-      preLoaderRoute: typeof GuardScanRouteImport
+    '/guard/requests': {
+      id: '/guard/requests'
+      path: '/requests'
+      fullPath: '/guard/requests'
+      preLoaderRoute: typeof GuardRequestsRouteImport
       parentRoute: typeof GuardRoute
     }
     '/guard/patrol': {
@@ -1608,11 +1669,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GuardPatrolRouteImport
       parentRoute: typeof GuardRoute
     }
-    '/guard/me': {
-      id: '/guard/me'
-      path: '/me'
-      fullPath: '/guard/me'
-      preLoaderRoute: typeof GuardMeRouteImport
+    '/guard/notifications': {
+      id: '/guard/notifications'
+      path: '/notifications'
+      fullPath: '/guard/notifications'
+      preLoaderRoute: typeof GuardNotificationsRouteImport
+      parentRoute: typeof GuardRoute
+    }
+    '/guard/incident': {
+      id: '/guard/incident'
+      path: '/incident'
+      fullPath: '/guard/incident'
+      preLoaderRoute: typeof GuardIncidentRouteImport
+      parentRoute: typeof GuardRoute
+    }
+    '/guard/check-out': {
+      id: '/guard/check-out'
+      path: '/check-out'
+      fullPath: '/guard/check-out'
+      preLoaderRoute: typeof GuardCheckOutRouteImport
+      parentRoute: typeof GuardRoute
+    }
+    '/guard/check-in': {
+      id: '/guard/check-in'
+      path: '/check-in'
+      fullPath: '/guard/check-in'
+      preLoaderRoute: typeof GuardCheckInRouteImport
+      parentRoute: typeof GuardRoute
+    }
+    '/guard/account': {
+      id: '/guard/account'
+      path: '/account'
+      fullPath: '/guard/account'
+      preLoaderRoute: typeof GuardAccountRouteImport
       parentRoute: typeof GuardRoute
     }
     '/chi-tieu_/scan': {
@@ -1783,6 +1872,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminRolesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/projects': {
+      id: '/admin/projects'
+      path: '/admin/projects'
+      fullPath: '/admin/projects'
+      preLoaderRoute: typeof AdminProjectsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/memories': {
       id: '/admin/memories'
       path: '/admin/memories'
@@ -1916,18 +2012,26 @@ const FamilyRouteWithChildren =
   FamilyRoute._addFileChildren(FamilyRouteChildren)
 
 interface GuardRouteChildren {
-  GuardMeRoute: typeof GuardMeRoute
+  GuardAccountRoute: typeof GuardAccountRoute
+  GuardCheckInRoute: typeof GuardCheckInRoute
+  GuardCheckOutRoute: typeof GuardCheckOutRoute
+  GuardIncidentRoute: typeof GuardIncidentRoute
+  GuardNotificationsRoute: typeof GuardNotificationsRoute
   GuardPatrolRoute: typeof GuardPatrolRoute
-  GuardScanRoute: typeof GuardScanRoute
-  GuardTasksRoute: typeof GuardTasksRoute
+  GuardRequestsRoute: typeof GuardRequestsRoute
+  GuardScheduleRoute: typeof GuardScheduleRoute
   GuardIndexRoute: typeof GuardIndexRoute
 }
 
 const GuardRouteChildren: GuardRouteChildren = {
-  GuardMeRoute: GuardMeRoute,
+  GuardAccountRoute: GuardAccountRoute,
+  GuardCheckInRoute: GuardCheckInRoute,
+  GuardCheckOutRoute: GuardCheckOutRoute,
+  GuardIncidentRoute: GuardIncidentRoute,
+  GuardNotificationsRoute: GuardNotificationsRoute,
   GuardPatrolRoute: GuardPatrolRoute,
-  GuardScanRoute: GuardScanRoute,
-  GuardTasksRoute: GuardTasksRoute,
+  GuardRequestsRoute: GuardRequestsRoute,
+  GuardScheduleRoute: GuardScheduleRoute,
   GuardIndexRoute: GuardIndexRoute,
 }
 
@@ -2047,6 +2151,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminFamilyRoute: AdminFamilyRoute,
   AdminHelpersRoute: AdminHelpersRoute,
   AdminMemoriesRoute: AdminMemoriesRoute,
+  AdminProjectsRoute: AdminProjectsRoute,
   AdminRolesRoute: AdminRolesRoute,
   AdminSecurityRoute: AdminSecurityRoute,
   AdminSuperRoute: AdminSuperRoute,
@@ -2058,13 +2163,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

@@ -1,169 +1,141 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { GuardMobileShell } from "@/components/guard/GuardMobileShell";
-import { GroupedSection } from "@/components/guard/ios/GroupedCard";
-import { ListRow } from "@/components/guard/ios/ListRow";
-import {
-  dutyKpis,
-  guardProfile,
-  guardTasks,
-  patrolCheckpoints,
-} from "@/features/guard-mobile/data";
-import { cn } from "@/lib/utils";
-import { hapticLight, hapticMedium } from "@/lib/haptic";
-import { Bell, Circle, MapPin, ScanLine, Siren } from "lucide-react";
+import { Shield, Bell, LogIn, LogOut, MapPin, AlertTriangle, Users } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
 
 export const Route = createFileRoute("/guard/")({
-  head: () => ({ meta: [{ title: "Ca trực — STOS Guard" }] }),
-  component: GuardDutyPage,
+  head: () => ({ meta: [{ title: "Bảo vệ — Trang chủ" }] }),
+  component: GuardHome,
 });
 
-function GuardDutyPage() {
-  const doneCp = patrolCheckpoints.filter((c) => c.done).length;
-  const nextCp = patrolCheckpoints.find((c) => !c.done);
+function GuardHome() {
+  const { user } = useAuth();
+  const fullName =
+    (user?.user_metadata as { full_name?: string } | null)?.full_name ?? "Nhân viên bảo vệ";
+  const initials = fullName
+    .split(" ")
+    .map((s) => s[0])
+    .slice(-2)
+    .join("")
+    .toUpperCase();
 
   return (
-    <GuardMobileShell
-      largeTitle={`Xin chào, ${guardProfile.name.split(" ").slice(-1).join(" ")}`}
-      subtitle={`${guardProfile.zone} · ${guardProfile.shift}`}
-      trailing={
+    <>
+      {/* Brand header */}
+      <header className="px-5 pt-6 pb-4 flex items-start justify-between">
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-2xl bg-gradient-to-br from-success to-brand grid place-items-center shadow-lg">
+            <Shield className="h-5 w-5 text-white" />
+          </div>
+          <div>
+            <p className="text-[15px] font-bold tracking-wide">BẢO VỆ</p>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">
+              STOS Residence
+            </p>
+          </div>
+        </div>
         <Link
-          to="/guard/tasks"
-          className="relative h-10 w-10 rounded-full bg-card border border-border grid place-items-center active:scale-95 transition"
-          aria-label="Thông báo nhiệm vụ"
+          to="/guard/notifications"
+          className="relative h-10 w-10 rounded-full bg-card border border-border grid place-items-center"
         >
-          <Bell className="h-[18px] w-[18px] text-foreground" />
-          <span className="absolute -top-0.5 -right-0.5 h-4 w-4 rounded-full bg-emergency text-[9px] font-bold text-primary-foreground grid place-items-center">
-            2
+          <Bell className="h-4 w-4" />
+          <span className="absolute -top-1 -right-1 h-4 min-w-4 px-1 rounded-full bg-emergency text-white text-[9px] font-bold grid place-items-center">
+            3
           </span>
         </Link>
-      }
-    >
-      {/* Shift status card */}
-      <section className="px-4 mt-2">
-        <div className="rounded-[14px] bg-card border border-border p-4">
-          <div className="flex items-center gap-3">
-            <div className="h-12 w-12 rounded-2xl bg-tint-green grid place-items-center text-success font-bold text-sm">
-              {guardProfile.avatarInitials}
+      </header>
+
+      {/* Profile */}
+      <section className="px-5">
+        <div className="flex items-center gap-3">
+          <div className="h-14 w-14 rounded-full bg-gradient-to-br from-brand to-info grid place-items-center text-white font-bold text-base shrink-0">
+            {initials}
+          </div>
+          <div className="min-w-0">
+            <p className="text-xs text-muted-foreground">Xin chào,</p>
+            <p className="text-lg font-bold truncate">{fullName}</p>
+            <p className="text-[11px] text-muted-foreground">Ca sáng: 06:00 - 14:00</p>
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <span className="h-1.5 w-1.5 rounded-full bg-success animate-pulse" />
+              <span className="text-[11px] text-success font-medium">Đang làm việc</span>
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-success flex items-center gap-1.5">
-                <span className="h-2 w-2 rounded-full bg-success animate-pulse" />
-                Đang trực
-              </p>
-              <p className="text-[15px] font-semibold truncate">{guardProfile.zone}</p>
-              <p className="text-[12px] text-muted-foreground">{guardProfile.project}</p>
-            </div>
-            <button
-              type="button"
-              onClick={() => hapticMedium()}
-              className="text-[13px] font-semibold text-brand min-h-[44px] px-2 active:opacity-60"
-            >
-              Chấm công
-            </button>
           </div>
         </div>
       </section>
 
-      {/* KPI strip */}
-      <section className="px-4 mt-4 grid grid-cols-3 gap-2">
-        {dutyKpis.map((k) => (
-          <div
-            key={k.label}
-            className="rounded-[14px] bg-card border border-border p-3 min-h-[72px] flex flex-col justify-between"
-          >
-            <p className="text-[10px] text-muted-foreground uppercase tracking-wide">
-              {k.label}
-            </p>
-            <p className="text-[20px] font-bold tabular-nums">{k.value}</p>
-            <p
-              className={cn(
-                "text-[10px] font-medium",
-                k.tone === "warning" && "text-warning",
-                k.tone === "success" && "text-success",
-                k.tone === "info" && "text-brand",
-              )}
-            >
-              {k.sub}
-            </p>
-          </div>
-        ))}
-      </section>
-
-      {/* Primary actions — 44pt+ targets */}
-      <section className="px-4 mt-5 grid grid-cols-2 gap-3">
-        <Link
-          to="/guard/scan"
-          onClick={() => hapticLight()}
-          className="col-span-2 flex items-center gap-4 rounded-[14px] bg-brand text-primary-foreground p-4 min-h-[56px] active:scale-[0.98] transition shadow-[var(--shadow-soft)]"
-        >
-          <span className="h-11 w-11 rounded-xl bg-primary-foreground/15 grid place-items-center shrink-0">
-            <ScanLine className="h-6 w-6" />
-          </span>
-          <span className="flex-1 text-left">
-            <p className="text-[16px] font-bold">Quét QR khách / xe</p>
-            <p className="text-[12px] opacity-80">Kiểm soát ra vào nhanh</p>
-          </span>
-        </Link>
-        <Link
+      {/* Action grid */}
+      <section className="px-5 mt-6 grid grid-cols-2 gap-3">
+        <ActionTile
+          to="/guard/check-in"
+          icon={LogIn}
+          title="VÀO CA"
+          subtitle="Check-in"
+          className="bg-gradient-to-br from-success to-[oklch(0.62_0.18_155)]"
+        />
+        <ActionTile
+          to="/guard/check-out"
+          icon={LogOut}
+          title="KẾT THÚC CA"
+          subtitle="Check-out"
+          className="bg-gradient-to-br from-emergency to-pink"
+        />
+        <ActionTile
           to="/guard/patrol"
-          className="flex flex-col gap-2 rounded-[14px] bg-card border border-border p-4 min-h-[88px] active:scale-[0.98] transition"
-        >
-          <MapPin className="h-5 w-5 text-brand" />
-          <p className="text-[14px] font-semibold">Tuần tra</p>
-          <p className="text-[11px] text-muted-foreground">
-            {doneCp}/{patrolCheckpoints.length} checkpoint
-          </p>
-        </Link>
-        <Link
-          to="/guard/tasks"
-          className="flex flex-col gap-2 rounded-[14px] bg-card border border-border p-4 min-h-[88px] active:scale-[0.98] transition"
-        >
-          <Siren className="h-5 w-5 text-emergency" />
-          <p className="text-[14px] font-semibold">Sự cố / SOS</p>
-          <p className="text-[11px] text-muted-foreground">2 đang mở</p>
-        </Link>
+          icon={MapPin}
+          title="TUẦN TRA"
+          subtitle="Điểm danh"
+          className="bg-gradient-to-br from-brand to-info"
+        />
+        <ActionTile
+          to="/guard/incident"
+          icon={AlertTriangle}
+          title="BÁO SỰ CỐ"
+          subtitle="Gửi báo cáo"
+          className="bg-gradient-to-br from-warning to-[oklch(0.7_0.16_45)]"
+        />
       </section>
 
-      {/* Next checkpoint */}
-      {nextCp && (
-        <GroupedSection title="Checkpoint kế tiếp" footer="Quét mã tại điểm để xác nhận tuần tra.">
-          <ListRow
-            title={nextCp.name}
-            subtitle={`Hạn ${nextCp.due} · GPS ${nextCp.lat}`}
-            value="Chưa quét"
-            icon={<Circle className="h-4 w-4" />}
-            iconBoxClassName="bg-tint-orange text-warning"
-            to="/guard/patrol"
-            showChevron
-          />
-        </GroupedSection>
-      )}
+      {/* Resident requests */}
+      <section className="px-5 mt-3">
+        <Link
+          to="/guard/requests"
+          className="flex items-center gap-4 rounded-3xl p-4 bg-gradient-to-br from-[oklch(0.55_0.2_295)] to-[oklch(0.45_0.2_280)] text-white shadow-lg active:scale-[0.98] transition"
+        >
+          <div className="h-12 w-12 rounded-2xl bg-white/20 grid place-items-center shrink-0">
+            <Users className="h-6 w-6" />
+          </div>
+          <div>
+            <p className="text-base font-bold tracking-wide">YÊU CẦU CƯ DÂN</p>
+            <p className="text-[12px] text-white/80">Xem & xử lý</p>
+          </div>
+        </Link>
+      </section>
+    </>
+  );
+}
 
-      {/* Open tasks preview */}
-      <GroupedSection title="Nhiệm vụ ưu tiên">
-        {guardTasks.slice(0, 2).map((t) => (
-          <ListRow
-            key={t.id}
-            title={t.title}
-            subtitle={`${t.location} · ${t.ago}`}
-            value={t.priority}
-            icon={
-              t.type === "SOS" ? (
-                <Siren className="h-4 w-4" />
-              ) : (
-                <Bell className="h-4 w-4" />
-              )
-            }
-            iconBoxClassName={
-              t.priority === "P1" ? "bg-emergency text-primary-foreground" : "bg-tint-blue text-brand"
-            }
-            to="/guard/tasks"
-          />
-        ))}
-        <ListRow title="Xem tất cả nhiệm vụ" to="/guard/tasks" showChevron />
-      </GroupedSection>
-
-      <div className="h-4" />
-    </GuardMobileShell>
+function ActionTile({
+  to,
+  icon: Icon,
+  title,
+  subtitle,
+  className,
+}: {
+  to: string;
+  icon: typeof Bell;
+  title: string;
+  subtitle: string;
+  className: string;
+}) {
+  return (
+    <Link
+      to={to as any}
+      className={`rounded-3xl p-4 text-white shadow-lg active:scale-[0.98] transition flex flex-col items-center justify-center min-h-[130px] ${className}`}
+    >
+      <div className="h-12 w-12 rounded-2xl bg-white/20 grid place-items-center mb-2">
+        <Icon className="h-6 w-6" />
+      </div>
+      <p className="text-sm font-bold tracking-wide">{title}</p>
+      <p className="text-[11px] text-white/80 mt-0.5">{subtitle}</p>
+    </Link>
   );
 }

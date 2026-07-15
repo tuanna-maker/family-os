@@ -1,0 +1,56 @@
+{
+  "cli": {
+    "version": ">= 12.0.0",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "env": {
+        "EAS_NO_FROZEN_LOCKFILE": "1"
+      }
+    },
+    "preview": {
+      "distribution": "internal",
+      "env": {
+        "EAS_NO_FROZEN_LOCKFILE": "1"
+      },
+      "android": {
+        "buildType": "apk"
+      },
+      "ios": {
+        "simulator": false
+      }
+    },
+    "ios-simulator": {
+      "ios": {
+        "simulator": true
+      },
+      "env": {
+        "EAS_NO_FROZEN_LOCKFILE": "1"
+      }
+    },
+    "production": {
+      "autoIncrement": true,
+      "env": {
+        "EAS_NO_FROZEN_LOCKFILE": "1"
+      },
+      "ios": {
+        "distribution": "store"
+      }
+    }
+  },
+  "submit": {
+    "production": {
+      "ios": {
+        "appleId": "tuanna@unicomhub.com",
+        "appleTeamId": "QYN6C6RJ47",
+        "ascAppId": "6780730468",
+        "ascApiKeyPath": "../asc-keys/AuthKey_DDVHAGCCZT.p8",
+        "ascApiKeyId": "DDVHAGCCZT",
+        "ascApiKeyIssuerId": "6c7d5137-21b1-4bae-96d2-3cc761483dbc"
+      }
+    }
+  }
+}

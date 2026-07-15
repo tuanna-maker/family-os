@@ -55,7 +55,8 @@ export function SecurityRequestsTracker() {
     queryKey: ["security-requests", session?.user?.id ?? "anon"],
     queryFn: () => fetchList(),
     enabled: !!session,
-    refetchInterval: 10_000,
+    staleTime: 15_000,
+    refetchInterval: 30_000,
   });
 
   const items = useMemo<SecurityRequest[]>(() => {
@@ -74,7 +75,7 @@ export function SecurityRequestsTracker() {
         <div>
           <h2 className="text-[17px] font-semibold tracking-tight">Trạng thái điều phối</h2>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Yêu cầu của bạn — cập nhật mỗi 10 giây
+            Yêu cầu của bạn — cập nhật mỗi 30 giây
           </p>
         </div>
         {q.isFetching && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}

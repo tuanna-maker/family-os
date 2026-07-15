@@ -1,0 +1,596 @@
+import { z } from "zod";
+import { requireUser } from "@shared/supabase/auth";
+import { getSupabase } from "@shared/supabase/get-client";
+import { sosDispatchSchema, SOS_SCHEMA_VERSION } from "@/features/security-ops/dashboard/sosSchema";
+
+export type SecurityRequest = {
+  id: string;
+  request_type: string;
+  status: string;
+  building: string | null;
+  apartment: string | null;
+  requester_id: string | null;
+  created_at: string;
+  resolved_at: string | null;
+  payload?: Record<string, unknown> | null;
+};
+
+const TYPES = ["sos", "fire", "intrusion", "noise", "package", "other"] as const;
+
+export async function createSosDispatch(data: any) {
+  const { supabase, userId } = await requireUser();
+    // Unique short ticket code: SOS-YYMMDD-XXXX (base36 random)
+    const now = new Date();
+    const ymd =
+      String(now.getUTCFullYear()).slice(-2) +
+      String(now.getUTCMonth() + 1).padStart(2, "0") +
+      String(now.getUTCDate()).padStart(2, "0");
+    const rand = Math.random().toString(36).slice(2, 6).toUpperCase();
+    const ticket_code = `SOS-${ymd}-${rand}`;
+
+    // Schema already trimmed/normalized
+    const zone = data.zone;
+    const location = data.location ?? null;
+    const note = data.note ?? null;
+
+    // Standardized payload (schema v1) — keep all SOS fields fully structured
+    // so reads don't have to guess shape, and DB columns stay semantically
+    // correct (building = zone, apartment = location).
+    const payload = {
+      schema_version: SOS_SCHEMA_VERSION,
+      ticket_code,
+      priority: data.priority,
+      incident_type: data.incident_type,
+      zone,
+      location,
+      team: {
+        id: data.team_id,
+        name: data.team_name,
+        auto_assigned: data.auto_assigned,
+      },
+      // Legacy flat fields kept for older readers
+      team_id: data.team_id,
+      team_name: data.team_name,
+      auto_assigned: data.auto_assigned,
+      note,
+      dispatched_at: now.toISOString(),
+      dispatched_by: userId,
+    };
+
+    const { data: row, error } = await supabase
+      .from("security_requests")
+      .insert({
+        requester_id: userId,
+        request_type: "sos",
+        status: "open",
+        building: zone,
+        apartment: location,
+        payload: payload as never,
+      })
+      .select("id, created_at")
+      .single();
+    if (error) throw new Error(error.message);
+
+    // Initial timeline event
+    const dispatchNote =
+      `Điều động ${data.team_name}${data.auto_assigned ? " (tự động)" : ""}` +
+      (note ? ` · ${note}` : "");
+    await supabase.from("sos_events").insert({
+      request_id: row.id,
+      actor_id: userId,
+      event_type: "dispatched",
+      to_status: "open",
+      note: dispatchNote,
+      metadata: {
+        ticket_code,
+        priority: data.priority,
+        incident_type: data.incident_type,
+        zone,
+        location,
+        team: { id: data.team_id, name: data.team_name, auto_assigned: data.auto_assigned },
+      } as never,
+    });
+
+    firePushDispatch();
+
+    return {
+      id: row.id as string,
+      ticket_code,
+      created_at: row.created_at as string,
+    };
+}
+
+
+export async function createSecurityRequest(data: any) {
+  const { supabase, userId } = await requireUser();
+    const { data: row, error } = await supabase
+      .from("security_requests")
+      .insert({
+        requester_id: userId,
+        request_type: data.request_type,
+        building: data.building ?? null,
+        apartment: data.apartment ?? null,
+        payload: (data.payload ?? {}) as never,
+      })
+      .select("id")
+      .single();
+    if (error) throw new Error(error.message);
+    return { id: row.id };
+}
+
+export async function attachSecurityRequestEvidence(data: {
+  id: string;
+  files: { path: string; name: string; size: number; mime: string }[];
+  note?: string;
+}) {
+  const { supabase, userId } = await requireUser();
+  const parsed = z
+    .object({
+      id: z.string().uuid(),
+      files: z
+        .array(
+          z.object({
+            path: z.string().min(3).max(500),
+            name: z.string().min(1).max(255),
+            size: z.number().int().min(1).max(10 * 1024 * 1024),
+            mime: z.string().min(1).max(120),
+          }),
+        )
+        .min(1)
+        .max(10),
+      note: z.string().max(200).optional(),
+    })
+    .parse(data);
+
+  for (const f of parsed.files) {
+    if (f.path.split("/")[0] !== parsed.id) {
+      throw new Error("Đường dẫn tệp không hợp lệ");
+    }
+  }
+
+  const { error } = await supabase.from("sos_events").insert({
+    request_id: parsed.id,
+    actor_id: userId,
+    event_type: "attachment",
+    note: parsed.note ?? `Đã đính kèm ${parsed.files.length} tệp`,
+    metadata: { attachments: parsed.files } as never,
+  });
+  if (error) throw new Error(error.message);
+  return { ok: true as const };
+}
+
+export async function getSecurityRequest(id: string) {
+  const { supabase } = await requireUser();
+  const { data, error } = await supabase
+    .from("security_requests")
+    .select("id, request_type, status, building, apartment, requester_id, created_at, resolved_at, payload")
+    .eq("id", id)
+    .single();
+  if (error) throw new Error(error.message);
+  return data as SecurityRequest;
+}
+
+export async function listSecurityRequests() {
+  const { supabase, userId } = await requireUser();
+
+        const { data, error } = await supabase
+      .from("security_requests")
+      .select("id, request_type, status, building, apartment, requester_id, created_at, resolved_at, payload")
+      .order("created_at", { ascending: false })
+      .limit(50);
+    if (error) throw new Error(error.message);
+    return (data ?? []) as SecurityRequest[];
+}
+
+export async function listOpenResidentRequests() {
+  const rows = await listSecurityRequests();
+  return rows.filter((r) => r.status === "open" || r.status === "in_progress");
+}
+
+/** Yêu cầu cư dân đã ẩn khỏi hộp thông báo (lưu server — không hiện lại sau cài app). */
+export async function listDismissedInboxRequestIds() {
+  const { supabase, userId } = await requireUser();
+  const { data, error } = await supabase
+    .from("guard_inbox_dismissals")
+    .select("request_id")
+    .eq("user_id", userId);
+  if (error) throw new Error(error.message);
+  return (data ?? []).map((row) => row.request_id as string);
+}
+
+export async function dismissInboxSecurityRequests(ids: string[]) {
+  if (ids.length === 0) return { ok: true as const };
+  const { supabase, userId } = await requireUser();
+  const now = new Date().toISOString();
+  const rows = ids.map((request_id) => ({ user_id: userId, request_id, dismissed_at: now }));
+  const { error } = await supabase
+    .from("guard_inbox_dismissals")
+    .upsert(rows, { onConflict: "user_id,request_id", ignoreDuplicates: true });
+  if (error) throw new Error(error.message);
+  return { ok: true as const };
+}
+
+export type SecurityRequestStatusUpdate = {
+  id: string;
+  status: "in_progress" | "resolved";
+  note?: string;
+};
+
+export type SecurityRequestStatusResult = {
+  ok: true;
+  id: string;
+  status: "in_progress" | "resolved";
+  request_type: string;
+  unit_label: string;
+};
+
+export async function updateSecurityRequest(
+  data: SecurityRequestStatusUpdate,
+  opts?: { skipPush?: boolean },
+): Promise<SecurityRequestStatusResult> {
+  const { supabase, userId } = await requireUser();
+
+  const { data: prev, error: prevErr } = await supabase
+    .from("security_requests")
+    .select("id, status, request_type, apartment, building, requester_id, payload")
+    .eq("id", data.id)
+    .single();
+  if (prevErr) throw new Error(prevErr.message);
+
+  const { error } = await supabase
+    .from("security_requests")
+    .update({
+      status: data.status,
+      assigned_to: userId,
+      resolved_at: data.status === "resolved" ? new Date().toISOString() : null,
+    })
+    .eq("id", data.id);
+  if (error) throw new Error(error.message);
+
+  const eventType = data.status === "in_progress" ? "claimed" : "resolved";
+  const eventNote =
+    data.status === "in_progress"
+      ? "Đội bảo an đã nhận và đang xử lý"
+      : (data.note ?? "Đã hoàn tất xử lý");
+
+  await Promise.all([
+    supabase.from("sos_events").insert({
+      request_id: data.id,
+      actor_id: userId,
+      event_type: eventType,
+      to_status: data.status,
+      note: eventNote,
+    }),
+    supabase.rpc("log_audit", {
+      _action: `security_request.${data.status}`,
+      _target_table: "security_requests",
+      _target_id: data.id,
+      _metadata: {},
+    }),
+  ]);
+
+  const unitParts = [prev.apartment, prev.building].filter(Boolean);
+  return {
+    ok: true,
+    id: data.id,
+    status: data.status,
+    request_type: prev.request_type as string,
+    unit_label: unitParts.length ? unitParts.join(" · ") : "Cư dân",
+  };
+}
+
+export async function batchUpdateSecurityRequests(input: {
+  ids: string[];
+  status: "in_progress" | "resolved";
+  note?: string;
+}) {
+  const settled = await Promise.allSettled(
+    input.ids.map((id) =>
+      updateSecurityRequest(
+        { id, status: input.status, note: input.note },
+        { skipPush: true },
+      ),
+    ),
+  );
+
+  return settled.map((entry, index) => {
+    const id = input.ids[index];
+    if (entry.status === "fulfilled") {
+      return { id, ok: true as const, result: entry.value };
+    }
+    const reason = entry.reason;
+    return {
+      id,
+      ok: false as const,
+      error: reason instanceof Error ? reason.message : "Lỗi không xác định",
+    };
+  });
+}
+
+export type OpenSosRow = {
+  id: string;
+  ticket_code: string;
+  priority: "P1" | "P2" | "P3" | "—";
+  incident_type: string;
+  zone: string | null;
+  location: string | null;
+  team_name: string | null;
+  status: string;
+  created_at: string;
+  age_seconds: number;
+};
+
+export async function listOpenSos() {
+  const { supabase, userId } = await requireUser();
+
+        const { data, error } = await supabase
+      .from("security_requests")
+      .select("id, status, building, apartment, created_at, payload")
+      .eq("request_type", "sos")
+      .in("status", ["open", "in_progress"])
+      .order("created_at", { ascending: false })
+      .limit(50);
+    if (error) throw new Error(error.message);
+    const now = Date.now();
+    return (data ?? []).map((r) => {
+      const p = (r.payload ?? {}) as Record<string, unknown>;
+      const team = (p.team as Record<string, unknown> | undefined) ?? null;
+      const priority = (p.priority as OpenSosRow["priority"]) ?? "—";
+      return {
+        id: r.id as string,
+        ticket_code: (p.ticket_code as string) ?? `SOS-${String(r.id).slice(0, 6).toUpperCase()}`,
+        priority,
+        incident_type: (p.incident_type as string) ?? "Sự cố",
+        zone: ((p.zone as string | undefined) ?? r.building) ?? null,
+        location: ((p.location as string | undefined) ?? r.apartment) ?? null,
+        team_name: ((team?.name as string | undefined) ?? (p.team_name as string | undefined)) ?? null,
+        status: r.status as string,
+        created_at: r.created_at as string,
+        age_seconds: Math.max(0, Math.floor((now - new Date(r.created_at as string).getTime()) / 1000)),
+      };
+    });
+}
+
+
+// ===== Security Core status for home page =====
+
+export type SecurityTone = "success" | "warning" | "emergency" | "muted";
+
+export type SecurityChip = {
+  key: "camera" | "fire" | "elevator" | "intrusion" | "package" | "tech";
+  label: string;
+  value: string;
+  tone: SecurityTone;
+  count: number;
+};
+
+export type SecurityStatus = {
+  overall: SecurityTone;
+  headline: string;
+  subline: string;
+  updated_at: string | null;
+  open_count: number;
+  chips: SecurityChip[];
+};
+
+const CHIP_DEFS: Array<{
+  key: SecurityChip["key"];
+  label: string;
+  okValue: string;
+  types: ReadonlyArray<typeof TYPES[number]>;
+}> = [
+  { key: "camera", label: "Camera & An ninh", okValue: "Hoạt động", types: ["intrusion"] },
+  { key: "fire", label: "PCCC", okValue: "Bình thường", types: ["fire"] },
+  { key: "elevator", label: "Thang máy", okValue: "Bình thường", types: ["other"] },
+];
+
+export async function getSecurityStatus(data: any) {
+  const { supabase, userId } = await requireUser();
+
+        const fid = data.family_id;
+
+    // 1) Resolve family member user ids
+    const [{ data: fam }, { data: roles }] = await Promise.all([
+      supabase.from("families").select("owner_id").eq("id", fid).maybeSingle(),
+      supabase
+        .from("user_roles")
+        .select("user_id")
+        .eq("family_id", fid)
+        .in("role", ["family_owner", "family_member"]),
+    ]);
+    const userIds = new Set<string>();
+    if (fam?.owner_id) userIds.add(fam.owner_id);
+    for (const r of roles ?? []) if (r.user_id) userIds.add(r.user_id);
+
+    // 2) Open/in-progress security requests from any family member
+    let openReqs: Array<{
+      request_type: string;
+      status: string;
+      created_at: string;
+    }> = [];
+    if (userIds.size > 0) {
+      const { data: reqs } = await supabase
+        .from("security_requests")
+        .select("request_type, status, created_at")
+        .in("requester_id", Array.from(userIds))
+        .in("status", ["open", "in_progress"])
+        .order("created_at", { ascending: false })
+        .limit(100);
+      openReqs = reqs ?? [];
+    }
+
+    // 3) Elderly safety alerts → treat as emergency/warning signal
+    const { data: elders } = await supabase
+      .from("elderly_profiles")
+      .select("safe_status, safe_last_at, name")
+      .eq("family_id", fid);
+    const elderAlerts = (elders ?? []).filter(
+      (e) => e.safe_status === "alert" || e.safe_status === "warn",
+    );
+
+    // 4) Latest update timestamp
+    const candidates: string[] = [];
+    if (openReqs[0]?.created_at) candidates.push(openReqs[0].created_at);
+    for (const e of elders ?? []) if (e.safe_last_at) candidates.push(e.safe_last_at);
+    const updated_at = candidates.sort().reverse()[0] ?? null;
+
+    // 5) Build chips
+    const countByType = new Map<string, number>();
+    for (const r of openReqs) {
+      countByType.set(r.request_type, (countByType.get(r.request_type) ?? 0) + 1);
+    }
+    const sosCount = countByType.get("sos") ?? 0;
+
+    const chips: SecurityChip[] = CHIP_DEFS.map((def) => {
+      const count = def.types.reduce(
+        (sum, t) => sum + (countByType.get(t) ?? 0),
+        0,
+      );
+      // Camera chip also reflects SOS / intrusion alarms
+      const effective = def.key === "camera" ? count + sosCount : count;
+      if (effective > 0) {
+        const tone: SecurityTone = def.key === "fire" ? "emergency" : "warning";
+        return {
+          key: def.key,
+          label: def.label,
+          value: `${effective} cảnh báo`,
+          tone,
+          count: effective,
+        };
+      }
+      return {
+        key: def.key,
+        label: def.label,
+        value: def.okValue,
+        tone: "success",
+        count: 0,
+      };
+    });
+
+    // 6) Overall status
+    const hasEmergency =
+      sosCount > 0 ||
+      (countByType.get("fire") ?? 0) > 0 ||
+      elderAlerts.some((e) => e.safe_status === "alert");
+    const hasWarning =
+      openReqs.length > 0 || elderAlerts.length > 0;
+
+    let overall: SecurityTone = "success";
+    let headline = "Tất cả bình thường";
+    let subline = "Không có cảnh báo đang mở";
+    if (hasEmergency) {
+      overall = "emergency";
+      headline = "Cảnh báo khẩn cấp";
+      subline = sosCount > 0
+        ? `${sosCount} yêu cầu SOS đang mở`
+        : (countByType.get("fire") ?? 0) > 0
+          ? "Báo cháy chưa xử lý"
+          : "Người thân cần hỗ trợ ngay";
+    } else if (hasWarning) {
+      overall = "warning";
+      headline = "Có cảnh báo cần xem";
+      subline = `${openReqs.length + elderAlerts.length} mục đang chờ xử lý`;
+    }
+
+    return {
+      overall,
+      headline,
+      subline,
+      updated_at,
+      open_count: openReqs.length + elderAlerts.length,
+      chips,
+    };
+}
+
+
+// ===== SOS status updates + timeline =====
+
+export type SosEvent = {
+  id: string;
+  request_id: string;
+  actor_id: string | null;
+  event_type: string;
+  from_status: string | null;
+  to_status: string | null;
+  note: string | null;
+  created_at: string;
+  metadata?: Record<string, unknown> | null;
+};
+
+const SOS_STATUSES = ["open", "in_progress", "resolved", "cancelled"] as const;
+export type SosStatus = (typeof SOS_STATUSES)[number];
+
+export async function updateSosStatus(data: any) {
+  const { supabase, userId } = await requireUser();
+    const { data: current, error: readErr } = await supabase
+      .from("security_requests")
+      .select("status")
+      .eq("id", data.id)
+      .single();
+    if (readErr) throw new Error(readErr.message);
+
+    const { error } = await supabase
+      .from("security_requests")
+      .update({
+        status: data.status,
+        assigned_to: userId,
+        resolved_at:
+          data.status === "resolved" || data.status === "cancelled"
+            ? new Date().toISOString()
+            : null,
+      })
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+
+    await supabase.from("sos_events").insert({
+      request_id: data.id,
+      actor_id: userId,
+      event_type: "status_change",
+      from_status: current?.status ?? null,
+      to_status: data.status,
+      note: data.note ?? null,
+    });
+    firePushDispatch();
+    return { ok: true };
+}
+
+export async function addSosNote(data: any) {
+  const { supabase, userId } = await requireUser();
+    const { error } = await supabase.from("sos_events").insert({
+      request_id: data.id,
+      actor_id: userId,
+      event_type: "note",
+      note: data.note,
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+}
+
+export async function listSosEvents(data: any) {
+  const { supabase, userId } = await requireUser();
+
+        const { data: rows, error } = await supabase
+      .from("sos_events")
+      .select("id, request_id, actor_id, event_type, from_status, to_status, note, created_at, metadata")
+      .eq("request_id", data.id)
+      .order("created_at", { ascending: true });
+    if (error) throw new Error(error.message);
+    return (rows ?? []) as SosEvent[];
+}
+
+const ATTACHMENTS_BUCKET = "security-attachments";
+
+export async function signSecurityAttachmentUrls(paths: string[]) {
+  const { supabase } = await requireUser();
+  const unique = [...new Set(paths.filter(Boolean))];
+  if (unique.length === 0) return [] as { path: string; url: string }[];
+
+  const { data, error } = await supabase.storage
+    .from(ATTACHMENTS_BUCKET)
+    .createSignedUrls(unique, 60 * 30);
+  if (error) throw new Error(error.message);
+
+  return (data ?? [])
+    .filter((row) => row.signedUrl)
+    .map((row) => ({ path: row.path ?? "", url: row.signedUrl as string }));
+}

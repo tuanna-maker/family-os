@@ -1014,28 +1014,43 @@ export type Database = {
       }
       profiles: {
         Row: {
+          apartment_no: string | null
           avatar_url: string | null
+          building_name: string | null
           created_at: string
+          email: string | null
           full_name: string | null
+          head_name: string | null
           id: string
           phone: string | null
           updated_at: string
+          username: string | null
         }
         Insert: {
+          apartment_no?: string | null
           avatar_url?: string | null
+          building_name?: string | null
           created_at?: string
+          email?: string | null
           full_name?: string | null
+          head_name?: string | null
           id: string
           phone?: string | null
           updated_at?: string
+          username?: string | null
         }
         Update: {
+          apartment_no?: string | null
           avatar_url?: string | null
+          building_name?: string | null
           created_at?: string
+          email?: string | null
           full_name?: string | null
+          head_name?: string | null
           id?: string
           phone?: string | null
           updated_at?: string
+          username?: string | null
         }
         Relationships: []
       }
@@ -1524,6 +1539,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      resolve_login_email: { Args: { _username: string }; Returns: string }
       tick_reminder_notifications: { Args: never; Returns: number }
     }
     Enums: {

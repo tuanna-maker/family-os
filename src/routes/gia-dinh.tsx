@@ -1,5 +1,4 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { MobileShell } from "@/components/mobile/MobileShell";
@@ -30,22 +29,28 @@ import { getMyContext } from "@/lib/auth.functions";
 import { getDashboard } from "@/lib/dashboard.functions";
 import { requireAuth } from "@/lib/require-auth";
 
+// Cache constants — context hiếm khi đổi, dashboard refresh nhanh hơn
+const CTX_STALE_MS = 5 * 60_000;
+const DASH_STALE_MS = 60_000;
+
 export const Route = createFileRoute("/gia-dinh")({
   beforeLoad: ({ location }) => requireAuth({ location }),
   head: () => ({ meta: [{ title: "Gia đình tôi — STOS Life" }] }),
   component: FamilyPage,
 });
 
+
 const HERO_FAMILY =
-  "https://images.unsplash.com/photo-1609220136736-443140cffec6?w=400&h=400&fit=crop&crop=faces";
+  "https://images.unsplash.com/photo-1609220136736-443140cffec6?w=240&h=240&fit=crop&crop=faces&q=70&auto=format";
 const AVATAR_FAMILY =
-  "https://images.unsplash.com/photo-1581952976147-5a2d15560349?w=120&h=120&fit=crop&crop=faces";
+  "https://images.unsplash.com/photo-1581952976147-5a2d15560349?w=80&h=80&fit=crop&crop=faces&q=70&auto=format";
 
 const FOOD_THUMBS = [
-  "https://images.unsplash.com/photo-1518635017498-87f514b751ba?w=160&h=160&fit=crop", // strawberries
-  "https://images.unsplash.com/photo-1563636619-e9143da7973b?w=160&h=160&fit=crop", // milk bottle
-  "https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=160&h=160&fit=crop", // salmon
+  "https://images.unsplash.com/photo-1518635017498-87f514b751ba?w=80&h=80&fit=crop&q=70&auto=format",
+  "https://images.unsplash.com/photo-1563636619-e9143da7973b?w=80&h=80&fit=crop&q=70&auto=format",
+  "https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=80&h=80&fit=crop&q=70&auto=format",
 ];
+
 
 type Moment = { id: string; title: string; date: string; img: string };
 const MOMENTS: Moment[] = [
@@ -53,33 +58,34 @@ const MOMENTS: Moment[] = [
     id: "1",
     title: "Đà Nẵng – Hội An",
     date: "20/05/2024",
-    img: "https://images.unsplash.com/photo-1559128010-7c1ad6e1b6a5?w=400&h=400&fit=crop",
+    img: "https://images.unsplash.com/photo-1559128010-7c1ad6e1b6a5?w=280&h=280&fit=crop&q=70&auto=format",
   },
   {
     id: "2",
     title: "Sinh nhật bé An",
     date: "12/05/2024",
-    img: "https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=400&h=400&fit=crop",
+    img: "https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=280&h=280&fit=crop&q=70&auto=format",
   },
   {
     id: "3",
     title: "Bữa cơm cuối tuần",
     date: "05/05/2024",
-    img: "https://images.unsplash.com/photo-1547573854-74d2a71d0826?w=400&h=400&fit=crop",
+    img: "https://images.unsplash.com/photo-1547573854-74d2a71d0826?w=280&h=280&fit=crop&q=70&auto=format",
   },
   {
     id: "4",
     title: "Ngày của mẹ",
     date: "10/05/2024",
-    img: "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=400&h=400&fit=crop",
+    img: "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=280&h=280&fit=crop&q=70&auto=format",
   },
   {
     id: "5",
     title: "Bé Minh học bài",
     date: "28/04/2024",
-    img: "https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?w=400&h=400&fit=crop",
+    img: "https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?w=280&h=280&fit=crop&q=70&auto=format",
   },
 ];
+
 
 function formatVnd(n: number) {
   return `${(n ?? 0).toLocaleString("vi-VN")}đ`;
@@ -109,14 +115,20 @@ function FamilyPage() {
 
   const ctxFn = useServerFn(getMyContext);
   const dashFn = useServerFn(getDashboard);
-  const { data: ctx } = useQuery({ queryKey: ["my-context"], queryFn: () => ctxFn() });
+  const { data: ctx } = useQuery({
+    queryKey: ["my-context"],
+    queryFn: () => ctxFn(),
+    staleTime: CTX_STALE_MS,
+  });
   const familyId = ctx?.family?.id;
   const { data: dash } = useQuery({
     queryKey: ["family-dashboard", familyId],
     queryFn: () => dashFn({ data: { family_id: familyId! } }),
     enabled: !!familyId,
-    refetchInterval: 60_000,
+    staleTime: DASH_STALE_MS,
+    refetchOnWindowFocus: false,
   });
+
 
   const expCur = dash?.expenses_month.total ?? 0;
   const expPrev = dash?.expenses_prev_month.total ?? 0;
@@ -157,6 +169,10 @@ function FamilyPage() {
             <img
               src={AVATAR_FAMILY}
               alt="Avatar gia đình"
+              width={36}
+              height={36}
+              loading="eager"
+              decoding="async"
               className="h-9 w-9 rounded-full object-cover ring-2 ring-white shadow"
             />
             <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
@@ -175,6 +191,11 @@ function FamilyPage() {
               <img
                 src={HERO_FAMILY}
                 alt="Gia đình Minh"
+                width={112}
+                height={112}
+                loading="eager"
+                fetchPriority="high"
+                decoding="async"
                 className="h-[112px] w-[112px] rounded-full object-cover"
               />
               <button className="absolute bottom-1 right-1 h-8 w-8 rounded-full bg-brand grid place-items-center ring-[3px] ring-card">
@@ -321,6 +342,10 @@ function FamilyPage() {
                       key={i}
                       src={src}
                       alt=""
+                      width={36}
+                      height={36}
+                      loading="lazy"
+                      decoding="async"
                       className="h-9 w-9 rounded-xl object-cover ring-1 ring-white/40"
                     />
                   ))}
@@ -408,7 +433,15 @@ function FamilyPage() {
           {MOMENTS.map((m) => (
             <div key={m.id} className="shrink-0 w-[136px]">
               <div className="h-[136px] w-[136px] rounded-2xl overflow-hidden bg-muted">
-                <img src={m.img} alt={m.title} className="h-full w-full object-cover" />
+                <img
+                  src={m.img}
+                  alt={m.title}
+                  width={136}
+                  height={136}
+                  loading="lazy"
+                  decoding="async"
+                  className="h-full w-full object-cover"
+                />
               </div>
               <p className="mt-2 text-[13px] font-semibold leading-tight truncate">{m.title}</p>
               <p className="text-[11px] text-muted-foreground mt-0.5">{m.date}</p>

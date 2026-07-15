@@ -1,0 +1,102 @@
+{
+  "expo": {
+    "name": "STOS Life",
+    "slug": "stos-life",
+    "version": "1.0.0",
+    "owner": "unicom-vibe-coding-team",
+    "orientation": "default",
+    "scheme": "vn.unicom.stos.familyrn",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "icon": "./assets/icon.webp",
+    "splash": {
+      "image": "./assets/icon.webp",
+      "resizeMode": "contain",
+      "backgroundColor": "#071A3D"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "vn.unicom.stos.familyrn",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false,
+        "UIRequiresFullScreen": true,
+        "UIBackgroundModes": [
+          "remote-notification",
+          "fetch"
+        ],
+        "UISupportedInterfaceOrientations": [
+          "UIInterfaceOrientationPortrait",
+          "UIInterfaceOrientationLandscapeLeft",
+          "UIInterfaceOrientationLandscapeRight"
+        ],
+        "UISupportedInterfaceOrientations~ipad": [
+          "UIInterfaceOrientationPortrait",
+          "UIInterfaceOrientationLandscapeLeft",
+          "UIInterfaceOrientationLandscapeRight"
+        ]
+      }
+    },
+    "android": {
+      "googleServicesFile": "./google-services.json",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icon.webp",
+        "backgroundColor": "#071A3D"
+      },
+      "package": "vn.unicom.stos.familyrn",
+      "permissions": [
+        "RECEIVE_BOOT_COMPLETED",
+        "VIBRATE",
+        "POST_NOTIFICATIONS",
+        "FOREGROUND_SERVICE",
+        "FOREGROUND_SERVICE_DATA_SYNC",
+        "RECORD_AUDIO"
+      ]
+    },
+    "plugins": [
+      [
+        "expo-router",
+        {
+          "root": "./app"
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#071A3D",
+          "image": "./assets/icon.webp",
+          "imageWidth": 200
+        }
+      ],
+      "expo-secure-store",
+      "expo-image-picker",
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Cho phép ghi âm tin nhắn gửi đội bảo an."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "defaultChannel": "default",
+          "enableBackgroundRemoteNotifications": true
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "supabaseUrl": "",
+      "supabaseAnonKey": "",
+      "pilotPrefill": true,
+      "authRedirectUrl": "vn.unicom.stos.familyrn://auth",
+      "router": {
+        "root": "./app"
+      },
+      "eas": {
+        "projectId": "498d3d55-e61f-4d53-9891-27e92dd9c5cc"
+      }
+    }
+  }
+}

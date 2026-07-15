@@ -27,6 +27,11 @@ import {
   deleteChildrenRow,
 } from "@/lib/children.functions";
 
+import { getMyContext } from "@/lib/auth.functions";
+
+const CTX_STALE_MS = 5 * 60_000;
+const DATA_STALE_MS = 60_000;
+
 export const Route = createFileRoute("/con-cai")({
   head: () => ({ meta: [{ title: "Đồng hành cùng con — STOS Life" }] }),
   beforeLoad: async ({ location }) => {
@@ -59,6 +64,7 @@ function ChildrenPage() {
     queryKey: ["children", familyId],
     queryFn: () => list({ data: { family_id: familyId! } }),
     enabled: !!familyId,
+    staleTime: DATA_STALE_MS,
   });
 
   const [dlg, setDlg] = useState<Dlg>(null);

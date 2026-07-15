@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
  * Dùng để highlight đúng khi user vào route con không cùng path với tab.
  */
 const tabs = [
-  { to: "/", label: "Trang chủ", icon: Home, matchPrefixes: ["/dashboard"] },
+  { to: "/home", label: "Trang chủ", icon: Home, matchPrefixes: ["/home", "/dashboard"] },
   {
     to: "/gia-dinh",
     label: "Gia đình",
@@ -37,7 +37,7 @@ const tabs = [
 ] as const;
 
 function isActive(tab: (typeof tabs)[number], pathname: string): boolean {
-  if (tab.to === "/") return pathname === "/" || tab.matchPrefixes.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+  if (tab.to === "/home") return pathname === "/home" || tab.matchPrefixes.some((p) => pathname === p || pathname.startsWith(`${p}/`));
   return tab.matchPrefixes.some((p) => pathname === p || pathname.startsWith(`${p}/`));
 }
 

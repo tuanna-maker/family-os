@@ -11,6 +11,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { getMyContext } from "@/lib/auth.functions";
 import { listExpenses, deleteExpense } from "@/lib/expenses.functions";
 
+const CTX_STALE_MS = 5 * 60_000;
+const DATA_STALE_MS = 60_000;
+
 export const Route = createFileRoute("/chi-tieu")({
   head: () => ({ meta: [{ title: "Chi tiêu gia đình — STOS Life" }] }),
   beforeLoad: async ({ location }) => {
@@ -29,13 +32,18 @@ function ExpensesPage() {
   const delExp = useServerFn(deleteExpense);
   const qc = useQueryClient();
 
-  const ctxQ = useQuery({ queryKey: ["my-context"], queryFn: () => getCtx() });
+  const ctxQ = useQuery({
+    queryKey: ["my-context"],
+    queryFn: () => getCtx(),
+    staleTime: CTX_STALE_MS,
+  });
   const familyId = ctxQ.data?.family?.id;
 
   const expensesQ = useQuery({
     queryKey: ["expenses", familyId],
     queryFn: () => listExp({ data: { family_id: familyId! } }),
     enabled: !!familyId,
+    staleTime: DATA_STALE_MS,
   });
 
   const del = useMutation({

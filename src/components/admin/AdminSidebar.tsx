@@ -1,13 +1,14 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
-import { Activity, ShieldCheck, Home as HomeIcon, ArrowLeft, FileClock, Users, Calendar, Heart, UserCog, Camera, Crown, LogOut, type LucideIcon } from "lucide-react";
+import { Activity, ShieldCheck, Home as HomeIcon, ArrowLeft, FileClock, Users, Calendar, Heart, UserCog, Camera, Crown, LogOut, Building2, type LucideIcon } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 
-type NavItem = { icon: LucideIcon; label: string; to: "/admin" | "/admin/super" | "/admin/family" | "/admin/security" | "/admin/audit" | "/admin/users" | "/admin/calendar" | "/admin/elderly-care" | "/admin/helpers" | "/admin/memories"; exact?: boolean };
+type NavItem = { icon: LucideIcon; label: string; to: "/admin" | "/admin/super" | "/admin/family" | "/admin/security" | "/admin/audit" | "/admin/users" | "/admin/calendar" | "/admin/elderly-care" | "/admin/helpers" | "/admin/memories" | "/admin/projects"; exact?: boolean };
 
 const NAV: NavItem[] = [
   { icon: HomeIcon, label: "Tổng quan", to: "/admin", exact: true },
   { icon: Crown, label: "Super Admin", to: "/admin/super" },
   { icon: Users, label: "Users", to: "/admin/users" },
+  { icon: Building2, label: "Chung cư", to: "/admin/projects" },
   { icon: Activity, label: "Family Core", to: "/admin/family" },
   { icon: Calendar, label: "Lịch gia đình", to: "/admin/calendar" },
   { icon: Heart, label: "Chăm sóc ông bà", to: "/admin/elderly-care" },

@@ -49,8 +49,8 @@ function Nav() {
             <a href="#command" className="hover:text-foreground transition-colors">Command Center</a>
           </div>
           <div className="flex items-center gap-2">
-            <Link to="/login" className="inline-flex h-9 items-center px-2.5 sm:px-3 text-sm font-medium text-muted-foreground hover:text-foreground transition">Đăng nhập</Link>
-            <Link to="/login" className="inline-flex h-9 items-center gap-1.5 rounded-full px-4 text-sm font-semibold text-white shadow-sm transition hover:opacity-95"
+            <Link to="/login" search={{ source: "landing" }} className="inline-flex h-9 items-center px-2.5 sm:px-3 text-sm font-medium text-muted-foreground hover:text-foreground transition">Đăng nhập</Link>
+            <Link to="/login" search={{ source: "landing" }} className="inline-flex h-9 items-center gap-1.5 rounded-full px-4 text-sm font-semibold text-white shadow-sm transition hover:opacity-95"
               style={{ background: "var(--grad-electric)" }}>
               Dùng thử <ArrowRight className="h-3.5 w-3.5" />
             </Link>
@@ -85,7 +85,7 @@ function Hero() {
               <strong className="text-foreground font-semibold"> hệ sinh thái sống hiện đại</strong>.
             </p>
             <div className="mt-8 flex flex-wrap items-center gap-3">
-              <Link to="/login" className="inline-flex h-12 items-center gap-2 rounded-full px-6 text-sm font-semibold text-white shadow-lg transition hover:scale-[1.02]"
+              <Link to="/login" search={{ source: "landing" }} className="inline-flex h-12 items-center gap-2 rounded-full px-6 text-sm font-semibold text-white shadow-lg transition hover:scale-[1.02]"
                 style={{ background: "var(--grad-electric)", boxShadow: "0 14px 40px -10px hsl(var(--brand-electric) / 0.5)" }}>
                 Dùng thử nền tảng <ArrowRight className="h-4 w-4" />
               </Link>

@@ -58,6 +58,11 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { requireAuth } from "@/lib/require-auth";
 
+import { getMyContext } from "@/lib/auth.functions";
+
+const CTX_STALE_MS = 5 * 60_000;
+const DATA_STALE_MS = 60_000;
+
 export const Route = createFileRoute("/cham-soc-ong-ba")({
   beforeLoad: ({ location }) => requireAuth({ location }),
   head: () => ({
@@ -120,6 +125,7 @@ function ElderlyCarePage() {
     queryKey: ["elderly-profiles", familyId],
     queryFn: () => profilesFn({ data: { familyId: familyId! } }),
     enabled: !!familyId,
+    staleTime: DATA_STALE_MS,
   });
 
   const profiles = profilesQ.data ?? [];
@@ -135,7 +141,7 @@ function ElderlyCarePage() {
     queryFn: () =>
       medsFn({ data: { familyId: familyId!, memberName: profile!.name } }),
     enabled: !!familyId && !!profile,
-    refetchInterval: 30_000,
+    staleTime: DATA_STALE_MS,
   });
 
   const medsWeekFn = useServerFn(listMedicineWeek);
@@ -144,7 +150,7 @@ function ElderlyCarePage() {
     queryFn: () =>
       medsWeekFn({ data: { familyId: familyId!, memberName: profile!.name, days: 7 } }),
     enabled: !!familyId && !!profile,
-    refetchInterval: 60_000,
+    staleTime: DATA_STALE_MS,
   });
 
 
@@ -154,6 +160,7 @@ function ElderlyCarePage() {
     queryKey: ["elderly-notes", profile?.id],
     queryFn: () => notesFn({ data: { elderlyId: profile!.id } }),
     enabled: !!profile,
+    staleTime: DATA_STALE_MS,
   });
 
   const vitalsFn = useServerFn(listVitals);
@@ -162,6 +169,7 @@ function ElderlyCarePage() {
     queryFn: () =>
       vitalsFn({ data: { familyId: familyId!, memberName: profile!.name } }),
     enabled: !!familyId && !!profile,
+    staleTime: DATA_STALE_MS,
   });
 
   const actFn = useServerFn(listElderlyActivity);
@@ -170,7 +178,7 @@ function ElderlyCarePage() {
     queryFn: () =>
       actFn({ data: { elderlyId: profile!.id, familyId: familyId! } }),
     enabled: !!profile && !!familyId,
-    refetchInterval: 30_000,
+    staleTime: DATA_STALE_MS,
   });
 
   const safeChecksFn = useServerFn(listSafeChecks);
@@ -178,8 +186,9 @@ function ElderlyCarePage() {
     queryKey: ["safe-checks", profile?.id],
     queryFn: () => safeChecksFn({ data: { elderlyId: profile!.id } }),
     enabled: !!profile,
-    refetchInterval: 60_000,
+    staleTime: DATA_STALE_MS,
   });
+
 
   // Realtime: cập nhật ngay khi có người khác xác nhận Safe Check
   useEffect(() => {

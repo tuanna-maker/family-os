@@ -1,0 +1,2222 @@
+<!DOCTYPE html>
+<!-- Canonical BRD: UNICOM/BRD-FAMILYOS-001 — chỉ sửa file docs/Unicom_BRD_FamilyOS.html -->
+<html lang="vi">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Tài liệu yêu cầu nghiệp vụ (BRD) v1.0 — STOS FAMILY OS / UNICOM</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700;800;900&display=swap');
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: #d0d0d0;
+      font-family: 'Be Vietnam Pro', 'Segoe UI', Arial, sans-serif;
+      font-size: 11px;
+      color: #0d1e34;
+    }
+
+    .doc-page {
+      width: 210mm;
+      min-height: 297mm;
+      margin: 10mm auto;
+      background: #fff;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, .25);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    @media print {
+      body {
+        background: #fff;
+      }
+
+      .doc-page {
+        margin: 0;
+        box-shadow: none;
+        page-break-after: always;
+      }
+    }
+
+    @media screen {
+      .doc-page {
+        height: auto;
+      }
+    }
+
+    /* ===== COVER PAGE ===== */
+    .doc-page.cover {
+      padding: 0;
+    }
+
+    .doc-page.cover .accent-bar {
+      height: 8px;
+      background: linear-gradient(90deg, #6366f1, #8b5cf6, #ec4899);
+      flex-shrink: 0;
+    }
+
+    .doc-page.cover .header {
+      padding: 22px 52px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+
+    .doc-page.cover .header-code {
+      font-size: 9.5px;
+      font-weight: 600;
+      letter-spacing: .8px;
+    }
+
+    .doc-page.cover .header-code span {
+      color: #0d1e34;
+    }
+
+    .doc-page.cover .header-right {
+      font-size: 9.5px;
+      text-align: right;
+      line-height: 1.7;
+    }
+
+    .doc-page.cover .divider {
+      margin: 0 52px;
+      height: 1px;
+      background: #eaeff8;
+      flex-shrink: 0;
+    }
+
+    .doc-page.cover .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding-bottom: 80px;
+      text-align: center;
+    }
+
+    .doc-page.cover .logo-block {
+      margin-bottom: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+    }
+
+    .doc-page.cover .logo-icon {
+      width: 72px;
+      height: 72px;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 36px;
+      flex-shrink: 0;
+    }
+
+    .doc-page.cover .logo-text-wrap {}
+
+    .doc-page.cover .logo-brand {
+      font-size: 28px;
+      font-weight: 900;
+      color: #0d1e34;
+      letter-spacing: 2px;
+    }
+
+    .doc-page.cover .logo-tagline {
+      font-size: 10px;
+      color: #64748b;
+      letter-spacing: 1px;
+      margin-top: 2px;
+    }
+
+    .doc-page.cover .sep {
+      width: 52px;
+      height: 3px;
+      background: linear-gradient(90deg, #6366f1, #ec4899);
+      border-radius: 2px;
+      margin: 0 auto 32px;
+    }
+
+    .doc-page.cover .doc-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 3.5px;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+      color: #6366f1;
+    }
+
+    .doc-page.cover .project-title {
+      font-size: 36px;
+      font-weight: 900;
+      line-height: 1;
+      letter-spacing: 0px;
+    }
+
+    .doc-page.cover .project-title .eo {
+      background: linear-gradient(135deg, #2B78E4, #13B9F2);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .doc-page.cover .project-title .sep-dot {
+      color: #c8d8ec;
+      margin: 0 6px;
+      font-weight: 300;
+    }
+
+    .doc-page.cover .subtitle {
+      margin-top: 16px;
+      font-size: 12px;
+      font-weight: 400;
+      letter-spacing: .3px;
+      color: #334155;
+    }
+
+    .doc-page.cover .meta-info {
+      margin-top: 36px;
+      font-size: 10.5px;
+      line-height: 1.85;
+      color: #3a4a64;
+    }
+
+    .doc-page.cover .meta-info strong {
+      color: #0d1e34;
+      font-weight: 600;
+    }
+
+    .doc-page.cover .footer {
+      padding: 18px 52px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-top: 1px solid #eaeff8;
+      flex-shrink: 0;
+    }
+
+    .doc-page.cover .footer-l {
+      font-size: 9.5px;
+      color: #64748b;
+    }
+
+    .doc-page.cover .footer-r {
+      font-size: 9.5px;
+      text-align: right;
+      color: #64748b;
+    }
+
+    /* ===== CONTENT PAGES ===== */
+    .inner-brd-header {
+      padding: 22px 48px 22px 68px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+
+    .inner-brd-header .inner-brd-code {
+      font-size: 9.5px;
+      font-weight: 600;
+      letter-spacing: .8px;
+      color: #6366f1;
+    }
+
+    .inner-brd-header .inner-brd-right {
+      font-size: 9.5px;
+      text-align: right;
+      line-height: 1.7;
+      color: #64748b;
+    }
+
+    .inner-brd-divider {
+      margin: 0 48px 0 68px;
+      height: 1px;
+      background: #eaeff8;
+      flex-shrink: 0;
+    }
+
+    .inner-brd-footer {
+      padding: 18px 48px 18px 68px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-top: 1px solid #eaeff8;
+      flex-shrink: 0;
+    }
+
+    .inner-brd-footer-l {
+      font-size: 9.5px;
+      color: #64748b;
+    }
+
+    .inner-brd-footer-r {
+      font-size: 9.5px;
+      text-align: right;
+      line-height: 1.65;
+      color: #64748b;
+    }
+
+    .inner-brd-footer-r .ft-page {
+      display: block;
+      font-weight: 600;
+      color: #0d1e34;
+    }
+
+    .content-area {
+      flex: 1;
+      overflow: hidden;
+      padding: 14px 48px 14px 68px;
+      font-size: 12.5px;
+      line-height: 1.55;
+      color: #1a2740;
+    }
+
+    /* ===== MARKDOWN STYLES ===== */
+    .md-render h1 {
+      font-size: 20px;
+      font-weight: 900;
+      color: #0d1e34;
+      margin: 8px 0 14px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid #6366f1;
+    }
+
+    .md-render h2 {
+      font-size: 16px;
+      font-weight: 800;
+      color: #0d1e34;
+      margin: 18px 0 10px;
+      padding: 6px 10px;
+      background: linear-gradient(90deg, #eff0fe, transparent);
+      border-left: 4px solid #6366f1;
+    }
+
+    .md-render h3 {
+      font-size: 13.5px;
+      font-weight: 700;
+      color: #1e3a5f;
+      margin: 14px 0 6px;
+    }
+
+    .md-render h4 {
+      font-size: 12.5px;
+      font-weight: 600;
+      color: #1e3a5f;
+      margin: 10px 0 4px;
+    }
+
+    .md-render p {
+      margin: 6px 0;
+    }
+
+    .md-render ul,
+    .md-render ol {
+      margin: 6px 0;
+      padding-left: 22px;
+    }
+
+    .md-render li {
+      margin: 3px 0;
+      line-height: 1.5;
+    }
+
+    .md-render strong {
+      color: #0d1e34;
+      font-weight: 700;
+    }
+
+    .md-render table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11px;
+      margin: 10px 0;
+      table-layout: auto;
+    }
+
+    .md-render th,
+    .md-render td {
+      border: 1px solid #cbd5e0;
+      padding: 5px 8px;
+      vertical-align: top;
+      text-align: left;
+      word-wrap: break-word;
+    }
+
+    .md-render th {
+      background: #1e3a5f;
+      color: #fff;
+      font-weight: 600;
+    }
+
+    .md-render tr:nth-child(even) td {
+      background: #f7fafc;
+    }
+
+    .md-render hr {
+      border: none;
+      border-top: 1px dashed #c8d8ec;
+      margin: 14px 0;
+    }
+
+    .md-render a {
+      color: #6366f1;
+      text-decoration: none;
+    }
+
+    .md-render blockquote {
+      margin: 10px 0;
+      padding: 8px 14px;
+      background: #f5f3ff;
+      border-left: 4px solid #6366f1;
+      color: #1e1b4b;
+      font-size: 11.5px;
+    }
+
+    .md-render code {
+      font-family: 'Consolas', 'Monaco', monospace;
+      font-size: 10.5px;
+      background: #f1f5f9;
+      padding: 1px 5px;
+      border-radius: 3px;
+      color: #6366f1;
+    }
+
+    .md-render pre {
+      background: #0f172a;
+      color: #e2e8f0;
+      padding: 10px 14px;
+      border-radius: 6px;
+      overflow: auto;
+      font-size: 10.5px;
+      line-height: 1.45;
+      margin: 10px 0;
+    }
+
+    .md-render pre code {
+      background: transparent;
+      color: inherit;
+      padding: 0;
+    }
+
+    .md-render .mermaid {
+      text-align: center;
+      margin: 14px 0;
+      background: #fafbfd;
+      padding: 12px;
+      border-radius: 6px;
+      border: 1px solid #eaeff8;
+    }
+
+    .md-render .mermaid svg {
+      max-width: 100%;
+      height: auto;
+    }
+
+    /* TOC */
+    .toc-page .content-area {
+      padding: 22px 48px 18px 68px;
+    }
+
+    .toc-title {
+      font-size: 20px;
+      font-weight: 900;
+      color: #0d1e34;
+      margin: 4px 0 10px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid #6366f1;
+    }
+
+    .toc-subtitle {
+      font-size: 11.5px;
+      color: #52637d;
+      margin-bottom: 18px;
+    }
+
+    .toc-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .toc-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 8px 10px;
+      border-radius: 8px;
+      text-decoration: none;
+      color: #1a2740;
+      border: 1px solid #e6edf7;
+      background: #fbfdff;
+    }
+
+    .toc-item:hover {
+      border-color: #6366f1;
+      background: #f5f3ff;
+    }
+
+    .toc-item.level-3 {
+      margin-left: 18px;
+      padding-left: 16px;
+    }
+
+    .toc-index {
+      min-width: 22px;
+      font-size: 11px;
+      font-weight: 800;
+      color: #6366f1;
+    }
+
+    .toc-text {
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    /* ===== COVER VISUAL ===== */
+    .cover-visual-strip {
+      position: absolute;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      width: 64px;
+      background: linear-gradient(180deg, #6366f1 0%, #8b5cf6 50%, #ec4899 100%);
+      opacity: 0.07;
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script>mermaid.initialize({ startOnLoad: true, theme: 'default', themeVariables: { primaryColor: '#6366f1', primaryTextColor: '#0d1e34', primaryBorderColor: '#818cf8', lineColor: '#6366f1', secondaryColor: '#eff0fe', tertiaryColor: '#f8fafc' } });</script>
+</head>
+
+<body>
+
+  <!-- ===== COVER PAGE ===== -->
+  <div class="doc-page cover">
+    <div class="cover-visual-strip"></div>
+    <div class="accent-bar"></div>
+    <div class="header">
+      <div class="header-code">Mã tài liệu: <span>UNICOM/BRD-FAMILYOS-001</span></div>
+      <div class="header-right">
+        Phiên bản 1.2 &nbsp;·&nbsp; 06/2026 &nbsp;·&nbsp; Tài liệu Yêu cầu Nghiệp vụ — STOS Family OS
+      </div>
+    </div>
+    <div class="divider"></div>
+    <div class="main">
+      <div class="logo-block">
+        <img src="logo.png" alt="UNICOM AI Software Factory" style="height: 150px; object-fit: contain;">
+      </div>
+      <div class="sep"></div>
+      <div class="doc-label">Business Requirements Document</div>
+      <div class="project-title">
+        <span class="eo">STOS Family OS</span>
+      </div>
+      <div class="subtitle">Hệ điều hành số dành cho gia đình đô thị — Platform cư dân và bảo vệ</div>
+      <div class="meta-info">
+        <strong>Phiên bản:</strong> 1.2 &nbsp;·&nbsp;
+        <strong>Ngày lập:</strong> 04/06/2026 &nbsp;·&nbsp;
+        <strong>Trạng thái:</strong> Phê duyệt<br>
+        <strong>Chủ biên:</strong> UNICOM Engineering Team &nbsp;·&nbsp;
+        <strong>Bảo mật:</strong> Nội bộ — Không phát hành ngoài
+      </div>
+    </div>
+    <div class="footer">
+      <div class="footer-l">© 2026 UNICOM — Tài liệu nội bộ. Nghiêm cấm sao chép khi chưa được phép.</div>
+      <div class="footer-r">UNICOM/BRD-FAMILYOS-001 · v1.2</div>
+    </div>
+  </div>
+
+  <!-- ===== TOC PAGE ===== -->
+  <div class="doc-page toc-page">
+    <div class="inner-brd-header">
+      <div class="inner-brd-code">UNICOM/BRD-FAMILYOS-001 · v1.2</div>
+      <div class="inner-brd-right">STOS Family OS — Business Requirements Document</div>
+    </div>
+    <div class="inner-brd-divider"></div>
+    <div class="content-area">
+      <div class="toc-title">Mục lục</div>
+      <div class="toc-subtitle">Business Requirements Document — STOS Family OS v1.2 · UNICOM · 06/2026</div>
+      <div class="toc-list">
+        <div class="toc-item"><span class="toc-index">1</span><span class="toc-text"><strong>Tổng quan hệ thống</strong>
+            — Bối cảnh, vấn đề, cơ hội thị trường</span></div>
+        <div class="toc-item"><span class="toc-index">2</span><span class="toc-text"><strong>Mục tiêu dự án</strong> —
+            Mục tiêu SMART, KPI đo lường thành công</span></div>
+        <div class="toc-item"><span class="toc-index">3</span><span class="toc-text"><strong>Stakeholders</strong> — Các
+            bên liên quan và vai trò</span></div>
+        <div class="toc-item"><span class="toc-index">4</span><span class="toc-text"><strong>Luồng tổng thể
+              End-to-End</strong> — Sơ đồ tổng quan hệ sinh thái 2 ứng dụng</span></div>
+        <div class="toc-item"><span class="toc-index">5</span><span class="toc-text"><strong>12 Module chức
+              năng</strong> — Danh mục và mô tả từng module</span></div>
+        <div class="toc-item level-3"><span class="toc-index">5.1</span><span class="toc-text">Dashboard & Tổng quan gia
+            đình</span></div>
+        <div class="toc-item level-3"><span class="toc-index">5.2</span><span class="toc-text">Bảo an & SOS</span></div>
+        <div class="toc-item level-3"><span class="toc-index">5.3</span><span class="toc-text">Quản lý Chi tiêu & OCR
+            AI</span></div>
+        <div class="toc-item level-3"><span class="toc-index">5.4–5.12</span><span class="toc-text">Con cái · Ông bà ·
+            Sức khỏe · Lịch · Kỷ niệm · Thực phẩm · Giúp việc · Thông báo · Cộng đồng</span></div>
+        <div class="toc-item"><span class="toc-index">6</span><span class="toc-text"><strong>Luồng nghiệp vụ chi
+              tiết</strong> — 16 luồng (L0–L15) phủ 12 module + Guard</span></div>
+        <div class="toc-item level-3"><span class="toc-index">6.1</span><span class="toc-text">L0 Đăng nhập · L1 SOS ·
+            L2 OCR · L3 Kỷ niệm</span></div>
+        <div class="toc-item level-3"><span class="toc-index">6.2</span><span class="toc-text">L4 Lịch · L5 Ông bà · L6
+            Con cái · L7 Sức khỏe</span></div>
+        <div class="toc-item level-3"><span class="toc-index">6.3</span><span class="toc-text">L8 Thực phẩm · L9 Giúp
+            việc · L10 QR · L11–L12 Thông báo/Cộng đồng</span></div>
+        <div class="toc-item level-3"><span class="toc-index">6.4</span><span class="toc-text">L13–L15 STOS Guard: Ca
+            trực, SOS, Tuần tra</span></div>
+        <div class="toc-item level-3"><span class="toc-index">6.5</span><span class="toc-text">Mã lỗi &amp; nhánh ngoại lệ theo luồng (tra cứu UAT)</span></div>
+        <div class="toc-item"><span class="toc-index">7</span><span class="toc-text"><strong>Phạm vi hệ thống</strong> —
+            In Scope / Out of Scope</span></div>
+        <div class="toc-item"><span class="toc-index">8</span><span class="toc-text"><strong>Yêu cầu phi chức
+              năng</strong> — Hiệu năng, bảo mật, UX</span></div>
+        <div class="toc-item"><span class="toc-index">9</span><span class="toc-text"><strong>Ràng buộc & Ma trận rủi
+              ro</strong></span></div>
+        <div class="toc-item"><span class="toc-index">10</span><span class="toc-text"><strong>Lộ trình triển
+              khai</strong> — 4 Phase từ Foundation đến Scale</span></div>
+        <div class="toc-item"><span class="toc-index">11</span><span class="toc-text"><strong>Bảng thuật
+              ngữ</strong></span></div>
+        <div class="toc-item"><span class="toc-index">12</span><span class="toc-text"><strong>Phê duyệt tài
+              liệu</strong></span></div>
+      </div>
+    </div>
+    <div class="inner-brd-footer">
+      <div class="inner-brd-footer-l">© 2026 UNICOM — Nội bộ</div>
+      <div class="inner-brd-footer-r"><span class="ft-page">Trang 2 / 13</span>UNICOM/BRD-FAMILYOS-001 · v1.2</div>
+    </div>
+  </div>
+
+  <!-- ===== PAGE 3: OVERVIEW ===== -->
+  <div class="doc-page">
+    <div class="inner-brd-header">
+      <div class="inner-brd-code">UNICOM/BRD-FAMILYOS-001 · v1.2</div>
+      <div class="inner-brd-right">STOS Family OS — Tổng quan hệ thống</div>
+    </div>
+    <div class="inner-brd-divider"></div>
+    <div class="content-area md-render">
+
+      <h1>1. Tổng quan hệ thống</h1>
+
+      <h2>1.1. Bối cảnh & Vấn đề</h2>
+
+      <p><strong>STOS Family OS</strong> (Smart Township Operating System) là hệ điều hành số dành cho các gia đình đô
+        thị sống trong chung cư cao cấp tại Việt Nam. Hiện tại, các gia đình phải dùng nhiều ứng dụng rời rạc để quản lý
+        cuộc sống, trong khi việc liên lạc với ban quản lý và bảo vệ tòa nhà diễn ra qua điện thoại thủ công, dễ chậm
+        trễ và bỏ sót.</p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Vấn đề</th>
+            <th>Hệ quả</th>
+            <th>Giải pháp STOS</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Phân tán công cụ quản lý gia đình</td>
+            <td>Tốn thời gian, thông tin bị bỏ sót</td>
+            <td>1 app duy nhất cho tất cả tính năng</td>
+          </tr>
+          <tr>
+            <td>Không theo dõi được sức khỏe ông bà</td>
+            <td>Bỏ lỡ liều thuốc, khám trễ hạn</td>
+            <td>Module nhắc thuốc + nhật ký chăm sóc</td>
+          </tr>
+          <tr>
+            <td>Chi tiêu ghi tay dễ sai, mất công</td>
+            <td>Không có báo cáo tài chính gia đình</td>
+            <td>Quét hóa đơn AI, báo cáo tự động</td>
+          </tr>
+          <tr>
+            <td>Liên hệ bảo vệ qua điện thoại</td>
+            <td>Chậm trễ xử lý sự cố, SOS không hiệu quả</td>
+            <td>Nút SOS one-tap, real-time notification</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2>1.2. Hệ sinh thái 2 ứng dụng</h2>
+
+      <p>Hệ thống bao gồm <strong>2 ứng dụng mobile</strong> cùng backend, phân quyền theo vai trò:</p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Ứng dụng</th>
+            <th>Dành cho</th>
+            <th>App ID</th>
+            <th>Màn hình</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>STOS Family</strong></td>
+            <td>Cư dân (vợ/chồng/con)</td>
+            <td>vn.unicom.stos.family</td>
+            <td>30 màn hình</td>
+          </tr>
+          <tr>
+            <td><strong>STOS Guard</strong></td>
+            <td>Nhân viên bảo vệ</td>
+            <td>vn.unicom.stos.guard</td>
+            <td>12 màn hình</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="mermaid">
+        flowchart LR
+        A["👨‍👩‍👧 Cư dân\nSTOS Family App"] -->|SOS / Yêu cầu| B["☁️ Supabase\nBackend + RLS"]
+        C["🛡️ Bảo vệ\nSTOS Guard App"] -->|Xử lý / Cập nhật| B
+        B -->|Push Notification| A
+        B -->|Alert SOS| C
+        D["🤖 AI Edge Functions\nOCR / Log / Health"] --- B
+        B -->|JWT Auth| E["🔐 Auth\n4 Roles RBAC"]
+      </div>
+
+      <h2>1.3. Phân khúc người dùng mục tiêu</h2>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Phân khúc</th>
+            <th>Đặc điểm</th>
+            <th>Nhu cầu chính</th>
+            <th>Ưu tiên</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Gia đình hạt nhân</strong><br><small>Bố mẹ 30–45, có con nhỏ</small></td>
+            <td>Thu nhập cao, bận rộn, tech-savvy</td>
+            <td>Chi tiêu, lịch học con, thực phẩm</td>
+            <td>🔴 Cao nhất</td>
+          </tr>
+          <tr>
+            <td><strong>Gia đình đa thế hệ</strong><br><small>Sống cùng ông bà</small></td>
+            <td>Lo lắng sức khỏe người cao tuổi</td>
+            <td>Nhắc thuốc, nhật ký y tế, an toàn</td>
+            <td>🔴 Cao nhất</td>
+          </tr>
+          <tr>
+            <td><strong>Cặp vợ chồng trẻ</strong><br><small>25–35, chưa có con</small></td>
+            <td>Ưa tiện lợi, minimalist</td>
+            <td>Chi tiêu, lịch đôi, kỷ niệm</td>
+            <td>🟡 Cao</td>
+          </tr>
+          <tr>
+            <td><strong>Nhân viên bảo vệ</strong><br><small>App STOS Guard</small></td>
+            <td>Trực ca, cần vận hành nhanh</td>
+            <td>SOS, ca trực, tuần tra, check-in</td>
+            <td>🟡 Cao</td>
+          </tr>
+        </tbody>
+      </table>
+
+    </div>
+    <div class="inner-brd-footer">
+      <div class="inner-brd-footer-l">© 2026 UNICOM — Nội bộ</div>
+      <div class="inner-brd-footer-r"><span class="ft-page">Trang 3 / 13</span>UNICOM/BRD-FAMILYOS-001 · v1.2</div>
+    </div>
+  </div>
+
+  <!-- ===== PAGE 4: OBJECTIVES & STAKEHOLDERS ===== -->
+  <div class="doc-page">
+    <div class="inner-brd-header">
+      <div class="inner-brd-code">UNICOM/BRD-FAMILYOS-001 · v1.2</div>
+      <div class="inner-brd-right">STOS Family OS — Mục tiêu & Stakeholders</div>
+    </div>
+    <div class="inner-brd-divider"></div>
+    <div class="content-area md-render">
+
+      <h1>2. Mục tiêu dự án</h1>
+
+      <h2>2.1. Mục tiêu Kinh doanh</h2>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Mục tiêu</th>
+            <th>Chỉ số đo lường (KPI)</th>
+            <th>Deadline</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Tăng mức độ hài lòng cư dân</td>
+            <td>CSAT ≥ 85%</td>
+            <td>Q4 2026</td>
+          </tr>
+          <tr>
+            <td>Giảm thời gian xử lý yêu cầu</td>
+            <td>Giảm 40% so với quy trình thủ công</td>
+            <td>Q3 2026</td>
+          </tr>
+          <tr>
+            <td>Tỷ lệ cài đặt ứng dụng</td>
+            <td>≥ 70% cư dân trong 12 tháng đầu</td>
+            <td>Q2 2027</td>
+          </tr>
+          <tr>
+            <td>Mở rộng thị trường</td>
+            <td>10 tòa nhà trong 18 tháng</td>
+            <td>Q4 2027</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2>2.2. Mục tiêu Sản phẩm</h2>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Tiêu chí</th>
+            <th>Mục tiêu</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Thời gian khởi động (Cold start)</td>
+            <td>&lt; 2 giây</td>
+          </tr>
+          <tr>
+            <td>Uptime hệ thống</td>
+            <td>≥ 99.5%/tháng</td>
+          </tr>
+          <tr>
+            <td>Crash rate</td>
+            <td>&lt; 0.1% sessions</td>
+          </tr>
+          <tr>
+            <td>Daily Active Users</td>
+            <td>≥ 50% số cư dân đăng ký</td>
+          </tr>
+          <tr>
+            <td>NPS (Net Promoter Score)</td>
+            <td>≥ 40 sau 3 tháng</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h1>3. Stakeholders</h1>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Vai trò</th>
+            <th>Đại diện</th>
+            <th>Trách nhiệm</th>
+            <th>Mức độ</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Product Owner</strong></td>
+            <td>UNICOM — STOS Team</td>
+            <td>Phê duyệt tính năng, ưu tiên backlog</td>
+            <td>🔴 Rất cao</td>
+          </tr>
+          <tr>
+            <td><strong>Cư dân</strong></td>
+            <td>Hộ gia đình trong tòa nhà</td>
+            <td>Người dùng cuối — phản hồi UX/UAT</td>
+            <td>🔴 Rất cao</td>
+          </tr>
+          <tr>
+            <td><strong>Ban Quản lý (BQL)</strong></td>
+            <td>Quản lý tòa nhà</td>
+            <td>Duyệt yêu cầu dịch vụ, gửi thông báo</td>
+            <td>🟡 Cao</td>
+          </tr>
+          <tr>
+            <td><strong>Nhân viên bảo vệ</strong></td>
+            <td>Security Guard team</td>
+            <td>Xử lý SOS, ca trực, tuần tra</td>
+            <td>🟡 Cao</td>
+          </tr>
+          <tr>
+            <td><strong>Engineering Team</strong></td>
+            <td>Dev + QA — UNICOM</td>
+            <td>Phát triển, kiểm thử, vận hành</td>
+            <td>🟡 Cao</td>
+          </tr>
+          <tr>
+            <td><strong>Legal/Compliance</strong></td>
+            <td>Pháp lý — UNICOM</td>
+            <td>PDPA, bảo mật dữ liệu y tế & tài chính</td>
+            <td>🟢 Trung bình</td>
+          </tr>
+        </tbody>
+      </table>
+
+    </div>
+    <div class="inner-brd-footer">
+      <div class="inner-brd-footer-l">© 2026 UNICOM — Nội bộ</div>
+      <div class="inner-brd-footer-r"><span class="ft-page">Trang 4 / 13</span>UNICOM/BRD-FAMILYOS-001 · v1.2</div>
+    </div>
+  </div>
+
+  <!-- ===== PAGE 5: END-TO-END FLOW ===== -->
+  <div class="doc-page">
+    <div class="inner-brd-header">
+      <div class="inner-brd-code">UNICOM/BRD-FAMILYOS-001 · v1.2</div>
+      <div class="inner-brd-right">STOS Family OS — Luồng tổng thể End-to-End</div>
+    </div>
+    <div class="inner-brd-divider"></div>
+    <div class="content-area md-render">
+
+      <h1>4. Luồng tổng thể End-to-End</h1>
+
+      <p>Dưới đây là sơ đồ mô tả tương tác giữa <strong>4 actor chính</strong> trong hệ sinh thái STOS Family OS — từ
+        lúc cư dân bấm SOS đến khi bảo vệ cập nhật trạng thái xử lý.</p>
+
+      <div class="mermaid">
+        sequenceDiagram
+        autonumber
+        actor CV as 👨‍👩‍👧 Cư dân
+        participant APP as 📱 STOS Family App
+        participant BE as ☁️ Supabase Backend
+        participant GU as 🛡️ STOS Guard App
+        actor BV as 👮 Bảo vệ
+
+        rect rgb(238, 242, 255)
+        Note over CV,APP: GIAI ĐOẠN 1 — ĐĂNG NHẬP & PHÂN QUYỀN
+        CV->>APP: Mở app, nhập tài khoản
+        APP->>BE: signInWithPassword (email/username)
+        BE-->>APP: JWT Token + Role (family_member)
+        APP-->>CV: Hiển thị Dashboard gia đình
+        end
+
+        rect rgb(220, 252, 231)
+        Note over CV,BE: GIAI ĐOẠN 2 — SỬ DỤNG TÍNH NĂNG HÀNG NGÀY
+        CV->>APP: Chụp hóa đơn → Scan OCR
+        APP->>BE: Gọi Edge Function scan-receipt
+        BE-->>APP: Trả về {title, amount, category}
+        APP-->>CV: Điền sẵn form Chi tiêu
+        CV->>APP: Xem lịch gia đình tuần này
+        APP->>BE: listFamilyEvents({family_id})
+        BE-->>APP: Danh sách sự kiện
+        end
+
+        rect rgb(254, 226, 226)
+        Note over CV,BV: GIAI ĐOẠN 3 — XỬ LÝ SỰ CỐ KHẨN CẤP (SOS)
+        CV->>APP: Bấm nút SOS
+        APP->>BE: createSecurityRequest({type: "sos"})
+        BE->>GU: Push Notification → Alert SOS
+        GU-->>BV: Nhận cảnh báo SOS + vị trí căn hộ
+        BV->>GU: Cập nhật trạng thái: "Đang xử lý"
+        GU->>BE: updateSecurityRequest({status: "in_progress"})
+        BE-->>APP: Real-time update trạng thái
+        APP-->>CV: Hiển thị "Bảo vệ đang đến..."
+        BV->>GU: Xử lý xong → "Đã giải quyết"
+        GU->>BE: updateSecurityRequest({status: "resolved"})
+        BE-->>APP: Thông báo "Sự cố đã được xử lý"
+        end
+      </div>
+
+      <h2>4.1. Chú giải các Actor</h2>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Actor</th>
+            <th>Vai trò</th>
+            <th>Màn hình/Chức năng chính</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Cư dân</strong></td>
+            <td>Người dùng cuối của STOS Family App</td>
+            <td>Dashboard, SOS, Chi tiêu, Lịch, Sức khỏe...</td>
+          </tr>
+          <tr>
+            <td><strong>STOS Family App</strong></td>
+            <td>Giao diện mobile cho cư dân (iOS/Android)</td>
+            <td>30 routes, 12 module tính năng</td>
+          </tr>
+          <tr>
+            <td><strong>Supabase Backend</strong></td>
+            <td>Auth + DB + Realtime + Edge Functions</td>
+            <td>PostgreSQL 27 bảng, RLS, JWT, 4 Edge Fns</td>
+          </tr>
+          <tr>
+            <td><strong>STOS Guard App</strong></td>
+            <td>Giao diện mobile cho bảo vệ (iOS/Android)</td>
+            <td>12 routes: ca trực, SOS, tuần tra, check-in</td>
+          </tr>
+          <tr>
+            <td><strong>Bảo vệ</strong></td>
+            <td>Nhân viên xử lý SOS, tuần tra</td>
+            <td>Nhận alert, cập nhật trạng thái, báo cáo</td>
+          </tr>
+        </tbody>
+      </table>
+
+    </div>
+    <div class="inner-brd-footer">
+      <div class="inner-brd-footer-l">© 2026 UNICOM — Nội bộ</div>
+      <div class="inner-brd-footer-r"><span class="ft-page">Trang 5 / 13</span>UNICOM/BRD-FAMILYOS-001 · v1.2</div>
+    </div>
+  </div>
+
+  <!-- ===== PAGE 6: MODULES ===== -->
+  <div class="doc-page">
+    <div class="inner-brd-header">
+      <div class="inner-brd-code">UNICOM/BRD-FAMILYOS-001 · v1.2</div>
+      <div class="inner-brd-right">STOS Family OS — 12 Module chức năng</div>
+    </div>
+    <div class="inner-brd-divider"></div>
+    <div class="content-area md-render">
+
+      <h1>5. 12 Module chức năng</h1>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Mã</th>
+            <th>Module</th>
+            <th>Màn hình chính</th>
+            <th>Tính năng cốt lõi</th>
+            <th>Ưu tiên</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>MOD-01</strong></td>
+            <td>🏠 Dashboard</td>
+            <td>/home, /dashboard</td>
+            <td>Trạng thái an ninh, lịch hôm nay, shortcut 8 tính năng, thành viên online</td>
+            <td>P0</td>
+          </tr>
+          <tr>
+            <td><strong>MOD-02</strong></td>
+            <td>🛡️ Bảo an & SOS</td>
+            <td>/bao-an, /qr-vao-ra</td>
+            <td>Nút SOS one-tap, báo cháy, trạng thái an ninh tòa nhà, QR check-in</td>
+            <td>P0</td>
+          </tr>
+          <tr>
+            <td><strong>MOD-03</strong></td>
+            <td>💰 Chi tiêu</td>
+            <td>/chi-tieu, /chi-tieu/them, /chi-tieu/scan</td>
+            <td>Ghi thu chi, quét hóa đơn AI (OCR), báo cáo tháng, 6 danh mục</td>
+            <td>P0</td>
+          </tr>
+          <tr>
+            <td><strong>MOD-04</strong></td>
+            <td>🎒 Con cái</td>
+            <td>/con-cai</td>
+            <td>Hồ sơ con, lịch học, bài tập về nhà, thành tích, nhắc phụ huynh</td>
+            <td>P0</td>
+          </tr>
+          <tr>
+            <td><strong>MOD-05</strong></td>
+            <td>❤️ Ông bà</td>
+            <td>/cham-soc-ong-ba, /nhat-ky</td>
+            <td>Nhắc thuốc, nhật ký chăm sóc, kiểm tra an toàn, SOS ông bà</td>
+            <td>P0</td>
+          </tr>
+          <tr>
+            <td><strong>MOD-06</strong></td>
+            <td>💊 Sức khỏe</td>
+            <td>/suc-khoe, /suc-khoe/quan-ly</td>
+            <td>Hồ sơ y tế, bản ghi sức khỏe, lịch khám, nhắc thuốc gia đình</td>
+            <td>P1</td>
+          </tr>
+          <tr>
+            <td><strong>MOD-07</strong></td>
+            <td>📅 Lịch gia đình</td>
+            <td>/lich-gia-dinh</td>
+            <td>Lịch chung tuần, 6 loại sự kiện có màu, thêm sự kiện, AI Briefing</td>
+            <td>P1</td>
+          </tr>
+          <tr>
+            <td><strong>MOD-08</strong></td>
+            <td>📸 Kỷ niệm</td>
+            <td>/ky-niem-gia-dinh, /upload, /them, /album</td>
+            <td>Album ảnh gia đình, timeline, tải ảnh từ thư viện điện thoại, riêng tư</td>
+            <td>P1</td>
+          </tr>
+          <tr>
+            <td><strong>MOD-09</strong></td>
+            <td>🍱 Thực phẩm</td>
+            <td>/thuc-pham</td>
+            <td>Theo dõi tủ lạnh, cảnh báo hết hạn, danh sách mua sắm</td>
+            <td>P2</td>
+          </tr>
+          <tr>
+            <td><strong>MOD-10</strong></td>
+            <td>🧹 Giúp việc</td>
+            <td>/quan-ly-giup-viec</td>
+            <td>Hồ sơ giúp việc, lịch làm việc, QR check-in/out, đánh giá</td>
+            <td>P2</td>
+          </tr>
+          <tr>
+            <td><strong>MOD-11</strong></td>
+            <td>🔔 Thông báo</td>
+            <td>/thong-bao, /cai-dat/thong-bao</td>
+            <td>Thông báo từ BQL, lịch sử, cài đặt loại thông báo nhận</td>
+            <td>P1</td>
+          </tr>
+          <tr>
+            <td><strong>MOD-12</strong></td>
+            <td>👥 Cộng đồng</td>
+            <td>/cong-dong, /lien-he, /tai-khoan</td>
+            <td>Diễn đàn cư dân, liên hệ BQL, hồ sơ cá nhân, quản lý gia đình</td>
+            <td>P2</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <blockquote>
+        <strong>Chú thích ưu tiên:</strong> P0 = MVP bắt buộc · P1 = Phase 1 · P2 = Phase 2 trở đi<br>
+        Tổng cộng: <strong>30 route files</strong> trong STOS Family App và <strong>12 route files</strong> trong STOS
+        Guard App.
+      </blockquote>
+
+    </div>
+    <div class="inner-brd-footer">
+      <div class="inner-brd-footer-l">© 2026 UNICOM — Nội bộ</div>
+      <div class="inner-brd-footer-r"><span class="ft-page">Trang 6 / 13</span>UNICOM/BRD-FAMILYOS-001 · v1.2</div>
+    </div>
+  </div>
+
+  <!-- ===== PAGE 7: DETAILED FLOWS ===== -->
+  <div class="doc-page">
+    <div class="inner-brd-header">
+      <div class="inner-brd-code">UNICOM/BRD-FAMILYOS-001 · v1.2</div>
+      <div class="inner-brd-right">STOS Family OS — Luồng nghiệp vụ chi tiết</div>
+    </div>
+    <div class="inner-brd-divider"></div>
+    <div class="content-area md-render">
+
+      <h1>6. Luồng nghiệp vụ chi tiết</h1>
+
+      <p>Phiên bản 1.2 đồng bộ <strong>68 Use Case</strong> (SRS v1.2) với <strong>16 luồng nghiệp vụ</strong> (L0–L15), tương đương mức độ chi tiết BRD TASMOS v2.1.
+        Mỗi luồng gồm: mục đích, sơ đồ tuần tự, bảng bước, quy tắc nghiệp vụ và nhánh ngoại lệ chính. SRS chi tiết Use Case
+        tham chiếu tại <code>UNICOM/SRS-FAMILYOS-001</code> mục 4A.</p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Mã luồng</th>
+            <th>Tên luồng</th>
+            <th>Module</th>
+            <th>Actor chính</th>
+            <th>Ưu tiên</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>L0</strong></td><td>Đăng nhập & Phân quyền RBAC</td><td>M01 Auth</td><td>Cư dân / Bảo vệ</td><td>P0</td></tr>
+          <tr><td><strong>L1</strong></td><td>Gửi SOS khẩn cấp</td><td>MOD-02 Bảo an</td><td>Cư dân → Bảo vệ</td><td>P0</td></tr>
+          <tr><td><strong>L2</strong></td><td>Quét hóa đơn AI (OCR)</td><td>MOD-03 Chi tiêu</td><td>Cư dân</td><td>P0</td></tr>
+          <tr><td><strong>L3</strong></td><td>Kỷ niệm & Album ảnh</td><td>MOD-08</td><td>Cư dân</td><td>P1</td></tr>
+          <tr><td><strong>L4</strong></td><td>Lịch gia đình & Nhắc việc</td><td>MOD-07</td><td>Cư dân</td><td>P1</td></tr>
+          <tr><td><strong>L5</strong></td><td>Chăm sóc ông bà & Nhắc thuốc</td><td>MOD-05</td><td>Cư dân</td><td>P0</td></tr>
+          <tr><td><strong>L6</strong></td><td>Quản lý con cái & Bài tập</td><td>MOD-04</td><td>Phụ huynh</td><td>P0</td></tr>
+          <tr><td><strong>L7</strong></td><td>Sức khỏe gia đình & Lịch khám</td><td>MOD-06</td><td>Cư dân</td><td>P1</td></tr>
+          <tr><td><strong>L8</strong></td><td>Thực phẩm & Cảnh báo hết hạn</td><td>MOD-09</td><td>Cư dân</td><td>P2</td></tr>
+          <tr><td><strong>L9</strong></td><td>Giúp việc — QR Check-in/out</td><td>MOD-10</td><td>Chủ hộ / Giúp việc</td><td>P2</td></tr>
+          <tr><td><strong>L10</strong></td><td>QR vào ra & Khách đến thăm</td><td>MOD-02</td><td>Cư dân / Bảo vệ</td><td>P1</td></tr>
+          <tr><td><strong>L11</strong></td><td>Thông báo từ BQL</td><td>MOD-11</td><td>BQL → Cư dân</td><td>P1</td></tr>
+          <tr><td><strong>L12</strong></td><td>Cộng đồng & Liên hệ dịch vụ</td><td>MOD-12</td><td>Cư dân</td><td>P2</td></tr>
+          <tr><td><strong>L13</strong></td><td>Guard — Check-in ca trực GPS</td><td>STOS Guard</td><td>Bảo vệ</td><td>P1</td></tr>
+          <tr><td><strong>L14</strong></td><td>Guard — Xử lý SOS & Timeline</td><td>STOS Guard</td><td>Bảo vệ</td><td>P0</td></tr>
+          <tr><td><strong>L15</strong></td><td>Guard — Tuần tra điểm QR</td><td>STOS Guard</td><td>Bảo vệ</td><td>P1</td></tr>
+        </tbody>
+      </table>
+
+      <h2>LUỒNG 0: Đăng nhập & Phân quyền (RBAC)</h2>
+
+      <p><strong>Mục đích:</strong> Xác thực người dùng, phát hành JWT và định tuyến đúng ứng dụng (Family hoặc Guard) theo
+        vai trò <code>family_owner</code>, <code>family_member</code>, <code>security_guard</code>,
+        <code>security_supervisor</code>.</p>
+
+      <div class="mermaid">
+        sequenceDiagram
+        actor U as Người dùng
+        participant APP as Mobile App
+        participant AUTH as Supabase Auth
+        participant DB as PostgreSQL
+
+        U->>APP: Nhập email/username + mật khẩu
+        alt Đăng nhập bằng username
+          APP->>DB: Tra cứu profiles.username → email
+        end
+        APP->>AUTH: signInWithPassword
+        AUTH-->>APP: JWT + refresh token
+        APP->>DB: Đọc user_roles
+        alt family_*
+          APP-->>U: Redirect /home (Family)
+        else security_*
+          APP-->>U: Redirect /guard (Guard)
+        end
+      </div>
+
+      <table>
+        <thead><tr><th>Bước</th><th>Người thực hiện</th><th>Mô tả</th><th>Dữ liệu</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>Người dùng</td><td>Mở app, nhập thông tin đăng nhập</td><td>—</td></tr>
+          <tr><td>2</td><td>App</td><td>Validate format; lưu session vào Preferences</td><td>JWT</td></tr>
+          <tr><td>3</td><td>Hệ thống</td><td>Kiểm tra RLS context `family_id`</td><td>profiles, user_roles</td></tr>
+          <tr><td>4</td><td>App</td><td>beforeLoad guard trên mọi route protected</td><td>redirect nếu hết hạn</td></tr>
+        </tbody>
+      </table>
+
+      <p><strong>Quy tắc:</strong> BR-AUTH-01 Không dùng localStorage trên native; BR-AUTH-02 Deep link reset password:
+        <code>vn.unicom.stos.family://auth</code>.</p>
+
+      
+      <h3>Nhánh ngoại lệ — L0 Đăng nhập & RBAC</h3>
+      <table>
+        <thead><tr><th>Mã nhánh</th><th>Tình huống</th><th>Hành vi hệ thống</th><th>Mức độ</th></tr></thead>
+        <tbody><tr><td><strong>A1</strong></td><td>Sai email/mật khẩu</td><td>Toast chung; không tiết lộ tài khoản tồn tại</td><td>Cao</td></tr><tr><td><strong>A2</strong></td><td>Role không dùng được trên app</td><td>Chặn shell; gợi ý đúng app Guard/Family</td><td>Cao</td></tr><tr><td><strong>A3</strong></td><td>JWT hết hạn / refresh fail</td><td>beforeLoad → redirect `/login`; xóa Preferences</td><td>Trung bình</td></tr><tr><td><strong>A4</strong></td><td>Quên MK — gửi quá nhiều lần</td><td>E-AUTH-429; cooldown 60s</td><td>Thấp</td></tr><tr><td><strong>A5</strong></td><td>Mạng không ổn định</td><td>Retry + toast; không clear form</td><td>Trung bình</td></tr></tbody>
+      </table>
+      <h3>Mã lỗi — L0 Đăng nhập & RBAC</h3>
+      <table>
+        <thead><tr><th>Mã</th><th>HTTP</th><th>Thông báo (VI)</th><th>Khi nào</th></tr></thead>
+        <tbody><tr><td><code>E-AUTH-001</code></td><td>401</td><td>Email hoặc mật khẩu không đúng</td><td>Credential sai</td></tr><tr><td><code>E-AUTH-008</code></td><td>403</td><td>Tài khoản không dùng được trên ứng dụng này</td><td>Role mismatch</td></tr><tr><td><code>E-AUTH-010</code></td><td>400</td><td>Liên kết đã hết hạn</td><td>Reset password token</td></tr><tr><td><code>E-AUTH-429</code></td><td>429</td><td>Vui lòng thử lại sau</td><td>Rate limit email</td></tr><tr><td><code>E-RLS-001</code></td><td>403</td><td>Không có quyền truy cập</td><td>family_id context thiếu</td></tr></tbody>
+      </table>
+      <p><strong>UC tham chiếu (SRS 4A):</strong> UC-01.01 … UC-01.05</p>
+
+
+      <h2>LUỒNG 1: Gửi SOS khẩn cấp</h2>
+
+      <p><strong>Mục đích:</strong> Cho phép cư dân gửi tín hiệu cầu cứu tức thì đến nhân viên bảo vệ trực ca, đảm bảo
+        phản ứng nhanh nhất trong tình huống khẩn cấp.</p>
+
+      <div class="mermaid">
+        sequenceDiagram
+        actor CV as Cư dân
+        participant APP as STOS Family
+        participant BE as Supabase
+        participant GU as STOS Guard
+        actor BV as Bảo vệ
+
+        CV->>APP: Bấm nút SOS trên màn Bảo an
+        APP->>CV: Hiển thị dialog chọn loại: SOS / Báo cháy / Xâm nhập
+        CV->>APP: Chọn loại + nhập mô tả (tùy chọn)
+        APP->>BE: INSERT security_requests{type, family_id, apartment_no}
+        BE->>GU: Push Notification (FCM/APNs) với payload SOS
+        GU-->>BV: Alert hiện trên màn hình Guard
+        APP-->>CV: Toast "Yêu cầu đã được ghi nhận — Mã SOS-xxxx"
+        BV->>GU: Nhận đơn → Cập nhật: "in_progress"
+        GU->>BE: PATCH security_requests{status: "in_progress"}
+        BE-->>APP: Realtime subscription cập nhật UI
+        APP-->>CV: Hiển thị "Bảo vệ đang xử lý..."
+        BV->>GU: Hoàn tất → "resolved"
+        GU->>BE: PATCH security_requests{status: "resolved"}
+        BE-->>APP: Thông báo "Sự cố đã được giải quyết"
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Bước</th>
+            <th>Người thực hiện</th>
+            <th>Hành động</th>
+            <th>Dữ liệu lưu</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>1</td>
+            <td>Cư dân</td>
+            <td>Bấm SOS, chọn loại</td>
+            <td>—</td>
+          </tr>
+          <tr>
+            <td>2</td>
+            <td>Hệ thống</td>
+            <td>Tạo record SOS</td>
+            <td>security_requests{type, status="open"}</td>
+          </tr>
+          <tr>
+            <td>3</td>
+            <td>Hệ thống</td>
+            <td>Push notification đến Guard</td>
+            <td>FCM payload với apartment_no</td>
+          </tr>
+          <tr>
+            <td>4</td>
+            <td>Bảo vệ</td>
+            <td>Nhận alert, xử lý</td>
+            <td>security_requests{status="in_progress"}</td>
+          </tr>
+          <tr>
+            <td>5</td>
+            <td>Bảo vệ</td>
+            <td>Hoàn tất</td>
+            <td>security_requests{status="resolved"}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      
+      <h3>Nhánh ngoại lệ — L1 SOS khẩn cấp</h3>
+      <table>
+        <thead><tr><th>Mã nhánh</th><th>Tình huống</th><th>Hành vi hệ thống</th><th>Mức độ</th></tr></thead>
+        <tbody><tr><td><strong>A1</strong></td><td>Push FCM/APNs thất bại</td><td>Retry tối đa 3; log E-SEC-002; vẫn lưu request</td><td>Cao</td></tr><tr><td><strong>A2</strong></td><td>Thiết bị offline</td><td>Lưu local queue (Phase 2); hiện toast chờ mạng</td><td>Trung bình</td></tr><tr><td><strong>A3</strong></td><td>Cư dân hủy khi status=open</td><td>PATCH `cancelled`; không push Guard</td><td>Trung bình</td></tr><tr><td><strong>A4</strong></td><td>Không có Guard online</td><td>Escalate supervisor + thông báo BQL</td><td>Cao</td></tr><tr><td><strong>A5</strong></td><td>SOS gắn người cao tuổi</td><td>Payload `elderly_id`; ưu tiên P0 trên Guard</td><td>Cao</td></tr></tbody>
+      </table>
+      <h3>Mã lỗi — L1 SOS khẩn cấp</h3>
+      <table>
+        <thead><tr><th>Mã</th><th>HTTP</th><th>Thông báo (VI)</th><th>Khi nào</th></tr></thead>
+        <tbody><tr><td><code>E-SEC-001</code></td><td>500</td><td>Không gửi được yêu cầu</td><td>INSERT security_requests fail</td></tr><tr><td><code>E-SEC-002</code></td><td>503</td><td>Không gửi được thông báo đến bảo vệ</td><td>Push gateway lỗi</td></tr><tr><td><code>E-RLS-001</code></td><td>403</td><td>Không có quyền</td><td>family_id khác hộ</td></tr></tbody>
+      </table>
+      <p><strong>UC tham chiếu (SRS 4A):</strong> UC-11.01 … UC-11.04, UC-14.04 … UC-14.05</p>
+
+
+      <h2>LUỒNG 2: Quét hóa đơn bằng AI (OCR)</h2>
+
+      <p><strong>Mục đích:</strong> Tự động hóa việc nhập liệu chi tiêu — cư dân chỉ cần chụp ảnh hóa đơn, AI sẽ nhận
+        diện và điền sẵn thông tin.</p>
+
+      <div class="mermaid">
+        sequenceDiagram
+        actor CV as Cư dân
+        participant APP as STOS Family
+        participant CAM as Camera Native
+        participant BE as Supabase Edge
+        participant AI as OpenAI Vision
+
+        CV->>APP: Bấm icon Camera ở màn Chi tiêu
+        APP->>CAM: Mở camera (Capacitor Camera Plugin)
+        CV->>CAM: Chụp ảnh hóa đơn
+        CAM-->>APP: Trả về base64 image
+        APP->>BE: POST /functions/v1/scan-receipt {image_base64}
+        BE->>AI: Gọi GPT-4 Vision với prompt trích xuất
+        AI-->>BE: JSON {title, amount, category, date}
+        BE-->>APP: Kết quả OCR
+        APP-->>CV: Form tự điền sẵn dữ liệu
+        CV->>APP: Xem lại và xác nhận (hoặc chỉnh sửa)
+        APP->>BE: INSERT expenses{family_id, title, amount, category}
+        BE-->>APP: Toast "Đã thêm khoản chi"
+      </div>
+
+      
+      <h3>Nhánh ngoại lệ — L2 OCR hóa đơn</h3>
+      <table>
+        <thead><tr><th>Mã nhánh</th><th>Tình huống</th><th>Hành vi hệ thống</th><th>Mức độ</th></tr></thead>
+        <tbody><tr><td><strong>A1</strong></td><td>Vision không trích xuất được</td><td>Form trống; user nhập tay</td><td>Trung bình</td></tr><tr><td><strong>A2</strong></td><td>Ảnh > 10MB hoặc format lạ</td><td>Từ chối upload; gợi ý chụp lại</td><td>Thấp</td></tr><tr><td><strong>A3</strong></td><td>Scan đã link expense</td><td>Mở read-only; E-EXP-005</td><td>Trung bình</td></tr><tr><td><strong>A4</strong></td><td>User hủy trước khi lưu</td><td>Không INSERT expenses</td><td>Thấp</td></tr><tr><td><strong>A5</strong></td><td>amount ≤ 0 sau chỉnh sửa</td><td>E-EXP-002; focus field</td><td>Trung bình</td></tr></tbody>
+      </table>
+      <h3>Mã lỗi — L2 OCR hóa đơn</h3>
+      <table>
+        <thead><tr><th>Mã</th><th>HTTP</th><th>Thông báo (VI)</th><th>Khi nào</th></tr></thead>
+        <tbody><tr><td><code>E-EXP-OCR</code></td><td>502</td><td>Không đọc được hóa đơn</td><td>Edge / Vision timeout</td></tr><tr><td><code>E-EXP-002</code></td><td>422</td><td>Số tiền không hợp lệ</td><td>amount ≤ 0</td></tr><tr><td><code>E-EXP-005</code></td><td>409</td><td>Hóa đơn đã được ghi nhận</td><td>receipt_scan.expense_id set</td></tr><tr><td><code>E-EXP-001</code></td><td>500</td><td>Không tải chi tiêu</td><td>DB lỗi</td></tr></tbody>
+      </table>
+      <p><strong>UC tham chiếu (SRS 4A):</strong> UC-03.01 … UC-03.06</p>
+
+
+      <h2>LUỒNG 3: Quản lý Kỷ niệm & Album ảnh</h2>
+
+      <p><strong>Mục đích:</strong> Lưu giữ các hình ảnh, khoảnh khắc gia đình. Cư dân có thể tải ảnh lên từ điện thoại
+        và sắp xếp vào các album sự kiện chung của gia đình.</p>
+
+      <div class="mermaid">
+        sequenceDiagram
+        actor CV as Cư dân
+        participant APP as STOS Family
+        participant CAM as Capacitor Camera
+        participant BE as Supabase Storage
+        participant DB as Supabase DB
+
+        CV->>APP: Vào Kỷ niệm > Bấm "Tải ảnh lên"
+        APP->>CAM: Mở gallery native (chọn nhiều ảnh)
+        CV->>CAM: Chọn ảnh từ thư viện thiết bị
+        CAM-->>APP: Trả về URI các ảnh đã chọn
+        APP->>BE: Tải ảnh lên bucket: family-media
+        BE-->>APP: Trả về URL ảnh public
+        APP->>DB: Lưu metadata (album, ngày chụp)
+        DB-->>APP: Hoàn tất lưu
+        APP-->>CV: Cập nhật giao diện Album & Timeline
+      </div>
+
+      <h3>Nhánh ngoại lệ — L3 Kỷ niệm & Media</h3>
+      <table>
+        <thead><tr><th>Mã nhánh</th><th>Tình huống</th><th>Hành vi hệ thống</th><th>Mức độ</th></tr></thead>
+        <tbody><tr><td><strong>A1</strong></td><td>Upload Storage fail từng file</td><td>Retry từng ảnh; giữ progress</td><td>Trung bình</td></tr><tr><td><strong>A2</strong></td><td>RLS bucket / signed URL</td><td>E-MEM-002; không hiển thị URL lạ</td><td>Cao</td></tr><tr><td><strong>A3</strong></td><td>User hủy chọn ảnh</td><td>Không gọi Storage</td><td>Thấp</td></tr><tr><td><strong>A4</strong></td><td>Mất mạng giữa batch</td><td>Resume upload Phase 2</td><td>Trung bình</td></tr></tbody>
+      </table>
+      <h3>Mã lỗi — L3 Kỷ niệm & Media</h3>
+      <table>
+        <thead><tr><th>Mã</th><th>HTTP</th><th>Thông báo (VI)</th><th>Khi nào</th></tr></thead>
+        <tbody><tr><td><code>E-MEM-001</code></td><td>413</td><td>Ảnh quá lớn</td><td>&gt; 10MB / file</td></tr><tr><td><code>E-MEM-002</code></td><td>500</td><td>Lỗi tải lên</td><td>Storage policy / network</td></tr><tr><td><code>E-RLS-001</code></td><td>403</td><td>Không có quyền album</td><td>Không phải family_member</td></tr></tbody>
+      </table>
+      <p><strong>UC tham chiếu (SRS 4A):</strong> UC-08.01 … UC-08.05</p>
+
+    </div>
+    <div class="inner-brd-footer">
+      <div class="inner-brd-footer-l">© 2026 UNICOM — Nội bộ</div>
+      <div class="inner-brd-footer-r"><span class="ft-page">Trang 7 / 13</span>UNICOM/BRD-FAMILYOS-001 · v1.2</div>
+    </div>
+  </div>
+
+  <!-- ===== PAGE 7B: FLOWS L4-L8 ===== -->
+  <div class="doc-page">
+    <div class="inner-brd-header">
+      <div class="inner-brd-code">UNICOM/BRD-FAMILYOS-001 · v1.2</div>
+      <div class="inner-brd-right">STOS Family OS — Luồng L4 đến L8</div>
+    </div>
+    <div class="inner-brd-divider"></div>
+    <div class="content-area md-render">
+
+      <h2>LUỒNG 4: Lịch gia đình & Nhắc việc</h2>
+      <p><strong>Mục đích:</strong> Đồng bộ lịch chung cho cả hộ — học con, khám bệnh, du lịch — với nhắc trước sự kiện.</p>
+      <div class="mermaid">
+        sequenceDiagram
+        actor CV as Cư dân
+        participant APP as STOS Family
+        participant DB as family_events
+        CV->>APP: Mở /lich-gia-dinh
+        APP->>DB: SELECT theo family_id + tuần
+        CV->>APP: Thêm sự kiện (title, starts_at, category)
+        APP->>DB: INSERT family_events
+        APP-->>CV: Cập nhật lịch + chip trên /home
+      </div>
+      <table>
+        <thead><tr><th>Bước</th><th>Mô tả</th><th>RLS / Ghi chú</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>Xem lịch tuần, lọc theo member_scope</td><td>6 loại category có màu</td></tr>
+          <tr><td>2</td><td>Tạo/sửa/xóa sự kiện</td><td>Chỉ family_member cùng hộ</td></tr>
+          <tr><td>3</td><td>Nhắc trước N phút</td><td>remind_minutes_before; push Phase 2</td></tr>
+        </tbody>
+      </table>
+
+      
+      <h3>Nhánh ngoại lệ — L4 Lịch gia đình</h3>
+      <table>
+        <thead><tr><th>Mã nhánh</th><th>Tình huống</th><th>Hành vi hệ thống</th><th>Mức độ</th></tr></thead>
+        <tbody><tr><td><strong>A1</strong></td><td>Trùng khung giờ sự kiện</td><td>Warning UI; vẫn cho lưu</td><td>Thấp</td></tr><tr><td><strong>A2</strong></td><td>starts_at / ends_at không hợp lệ</td><td>E-EVT-001; không INSERT</td><td>Trung bình</td></tr><tr><td><strong>A3</strong></td><td>Xóa sự kiện</td><td>Confirm dialog → deleteFamilyEvent</td><td>Trung bình</td></tr><tr><td><strong>A4</strong></td><td>member_scope không khớp</td><td>Lọc ẩn trên lịch chung</td><td>Thấp</td></tr></tbody>
+      </table>
+      <h3>Mã lỗi — L4 Lịch gia đình</h3>
+      <table>
+        <thead><tr><th>Mã</th><th>HTTP</th><th>Thông báo (VI)</th><th>Khi nào</th></tr></thead>
+        <tbody><tr><td><code>E-EVT-001</code></td><td>400</td><td>Thời gian không hợp lệ</td><td>Validation Zod</td></tr><tr><td><code>E-RLS-001</code></td><td>403</td><td>Không sửa sự kiện hộ khác</td><td>RLS family_events</td></tr></tbody>
+      </table>
+      <p><strong>UC tham chiếu (SRS 4A):</strong> UC-07.01 … UC-07.04</p>
+
+
+      <h2>LUỒNG 5: Chăm sóc ông bà & Nhắc thuốc</h2>
+      <p><strong>Mục đích:</strong> Theo dõi lịch uống thuốc, nhật ký chăm sóc và kiểm tra an toàn hàng ngày cho người cao tuổi.</p>
+      <div class="mermaid">
+        sequenceDiagram
+        actor CV as Cư dân
+        participant APP as STOS Family
+        participant DB as DB
+        CV->>APP: /cham-soc-ong-ba
+        APP->>DB: elderly_profiles + medication_schedules
+        CV->>APP: Đánh dấu "Đã uống thuốc"
+        APP->>DB: INSERT medication_logs
+        alt Quá giờ 30 phút
+          APP-->>CV: Cảnh báo trên Dashboard
+        end
+        CV->>APP: Ghi nhật ký /cham-soc-ong-ba/nhat-ky
+        APP->>DB: INSERT care_logs
+      </div>
+      <p><strong>Nhánh ngoại lệ:</strong> SOS ông bà → chuyển Luồng L1 với payload gắn <code>elderly_id</code>.</p>
+
+      
+      <h3>Nhánh ngoại lệ — L5 Chăm sóc ông bà</h3>
+      <table>
+        <thead><tr><th>Mã nhánh</th><th>Tình huống</th><th>Hành vi hệ thống</th><th>Mức độ</th></tr></thead>
+        <tbody><tr><td><strong>A1</strong></td><td>Chưa có elderly_profiles</td><td>CTA tạo hồ sơ mới</td><td>Trung bình</td></tr><tr><td><strong>A2</strong></td><td>Trễ uống thuốc > 30 phút</td><td>Badge đỏ Dashboard + activity feed</td><td>Cao</td></tr><tr><td><strong>A3</strong></td><td>SOS từ module ông bà</td><td>Chuyển L1 + `elderly_id`</td><td>Cao</td></tr><tr><td><strong>A4</strong></td><td>Safe check bỏ qua</td><td>safe_status → warn sau 24h</td><td>Trung bình</td></tr></tbody>
+      </table>
+      <h3>Mã lỗi — L5 Chăm sóc ông bà</h3>
+      <table>
+        <thead><tr><th>Mã</th><th>HTTP</th><th>Thông báo (VI)</th><th>Khi nào</th></tr></thead>
+        <tbody><tr><td><code>E-ELD-001</code></td><td>404</td><td>Không tìm thấy hồ sơ</td><td>elderly_id sai</td></tr><tr><td><code>E-ELD-002</code></td><td>403</td><td>Không có quyền</td><td>RLS</td></tr></tbody>
+      </table>
+      <p><strong>UC tham chiếu (SRS 4A):</strong> UC-05.01 … UC-05.08</p>
+
+
+      <h2>LUỒNG 6: Quản lý con cái</h2>
+      <p><strong>Mục đích:</strong> Hồ sơ con, lịch học, bài tập và thành tích; nhắc phụ huynh khi bài tập chưa hoàn thành.</p>
+      <table>
+        <thead><tr><th>Bước</th><th>Hành động</th><th>Bảng</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>Xem hồ sơ & lịch học</td><td>children, school_schedules</td></tr>
+          <tr><td>2</td><td>Cập nhật trạng thái bài tập</td><td>homeworks</td></tr>
+          <tr><td>3</td><td>Ghi thành tích / điểm</td><td>achievements</td></tr>
+          <tr><td>4</td><td>Nhắc phụ huynh</td><td>parent_reminders → thông báo in-app</td></tr>
+        </tbody>
+      </table>
+
+      
+      <h3>Nhánh ngoại lệ — L6 Con cái & Bài tập</h3>
+      <table>
+        <thead><tr><th>Mã nhánh</th><th>Tình huống</th><th>Hành vi hệ thống</th><th>Mức độ</th></tr></thead>
+        <tbody><tr><td><strong>A1</strong></td><td>RLS deny homework</td><td>Toast E-CHILD-001</td><td>Cao</td></tr><tr><td><strong>A2</strong></td><td>Bài tập quá hạn</td><td>Highlight đỏ; nhắc parent_reminders</td><td>Trung bình</td></tr><tr><td><strong>A3</strong></td><td>Parallel fetch một API fail</td><td>Partial UI + retry nút</td><td>Trung bình</td></tr></tbody>
+      </table>
+      <h3>Mã lỗi — L6 Con cái & Bài tập</h3>
+      <table>
+        <thead><tr><th>Mã</th><th>HTTP</th><th>Thông báo (VI)</th><th>Khi nào</th></tr></thead>
+        <tbody><tr><td><code>E-CHILD-001</code></td><td>500</td><td>Lỗi tải dữ liệu con</td><td>API aggregate</td></tr><tr><td><code>E-RLS-001</code></td><td>403</td><td>Không có quyền</td><td>family_id</td></tr></tbody>
+      </table>
+      <p><strong>UC tham chiếu (SRS 4A):</strong> UC-04.01 … UC-04.05</p>
+
+
+      <h2>LUỒNG 7: Sức khỏe gia đình</h2>
+      <p><strong>Mục đích:</strong> Lưu hồ sơ y tế, bản ghi đo đạc và lịch hẹn khám cho từng thành viên.</p>
+      <div class="mermaid">
+        sequenceDiagram
+        actor CV as Cư dân
+        participant APP as STOS Family
+        participant DB as health_records
+        CV->>APP: /suc-khoe → chọn thành viên
+        CV->>APP: Thêm bản ghi / lịch khám
+        APP->>DB: INSERT health_records / appointments
+        APP-->>CV: Hiển thị trên timeline y tế
+      </div>
+
+      
+      <h3>Nhánh ngoại lệ — L7 Sức khỏe gia đình</h3>
+      <table>
+        <thead><tr><th>Mã nhánh</th><th>Tình huống</th><th>Hành vi hệ thống</th><th>Mức độ</th></tr></thead>
+        <tbody><tr><td><strong>A1</strong></td><td>Validation hồ sơ y tế</td><td>E-HEALTH-001; giữ form</td><td>Trung bình</td></tr><tr><td><strong>A2</strong></td><td>Truy cập hồ sơ thành viên khác</td><td>RLS strict — chỉ cùng hộ</td><td>Cao</td></tr><tr><td><strong>A3</strong></td><td>Lịch khám trùng</td><td>Warning; cho phép lưu</td><td>Thấp</td></tr></tbody>
+      </table>
+      <h3>Mã lỗi — L7 Sức khỏe gia đình</h3>
+      <table>
+        <thead><tr><th>Mã</th><th>HTTP</th><th>Thông báo (VI)</th><th>Khi nào</th></tr></thead>
+        <tbody><tr><td><code>E-HEALTH-001</code></td><td>500</td><td>Lỗi hồ sơ y tế</td><td>DB / API</td></tr><tr><td><code>E-RLS-001</code></td><td>403</td><td>Dữ liệu nhạy cảm</td><td>RLS health_*</td></tr></tbody>
+      </table>
+      <p><strong>UC tham chiếu (SRS 4A):</strong> UC-06.01 … UC-06.05</p>
+
+
+      <h2>LUỒNG 8: Thực phẩm & Tủ lạnh</h2>
+      <p><strong>Mục đích:</strong> Quản lý hạn sử dụng thực phẩm, gợi ý danh sách mua khi sắp hết hoặc hết hạn.</p>
+      <table>
+        <thead><tr><th>Trạng thái</th><th>Điều kiện</th><th>Hiển thị</th></tr></thead>
+        <tbody>
+          <tr><td>Bình thường</td><td>expires_on &gt; 3 ngày</td><td>Danh sách /thuc-pham</td></tr>
+          <tr><td>Sắp hết hạn</td><td>≤ 3 ngày</td><td>Badge vàng trên Home</td></tr>
+          <tr><td>Đã hết hạn</td><td>&lt; hôm nay</td><td>Badge đỏ + gợi ý mua sắm</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Nhánh ngoại lệ — L8 Thực phẩm</h3>
+      <table>
+        <thead><tr><th>Mã nhánh</th><th>Tình huống</th><th>Hành vi hệ thống</th><th>Mức độ</th></tr></thead>
+        <tbody><tr><td><strong>A1</strong></td><td>expires_on null</td><td>Không hiển thị badge hết hạn</td><td>Thấp</td></tr><tr><td><strong>A2</strong></td><td>≤ 3 ngày</td><td>Badge vàng Home + /thuc-pham</td><td>Trung bình</td></tr><tr><td><strong>A3</strong></td><td>Đã hết hạn</td><td>Badge đỏ + gợi ý shopping list</td><td>Trung bình</td></tr></tbody>
+      </table>
+      <h3>Mã lỗi — L8 Thực phẩm</h3>
+      <table>
+        <thead><tr><th>Mã</th><th>HTTP</th><th>Thông báo (VI)</th><th>Khi nào</th></tr></thead>
+        <tbody><tr><td><code>E-FOOD-001</code></td><td>500</td><td>Lỗi tủ lạnh</td><td>listFood / upsert fail</td></tr></tbody>
+      </table>
+      <p><strong>UC tham chiếu (SRS 4A):</strong> UC-09.01 … UC-09.05</p>
+
+    </div>
+    <div class="inner-brd-footer">
+      <div class="inner-brd-footer-l">© 2026 UNICOM — Nội bộ</div>
+      <div class="inner-brd-footer-r"><span class="ft-page">Trang 8 / 13</span>UNICOM/BRD-FAMILYOS-001 · v1.2</div>
+    </div>
+  </div>
+
+  <!-- ===== PAGE 7C: FLOWS L9-L15 ===== -->
+  <div class="doc-page">
+    <div class="inner-brd-header">
+      <div class="inner-brd-code">UNICOM/BRD-FAMILYOS-001 · v1.2</div>
+      <div class="inner-brd-right">STOS Family OS — Luồng L9 đến L15</div>
+    </div>
+    <div class="inner-brd-divider"></div>
+    <div class="content-area md-render">
+
+      <h2>LUỒNG 9: Giúp việc — QR Check-in/out</h2>
+      <div class="mermaid">
+        sequenceDiagram
+        actor CV as Chủ hộ
+        participant APP as STOS Family
+        participant DB as maid_attendance
+        CV->>APP: /quan-ly-giup-viec
+        CV->>APP: Quét QR ca làm (native camera)
+        APP->>DB: INSERT check-in + GPS
+        Note over APP,DB: Check-out tương tự, tính giờ làm
+      </div>
+
+      
+      <h3>Nhánh ngoại lệ — L9 Giúp việc QR</h3>
+      <table>
+        <thead><tr><th>Mã nhánh</th><th>Tình huống</th><th>Hành vi hệ thống</th><th>Mức độ</th></tr></thead>
+        <tbody><tr><td><strong>A1</strong></td><td>QR ca hết hạn / sai chữ ký</td><td>E-MAID-001; không ghi attendance</td><td>Trung bình</td></tr><tr><td><strong>A2</strong></td><td>GPS tắt / accuracy thấp</td><td>Cảnh báo; vẫn cho check-in có flag</td><td>Trung bình</td></tr><tr><td><strong>A3</strong></td><td>Check-out khi chưa check-in</td><td>409 conflict</td><td>Thấp</td></tr></tbody>
+      </table>
+      <h3>Mã lỗi — L9 Giúp việc QR</h3>
+      <table>
+        <thead><tr><th>Mã</th><th>HTTP</th><th>Thông báo (VI)</th><th>Khi nào</th></tr></thead>
+        <tbody><tr><td><code>E-MAID-001</code></td><td>400</td><td>QR không hợp lệ</td><td>Token invalid</td></tr><tr><td><code>E-MAID-002</code></td><td>409</td><td>Chưa check-in ca</td><td>Check-out sớm</td></tr></tbody>
+      </table>
+      <p><strong>UC tham chiếu (SRS 4A):</strong> UC-10.01 … UC-10.03</p>
+
+
+      <h2>LUỒNG 10: QR vào ra & Khách đến thăm</h2>
+      <p><strong>Mục đích:</strong> Cư dân tạo mã QR cho khách; bảo vệ xác nhận vào/ra tòa nhà.</p>
+      <table>
+        <thead><tr><th>Bước</th><th>Actor</th><th>Mô tả</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>Cư dân</td><td>Tạo QR tại /qr-vao-ra (thời hạn, số lượt)</td></tr>
+          <tr><td>2</td><td>Bảo vệ</td><td>Quét QR tại cổng → ghi nhận vào</td></tr>
+          <tr><td>3</td><td>Hệ thống</td><td>Thông báo chủ hộ khi khách check-in</td></tr>
+        </tbody>
+      </table>
+
+      
+      <h3>Nhánh ngoại lệ — L10 QR khách & Vào ra</h3>
+      <table>
+        <thead><tr><th>Mã nhánh</th><th>Tình huống</th><th>Hành vi hệ thống</th><th>Mức độ</th></tr></thead>
+        <tbody><tr><td><strong>A1</strong></td><td>QR khách hết hạn</td><td>Yêu cầu tạo mã mới</td><td>Trung bình</td></tr><tr><td><strong>A2</strong></td><td>Vượt số lượt quét</td><td>Chặn vào; thông báo chủ hộ</td><td>Trung bình</td></tr><tr><td><strong>A3</strong></td><td>Guard quét QR lỗi</td><td>Log audit; không mở cổng tự động</td><td>Cao</td></tr></tbody>
+      </table>
+      <h3>Mã lỗi — L10 QR khách & Vào ra</h3>
+      <table>
+        <thead><tr><th>Mã</th><th>HTTP</th><th>Thông báo (VI)</th><th>Khi nào</th></tr></thead>
+        <tbody><tr><td><code>E-SEC-003</code></td><td>400</td><td>Mã QR không hợp lệ</td><td>Payload / expiry</td></tr><tr><td><code>E-SEC-004</code></td><td>410</td><td>Mã QR đã hết hạn</td><td>expires_at</td></tr></tbody>
+      </table>
+      <p><strong>UC tham chiếu (SRS 4A):</strong> UC-11.03, UC-11.04</p>
+
+
+      <h2>LUỒNG 11: Thông báo từ Ban quản lý</h2>
+      <p>BQL phát hành thông báo (web console Phase 2) → cư dân nhận tại <code>/thong-bao</code>, cấu hình loại nhận tại
+        <code>/cai-dat/thong-bao</code>. Trạng thái: chưa đọc / đã đọc.</p>
+
+      
+      <h3>Nhánh ngoại lệ — L11 Thông báo BQL</h3>
+      <table>
+        <thead><tr><th>Mã nhánh</th><th>Tình huống</th><th>Hành vi hệ thống</th><th>Mức độ</th></tr></thead>
+        <tbody><tr><td><strong>A1</strong></td><td>notification_id không thuộc user</td><td>403; không mark read</td><td>Cao</td></tr><tr><td><strong>A2</strong></td><td>User tắt loại trong prefs</td><td>Chỉ in-app; không push</td><td>Thấp</td></tr><tr><td><strong>A3</strong></td><td>Badge unread</td><td>Đồng bộ khi markRead batch</td><td>Thấp</td></tr></tbody>
+      </table>
+      <h3>Mã lỗi — L11 Thông báo BQL</h3>
+      <table>
+        <thead><tr><th>Mã</th><th>HTTP</th><th>Thông báo (VI)</th><th>Khi nào</th></tr></thead>
+        <tbody><tr><td><code>E-NOTI-001</code></td><td>500</td><td>Lỗi thông báo</td><td>listNotifications</td></tr><tr><td><code>E-NOTI-403</code></td><td>403</td><td>Không có quyền</td><td>user_id mismatch</td></tr></tbody>
+      </table>
+      <p><strong>UC tham chiếu (SRS 4A):</strong> UC-12.01 … UC-12.03</p>
+
+
+      <h2>LUỒNG 12: Cộng đồng & Liên hệ dịch vụ</h2>
+      <p>Diễn đàn <code>/cong-dong</code>, gửi yêu cầu BQL <code>/lien-he</code>, dịch vụ mở rộng <code>/dich-vu</code>.
+        Mọi ticket lưu <code>service_requests</code> với trạng thái open → in_progress → resolved.</p>
+
+
+      <h3>Nhánh ngoại lệ — L12 Cộng đồng & Dịch vụ</h3>
+      <table>
+        <thead><tr><th>Mã nhánh</th><th>Tình huống</th><th>Hành vi hệ thống</th><th>Mức độ</th></tr></thead>
+        <tbody><tr><td><strong>A1</strong></td><td>Validation form (message ngắn)</td><td>E-COM-001 inline</td><td>Thấp</td></tr><tr><td><strong>A2</strong></td><td>Ticket đã resolved</td><td>Chỉ đọc; không reply</td><td>Thấp</td></tr><tr><td><strong>A3</strong></td><td>Spam — Phase 2</td><td>Rate limit theo user</td><td>Trung bình</td></tr></tbody>
+      </table>
+      <h3>Mã lỗi — L12 Cộng đồng & Dịch vụ</h3>
+      <table>
+        <thead><tr><th>Mã</th><th>HTTP</th><th>Thông báo (VI)</th><th>Khi nào</th></tr></thead>
+        <tbody><tr><td><code>E-COM-001</code></td><td>500</td><td>Gửi thất bại</td><td>service_requests insert</td></tr></tbody>
+      </table>
+      <p><strong>UC tham chiếu (SRS 4A):</strong> UC-13.01 … UC-13.04</p>
+
+
+            <hr />
+
+      <h2>LUỒNG 13: Guard — Check-in ca trực (GPS)</h2>
+      <div class="mermaid">
+        sequenceDiagram
+        actor BV as Bảo vệ
+        participant GU as STOS Guard
+        participant DB as shifts
+        BV->>GU: /guard/check-in
+        GU->>GU: Lấy GPS (Capacitor)
+        GU->>DB: Ghi nhận ca trực + tọa độ
+        alt Ngoài geofence tòa nhà
+          GU-->>BV: Cảnh báo — cần xác nhận supervisor
+        end
+      </div>
+
+      
+      <h3>Nhánh ngoại lệ — L13 Guard Check-in GPS</h3>
+      <table>
+        <thead><tr><th>Mã nhánh</th><th>Tình huống</th><th>Hành vi hệ thống</th><th>Mức độ</th></tr></thead>
+        <tbody><tr><td><strong>A1</strong></td><td>Ngoài geofence tòa nhà</td><td>E-GUARD-003; yêu cầu supervisor override</td><td>Cao</td></tr><tr><td><strong>A2</strong></td><td>Đã check-in ca hiện tại</td><td>E-GUARD-002; hiển thị ca đang mở</td><td>Trung bình</td></tr><tr><td><strong>A3</strong></td><td>JWT hết hạn</td><td>Redirect login Guard</td><td>Cao</td></tr></tbody>
+      </table>
+      <h3>Mã lỗi — L13 Guard Check-in GPS</h3>
+      <table>
+        <thead><tr><th>Mã</th><th>HTTP</th><th>Thông báo (VI)</th><th>Khi nào</th></tr></thead>
+        <tbody><tr><td><code>E-GUARD-001</code></td><td>401</td><td>Phiên đăng nhập hết hạn</td><td>JWT</td></tr><tr><td><code>E-GUARD-002</code></td><td>409</td><td>Ca trực đã check-in</td><td>Duplicate shift</td></tr><tr><td><code>E-GUARD-003</code></td><td>422</td><td>Ngoài phạm vi tòa nhà</td><td>Geofence</td></tr></tbody>
+      </table>
+      <p><strong>UC tham chiếu (SRS 4A):</strong> UC-14.02, UC-14.03</p>
+
+
+      <h2>LUỒNG 14: Guard — Xử lý SOS (chi tiết)</h2>
+      <p>Bổ sung cho L1 từ góc nhìn bảo vệ: Realtime subscription <code>security_requests</code>, timeline
+        <code>sos_events</code>, ticket <code>SOS-YYMMDD-XXXX</code>.</p>
+      <div class="mermaid">
+        sequenceDiagram
+        actor BV as Bảo vệ
+        participant GU as STOS Guard
+        participant BE as Supabase
+        participant FA as STOS Family
+        BE->>GU: Push SOS + apartment
+        BV->>GU: Nhận đơn — in_progress
+        GU->>BE: PATCH + INSERT sos_events
+        BE-->>FA: Realtime status
+        BV->>GU: Hoàn tất — resolved
+      </div>
+      <table>
+        <thead><tr><th>status</th><th>Ý nghĩa</th><th>Ai chuyển</th></tr></thead>
+        <tbody>
+          <tr><td>open</td><td>Mới tạo</td><td>Hệ thống</td></tr>
+          <tr><td>in_progress</td><td>Bảo vệ đang xử lý</td><td>Guard</td></tr>
+          <tr><td>resolved</td><td>Hoàn tất</td><td>Guard</td></tr>
+          <tr><td>cancelled</td><td>Cư dân hủy (trước khi xử lý)</td><td>Family</td></tr>
+        </tbody>
+      </table>
+
+      
+      <h3>Nhánh ngoại lệ — L14 Guard Xử lý SOS</h3>
+      <table>
+        <thead><tr><th>Mã nhánh</th><th>Tình huống</th><th>Hành vi hệ thống</th><th>Mức độ</th></tr></thead>
+        <tbody><tr><td><strong>A1</strong></td><td>PATCH khi không phải ca / assignee</td><td>403; audit denied</td><td>Cao</td></tr><tr><td><strong>A2</strong></td><td>SLA > 5 phút chưa in_progress</td><td>Escalate supervisor dashboard</td><td>Cao</td></tr><tr><td><strong>A3</strong></td><td>Chuyển status không hợp lệ</td><td>409; giữ nguyên state machine</td><td>Trung bình</td></tr><tr><td><strong>A4</strong></td><td>Realtime disconnect</td><td>Polling fallback 10s</td><td>Trung bình</td></tr></tbody>
+      </table>
+      <h3>Mã lỗi — L14 Guard Xử lý SOS</h3>
+      <table>
+        <thead><tr><th>Mã</th><th>HTTP</th><th>Thông báo (VI)</th><th>Khi nào</th></tr></thead>
+        <tbody><tr><td><code>E-GUARD-001</code></td><td>401</td><td>Phiên hết hạn</td><td>JWT</td></tr><tr><td><code>E-GUARD-004</code></td><td>409</td><td>Trạng thái không hợp lệ</td><td>Illegal transition</td></tr><tr><td><code>E-SEC-001</code></td><td>500</td><td>Cập nhật SOS thất bại</td><td>PATCH fail</td></tr></tbody>
+      </table>
+      <p><strong>UC tham chiếu (SRS 4A):</strong> UC-14.04, UC-14.05, UC-14.07</p>
+
+
+      <h2>LUỒNG 15: Guard — Tuần tra điểm QR</h2>
+      <p>Bảo vệ thực hiện lộ trình tuần tra: quét QR từng điểm → <code>patrol_checkpoints</code> + ảnh chứng minh (tùy chọn).
+        Ca trước bàn giao đơn dở cho ca sau (Phase 2).</p>
+
+
+      <h3>Nhánh ngoại lệ — L15 Guard Tuần tra QR</h3>
+      <table>
+        <thead><tr><th>Mã nhánh</th><th>Tình huống</th><th>Hành vi hệ thống</th><th>Mức độ</th></tr></thead>
+        <tbody><tr><td><strong>A1</strong></td><td>QR checkpoint không thuộc route</td><td>E-GUARD-005; log cảnh báo</td><td>Trung bình</td></tr><tr><td><strong>A2</strong></td><td>Quét trùng điểm trong ca</td><td>Idempotent — cập nhật timestamp</td><td>Thấp</td></tr><tr><td><strong>A3</strong></td><td>Chưa check-in ca</td><td>Redirect L13 trước</td><td>Trung bình</td></tr><tr><td><strong>A4</strong></td><td>Ảnh chứng minh bắt buộc — Phase 2</td><td>Block complete nếu thiếu ảnh</td><td>Thấp</td></tr></tbody>
+      </table>
+      <h3>Mã lỗi — L15 Guard Tuần tra QR</h3>
+      <table>
+        <thead><tr><th>Mã</th><th>HTTP</th><th>Thông báo (VI)</th><th>Khi nào</th></tr></thead>
+        <tbody><tr><td><code>E-GUARD-005</code></td><td>400</td><td>Điểm tuần tra không hợp lệ</td><td>checkpoint_id</td></tr><tr><td><code>E-GUARD-001</code></td><td>401</td><td>Phiên hết hạn</td><td>JWT</td></tr></tbody>
+      </table>
+      <p><strong>UC tham chiếu (SRS 4A):</strong> UC-14.06</p>
+
+
+    </div>
+    <div class="inner-brd-footer">
+      <div class="inner-brd-footer-l">© 2026 UNICOM — Nội bộ</div>
+      <div class="inner-brd-footer-r"><span class="ft-page">Trang 9 / 13</span>UNICOM/BRD-FAMILYOS-001 · v1.2</div>
+    </div>
+  </div>
+
+  <!-- ===== PAGE 7D: FLOW ERRORS INDEX ===== -->
+  <div class="doc-page">
+    <div class="inner-brd-header">
+      <div class="inner-brd-code">UNICOM/BRD-FAMILYOS-001 · v1.2</div>
+      <div class="inner-brd-right">STOS Family OS — Mã lỗi &amp; Ngoại lệ (L0–L15)</div>
+    </div>
+    <div class="inner-brd-divider"></div>
+    <div class="content-area md-render">
+
+      <h1>6.5. Bảng tra cứu mã lỗi theo luồng (TASMOS-level)</h1>
+      <p>Phụ lục tổng hợp phục vụ UAT, QA và đối soát với SRS mục 4A (68 UC). Chi tiết nhánh xử lý nằm ngay sau từng
+        luồng ở mục 6.</p>
+
+      <table>
+        <thead>
+          <tr><th>Luồng</th><th>Prefix mã lỗi</th><th>Số nhánh ngoại lệ</th><th>SLA / Ghi chú</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>L0</td><td>E-AUTH-*, E-RLS-001</td><td>5</td><td>Login P95 &lt; 2s</td></tr>
+          <tr><td>L1</td><td>E-SEC-*, E-RLS-001</td><td>5</td><td>Push &lt; 5s; Realtime Family</td></tr>
+          <tr><td>L2</td><td>E-EXP-*, E-EXP-OCR</td><td>5</td><td>OCR ≥ 80% mẫu UAT</td></tr>
+          <tr><td>L3</td><td>E-MEM-*</td><td>4</td><td>Storage private bucket</td></tr>
+          <tr><td>L4</td><td>E-EVT-*</td><td>4</td><td>Timezone VN</td></tr>
+          <tr><td>L5</td><td>E-ELD-*</td><td>4</td><td>Trễ thuốc 30'</td></tr>
+          <tr><td>L6</td><td>E-CHILD-*</td><td>3</td><td>Parallel fetch</td></tr>
+          <tr><td>L7</td><td>E-HEALTH-*</td><td>3</td><td>RLS nhạy cảm</td></tr>
+          <tr><td>L8</td><td>E-FOOD-*</td><td>3</td><td>Badge ≤3 ngày</td></tr>
+          <tr><td>L9</td><td>E-MAID-*</td><td>3</td><td>GPS log</td></tr>
+          <tr><td>L10</td><td>E-SEC-003/004</td><td>3</td><td>QR expiry</td></tr>
+          <tr><td>L11</td><td>E-NOTI-*</td><td>3</td><td>Per-user inbox</td></tr>
+          <tr><td>L12</td><td>E-COM-*</td><td>3</td><td>Ticket lifecycle</td></tr>
+          <tr><td>L13–L15</td><td>E-GUARD-*</td><td>3–4 mỗi luồng</td><td>Geofence + SOS SLA</td></tr>
+        </tbody>
+      </table>
+
+      <h2>Ma trận trạng thái SOS (L1 / L14)</h2>
+      <table>
+        <thead><tr><th>status</th><th>Cho phép chuyển sang</th><th>Actor</th></tr></thead>
+        <tbody>
+          <tr><td>open</td><td>in_progress, cancelled</td><td>Guard / Cư dân (hủy)</td></tr>
+          <tr><td>in_progress</td><td>resolved</td><td>Guard assigned</td></tr>
+          <tr><td>resolved</td><td>— (terminal)</td><td>Guard</td></tr>
+          <tr><td>cancelled</td><td>— (terminal)</td><td>Cư dân</td></tr>
+        </tbody>
+      </table>
+
+      <p><strong>E-SYS-500:</strong> Lỗi hệ thống chung — toast "Đã có lỗi, vui lòng thử lại"; ghi log Sentry/observability.</p>
+
+    </div>
+    <div class="inner-brd-footer">
+      <div class="inner-brd-footer-l">© 2026 UNICOM — Nội bộ</div>
+      <div class="inner-brd-footer-r"><span class="ft-page">Trang 10 / 13</span>UNICOM/BRD-FAMILYOS-001 · v1.2</div>
+    </div>
+  </div>
+
+  <!-- ===== PAGE 8: SCOPE + NFR ===== -->
+  <div class="doc-page">
+    <div class="inner-brd-header">
+      <div class="inner-brd-code">UNICOM/BRD-FAMILYOS-001 · v1.2</div>
+      <div class="inner-brd-right">STOS Family OS — Phạm vi & Yêu cầu phi chức năng</div>
+    </div>
+    <div class="inner-brd-divider"></div>
+    <div class="content-area md-render">
+
+      <h1>7. Phạm vi hệ thống</h1>
+
+      <h2>7.1. Trong phạm vi (In Scope)</h2>
+
+      <ul>
+        <li>STOS Family App cho iOS (≥14) và Android (≥7)</li>
+        <li>STOS Guard App cho iOS và Android</li>
+        <li>Backend Supabase: Auth, PostgreSQL với RLS, Realtime, Edge Functions</li>
+        <li>Push Notifications qua FCM (Android) và APNs (iOS)</li>
+        <li>Camera tích hợp native: chụp ảnh, chọn từ thư viện (@capacitor/camera)</li>
+        <li>AI OCR quét hóa đơn (OpenAI Vision qua Supabase Edge Function)</li>
+        <li>Observability: log ingest, health check cron, metrics aggregate</li>
+        <li>CI/CD GitHub Actions: tự động build APK + IPA khi tag phiên bản</li>
+        <li>Monorepo: shared-ui, shared-supabase, shared-utils packages</li>
+      </ul>
+
+      <h2>7.2. Ngoài phạm vi (Out of Scope)</h2>
+
+      <ul>
+        <li>Admin BQL web console (consult, bql.*, saas.* routes)</li>
+        <li>Cổng thanh toán trực tuyến (phí dịch vụ tòa nhà)</li>
+        <li>Tích hợp camera CCTV vật lý</li>
+        <li>Web app (chỉ mobile native Capacitor)</li>
+        <li>Biometric authentication (dự kiến Phase 2)</li>
+        <li>Tích hợp bên thứ ba (Zalo OA, Viber, ChatGPT)</li>
+      </ul>
+
+      <hr />
+
+      <h1>8. Yêu cầu phi chức năng</h1>
+
+      <h2>8.1. Hiệu năng</h2>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Tiêu chí</th>
+            <th>Yêu cầu</th>
+            <th>Đo lường</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>App cold start</td>
+            <td>&lt; 2 giây</td>
+            <td>Time to First Meaningful Paint</td>
+          </tr>
+          <tr>
+            <td>API response time</td>
+            <td>&lt; 500ms (p95)</td>
+            <td>Supabase query logs</td>
+          </tr>
+          <tr>
+            <td>SOS Push Notification</td>
+            <td>&lt; 5 giây từ lúc gửi</td>
+            <td>FCM/APNs delivery report</td>
+          </tr>
+          <tr>
+            <td>Uptime</td>
+            <td>≥ 99.5%/tháng</td>
+            <td>health-check cron mỗi 1 phút</td>
+          </tr>
+          <tr>
+            <td>Bundle size</td>
+            <td>&lt; 50MB APK / &lt; 100MB IPA</td>
+            <td>Gradle + Xcode build output</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2>8.2. Bảo mật</h2>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Tiêu chí</th>
+            <th>Yêu cầu</th>
+            <th>Trạng thái</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Session storage</td>
+            <td>@capacitor/preferences (không dùng localStorage)</td>
+            <td>✅ Implemented</td>
+          </tr>
+          <tr>
+            <td>RLS trên tất cả bảng DB</td>
+            <td>Policy is_family_member() cho mỗi bảng</td>
+            <td>✅ Implemented</td>
+          </tr>
+          <tr>
+            <td>Deep link auth</td>
+            <td>vn.unicom.stos.family://auth</td>
+            <td>✅ Implemented</td>
+          </tr>
+          <tr>
+            <td>JWT Edge Functions</td>
+            <td>verify_jwt = true trong config.toml</td>
+            <td>⚠️ Phase 1</td>
+          </tr>
+          <tr>
+            <td>No console.log production</td>
+            <td>Vite esbuild.drop: ['console']</td>
+            <td>⚠️ Phase 1</td>
+          </tr>
+          <tr>
+            <td>Biometric auth</td>
+            <td>@capacitor-community/biometric-auth</td>
+            <td>📌 Phase 2</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2>8.3. Trải nghiệm người dùng (UX)</h2>
+
+      <ul>
+        <li><strong>Dark mode mặc định</strong> với CSS variables token, hỗ trợ light mode qua useTheme hook</li>
+        <li><strong>Toast feedback</strong> bắt buộc cho mọi action (loading, success, error)</li>
+        <li><strong>Touch target tối thiểu</strong> 44×44px, aria-label bằng tiếng Việt</li>
+        <li><strong>Native UI</strong> cho dropdown: dùng HTML &lt;select&gt; native để tránh z-index conflict trên
+          Capacitor WebView</li>
+        <li><strong>Back navigation</strong> rõ ràng — màn hình con luôn back về đúng màn cha</li>
+      </ul>
+
+    </div>
+    <div class="inner-brd-footer">
+      <div class="inner-brd-footer-l">© 2026 UNICOM — Nội bộ</div>
+      <div class="inner-brd-footer-r"><span class="ft-page">Trang 11 / 13</span>UNICOM/BRD-FAMILYOS-001 · v1.2</div>
+    </div>
+  </div>
+
+  <!-- ===== PAGE 9: RISKS + ROADMAP ===== -->
+  <div class="doc-page">
+    <div class="inner-brd-header">
+      <div class="inner-brd-code">UNICOM/BRD-FAMILYOS-001 · v1.2</div>
+      <div class="inner-brd-right">STOS Family OS — Rủi ro & Lộ trình</div>
+    </div>
+    <div class="inner-brd-divider"></div>
+    <div class="content-area md-render">
+
+      <h1>9. Ma trận rủi ro</h1>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Rủi ro</th>
+            <th>Xác suất</th>
+            <th>Tác động</th>
+            <th>Biện pháp giảm thiểu</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>App Store từ chối do thiếu usage description cho Camera/Photos</td>
+            <td>Trung bình</td>
+            <td>Cao</td>
+            <td>Review App Store guidelines sớm, thêm NSPhotoLibraryUsageDescription đầy đủ</td>
+          </tr>
+          <tr>
+            <td>Supabase downtime ảnh hưởng đến luồng SOS</td>
+            <td>Thấp</td>
+            <td>Rất cao</td>
+            <td>Retry queue, xem xét fallback SMS cho SOS khẩn cấp phase 2</td>
+          </tr>
+          <tr>
+            <td>OCR AI chất lượng thấp với hóa đơn in mờ</td>
+            <td>Trung bình</td>
+            <td>Thấp</td>
+            <td>Fallback nhập tay; cải thiện prompt, thêm preprocessing ảnh</td>
+          </tr>
+          <tr>
+            <td>Adopt rate cư dân thấp trong 3 tháng đầu</td>
+            <td>Trung bình</td>
+            <td>Cao</td>
+            <td>Onboarding tour, push notification thông minh, training BQL</td>
+          </tr>
+          <tr>
+            <td>Push notification iOS không đến do APNs cert hết hạn</td>
+            <td>Thấp</td>
+            <td>Cao</td>
+            <td>Sentry alert + GitHub Actions auto-renew cert</td>
+          </tr>
+          <tr>
+            <td>RLS bị bypass do logic sai trong helper functions</td>
+            <td>Rất thấp</td>
+            <td>Rất cao</td>
+            <td>Integration test RLS trong CI, supabase test db với seed data</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <hr />
+
+      <h1>10. Lộ trình triển khai</h1>
+
+      <div class="mermaid">
+        gantt
+        title Lộ trình STOS Family OS 2026-2027
+        dateFormat YYYY-MM
+        axisFormat %m/%Y
+        section Phase 0 — Foundation
+        Monorepo + DB Schema + Auth :done, 2026-03, 2026-04
+        Capacitor native setup :done, 2026-04, 2026-05
+        CI/CD + Shared UI Library :done, 2026-05, 2026-05
+        section Phase 1 — MVP Core
+        30 màn hình hoàn chỉnh :active, 2026-05, 2026-06
+        Camera + OCR tích hợp :active, 2026-06, 2026-06
+        APK Release + iOS TestFlight :2026-06, 2026-07
+        section Phase 2 — Real-time & AI
+        Supabase Realtime SOS :2026-07, 2026-09
+        Edge Functions deploy đầy đủ :2026-07, 2026-08
+        AI gợi ý chi tiêu thông minh :2026-09, 2026-10
+        section Phase 3 — Hardening
+        Biometric Auth + Auto-logout :2026-10, 2026-11
+        Certificate pinning :2026-11, 2026-12
+        Coverage ≥80% + RLS CI tests :2026-12, 2027-01
+        section Phase 4 — Scale
+        Multi-tenant 10 tòa nhà :2027-01, 2027-06
+        PDPA/GDPR export, marketplace :2027-04, 2027-12
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Phase</th>
+            <th>Thời gian</th>
+            <th>Nội dung chính</th>
+            <th>Deliverable</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Phase 0</strong></td>
+            <td>Q1–Q2 2026</td>
+            <td>Monorepo, DB schema, Auth, Capacitor, CI/CD</td>
+            <td>✅ Hoàn thành</td>
+          </tr>
+          <tr>
+            <td><strong>Phase 1</strong></td>
+            <td>Q2 2026</td>
+            <td>30 màn hình MVP, Camera tích hợp, APK Release</td>
+            <td>🔄 Đang thực hiện</td>
+          </tr>
+          <tr>
+            <td><strong>Phase 2</strong></td>
+            <td>Q3 2026</td>
+            <td>Realtime, Edge Functions đầy đủ, AI gợi ý</td>
+            <td>📌 Kế hoạch</td>
+          </tr>
+          <tr>
+            <td><strong>Phase 3</strong></td>
+            <td>Q4 2026</td>
+            <td>Security hardening, Biometric, RLS CI tests</td>
+            <td>📌 Kế hoạch</td>
+          </tr>
+          <tr>
+            <td><strong>Phase 4</strong></td>
+            <td>2027</td>
+            <td>Multi-tenant, 10 tòa nhà, Marketplace</td>
+            <td>📌 Kế hoạch</td>
+          </tr>
+        </tbody>
+      </table>
+
+    </div>
+    <div class="inner-brd-footer">
+      <div class="inner-brd-footer-l">© 2026 UNICOM — Nội bộ</div>
+      <div class="inner-brd-footer-r"><span class="ft-page">Trang 12 / 13</span>UNICOM/BRD-FAMILYOS-001 · v1.2</div>
+    </div>
+  </div>
+
+  <!-- ===== PAGE 10: GLOSSARY + APPROVAL ===== -->
+  <div class="doc-page">
+    <div class="inner-brd-header">
+      <div class="inner-brd-code">UNICOM/BRD-FAMILYOS-001 · v1.2</div>
+      <div class="inner-brd-right">STOS Family OS — Thuật ngữ & Phê duyệt</div>
+    </div>
+    <div class="inner-brd-divider"></div>
+    <div class="content-area md-render">
+
+      <h1>11. Bảng thuật ngữ</h1>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Thuật ngữ</th>
+            <th>Giải thích đầy đủ</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>STOS</strong></td>
+            <td>Smart Township Operating System — Hệ điều hành đô thị thông minh</td>
+          </tr>
+          <tr>
+            <td><strong>BQL</strong></td>
+            <td>Ban Quản lý tòa nhà</td>
+          </tr>
+          <tr>
+            <td><strong>RLS</strong></td>
+            <td>Row Level Security — Bảo mật dữ liệu cấp hàng trong PostgreSQL/Supabase. Đảm bảo gia đình A không đọc
+              được dữ liệu gia đình B.</td>
+          </tr>
+          <tr>
+            <td><strong>SOS</strong></td>
+            <td>Save Our Souls — Tín hiệu cầu cứu khẩn cấp từ cư dân đến bảo vệ</td>
+          </tr>
+          <tr>
+            <td><strong>OCR</strong></td>
+            <td>Optical Character Recognition — Nhận diện ký tự quang học, dùng để đọc hóa đơn tự động</td>
+          </tr>
+          <tr>
+            <td><strong>Capacitor</strong></td>
+            <td>Framework của Ionic giúp build web app (React) thành native iOS/Android</td>
+          </tr>
+          <tr>
+            <td><strong>APK</strong></td>
+            <td>Android Package Kit — file cài đặt ứng dụng trên Android</td>
+          </tr>
+          <tr>
+            <td><strong>IPA</strong></td>
+            <td>iOS App Archive — file phân phối ứng dụng iOS</td>
+          </tr>
+          <tr>
+            <td><strong>FCM</strong></td>
+            <td>Firebase Cloud Messaging — dịch vụ push notification của Google cho Android</td>
+          </tr>
+          <tr>
+            <td><strong>APNs</strong></td>
+            <td>Apple Push Notification service — dịch vụ push notification của Apple cho iOS</td>
+          </tr>
+          <tr>
+            <td><strong>JWT</strong></td>
+            <td>JSON Web Token — Token xác thực stateless dùng trong Supabase Auth</td>
+          </tr>
+          <tr>
+            <td><strong>RBAC</strong></td>
+            <td>Role-Based Access Control — Phân quyền theo vai trò (family_owner, family_member, security_guard,
+              security_supervisor)</td>
+          </tr>
+          <tr>
+            <td><strong>PDPA</strong></td>
+            <td>Personal Data Protection Act — Luật bảo vệ dữ liệu cá nhân Việt Nam/ASEAN</td>
+          </tr>
+          <tr>
+            <td><strong>Edge Function</strong></td>
+            <td>Hàm serverless chạy trên Deno trong Supabase, dùng cho AI OCR, log ingest, health check</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <hr />
+
+      <h1>12. Phê duyệt tài liệu</h1>
+
+      <blockquote>
+        Tài liệu này đã được soát xét và phê duyệt bởi các bên liên quan dưới đây. Mọi thay đổi nội dung sau khi ký
+        duyệt cần được ghi nhận trong Lịch sử thay đổi và ký lại.
+      </blockquote>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Vai trò</th>
+            <th>Họ và tên</th>
+            <th>Chữ ký</th>
+            <th>Ngày ký</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Product Owner</td>
+            <td>
+              &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+            </td>
+            <td>
+              &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+            </td>
+            <td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
+          </tr>
+          <tr>
+            <td>Tech Lead</td>
+            <td>&nbsp;</td>
+            <td>&nbsp;</td>
+            <td>&nbsp;</td>
+          </tr>
+          <tr>
+            <td>QA Lead</td>
+            <td>&nbsp;</td>
+            <td>&nbsp;</td>
+            <td>&nbsp;</td>
+          </tr>
+          <tr>
+            <td>Legal/Compliance</td>
+            <td>&nbsp;</td>
+            <td>&nbsp;</td>
+            <td>&nbsp;</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2>Lịch sử thay đổi</h2>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Phiên bản</th>
+            <th>Ngày</th>
+            <th>Người thực hiện</th>
+            <th>Nội dung thay đổi</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>v1.2</td>
+            <td>04/06/2026</td>
+            <td>UNICOM Engineering</td>
+            <td>Bổ sung mục 6.5 + nhánh ngoại lệ &amp; mã lỗi cho L0–L15 (đồng bộ SRS 68 UC)</td>
+          </tr>
+          <tr>
+            <td>v1.1</td>
+            <td>04/06/2026</td>
+            <td>UNICOM Engineering</td>
+            <td>Bổ sung 16 luồng nghiệp vụ chi tiết (L0–L15), bảng ánh xạ module, 2 trang luồng Guard &amp; gia đình</td>
+          </tr>
+          <tr>
+            <td>v1.0</td>
+            <td>04/06/2026</td>
+            <td>UNICOM Engineering</td>
+            <td>Tài liệu khởi tạo ban đầu — tổng hợp từ phân tích codebase</td>
+          </tr>
+        </tbody>
+      </table>
+
+    </div>
+    <div class="inner-brd-footer">
+      <div class="inner-brd-footer-l">© 2026 UNICOM — Nội bộ</div>
+      <div class="inner-brd-footer-r"><span class="ft-page">Trang 13 / 13</span>UNICOM/BRD-FAMILYOS-001 · v1.2</div>
+    </div>
+  </div>
+
+</body>
+
+</html>

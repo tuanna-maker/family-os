@@ -1,9 +1,10 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { MobileShell } from "@/components/mobile/MobileShell";
 import { PageHeader } from "@/components/common/PageHeader";
 import { RoundedCard } from "@/components/common/RoundedCard";
-import { family } from "@/features/family-core";
 import { useAuth } from "@/hooks/use-auth";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Bell,
   Globe,
@@ -38,24 +39,64 @@ const SETTINGS: SettingItem[] = [
 ];
 
 function AccountPage() {
-  const { signOut } = useAuth();
+  const { user, signOut } = useAuth();
   const navigate = useNavigate();
+
+  const { data: profile } = useQuery({
+    queryKey: ["profile", user?.id],
+    enabled: !!user?.id,
+    staleTime: 5 * 60_000,
+    gcTime: 30 * 60_000,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("full_name, username, email, apartment_no, building_name, avatar_url")
+        .eq("id", user!.id)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+
   const handleSignOut = async () => {
     await signOut();
     navigate({ to: "/login" });
   };
+
+  const displayName =
+    profile?.full_name?.trim() ||
+    profile?.username?.trim() ||
+    (user?.user_metadata?.full_name as string | undefined)?.trim() ||
+    user?.email?.split("@")[0] ||
+    "Người dùng";
+  const initial = displayName.charAt(0).toUpperCase();
+  const apartmentLine = [profile?.apartment_no, profile?.building_name]
+    .filter(Boolean)
+    .join(", ");
+  const subtitle = apartmentLine || profile?.email || user?.email || "";
+
   return (
     <MobileShell>
       <PageHeader title="Tài khoản" back={false} />
 
       <section className="px-4">
         <RoundedCard className="flex items-center gap-4">
-          <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-brand to-pink grid place-items-center text-3xl shrink-0">
-            👩🏻
+          <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-brand to-pink grid place-items-center text-2xl font-semibold text-white shrink-0 overflow-hidden">
+            {profile?.avatar_url ? (
+              <img
+                src={profile.avatar_url}
+                alt={displayName}
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              initial
+            )}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-base font-semibold">Mẹ Linh</p>
-            <p className="text-xs text-muted-foreground truncate">{family.apartment}</p>
+            <p className="text-base font-semibold truncate">{displayName}</p>
+            {subtitle && (
+              <p className="text-xs text-muted-foreground truncate">{subtitle}</p>
+            )}
             <p className="text-[11px] text-brand font-medium mt-1">Chủ hộ • Premium</p>
           </div>
         </RoundedCard>

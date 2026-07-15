@@ -10,6 +10,7 @@ import {
 import { useEffect, type ReactNode } from "react";
 import { toast, Toaster } from "sonner";
 import { AuthProvider } from "@/hooks/use-auth";
+
 import { EasyReadProvider } from "@/hooks/use-easy-read";
 import { ThemeProvider } from "@/hooks/use-theme";
 import { MockAuthProvider } from "@/contexts/MockAuthContext";
@@ -138,18 +139,15 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   head: () => ({
     meta: [
       { charSet: "utf-8" },
-      {
-        name: "viewport",
-        content: "width=device-width, initial-scale=1, viewport-fit=cover",
-      },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { name: "viewport", content: "width=device-width, initial-scale=1" },
+      { title: "STOS - Hệ điều hành chung cư" },
+      { name: "description", content: "Hệ điều hành chung cư" },
+      { name: "author", content: "STOS" },
+      { property: "og:title", content: "STOS - Hệ điều hành chung cư" },
+      { property: "og:description", content: "Hệ điều hành chung cư" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:site", content: "@STOS" },
     ],
     links: [{ rel: "stylesheet", href: appCss }],
   }),
@@ -159,11 +157,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   errorComponent: ErrorComponent,
 });
 
+const THEME_INIT_SCRIPT = `(function(){try{var t=localStorage.getItem('ui:theme');if(t!=='light'&&t!=='dark'){t=window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark';}var r=document.documentElement;r.classList.remove('light','dark');r.classList.add(t);r.style.colorScheme=t;}catch(e){document.documentElement.classList.add('dark');}})();`;
+
 function RootShell({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <head>
         <HeadContent />
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>
       <body>
         {children}
@@ -227,6 +228,7 @@ function RootComponent() {
                 <Outlet />
                 <RouterErrorWatcher />
                 <Toaster richColors closeButton position="top-center" />
+                
               </EasyReadProvider>
             </ThemeProvider>
           </TenantProvider>
