@@ -2,6 +2,7 @@ import { z } from "zod";
 import { requireUser } from "@shared/supabase/auth";
 import { getSupabase } from "@shared/supabase/get-client";
 import { sosDispatchSchema, SOS_SCHEMA_VERSION } from "@/features/security-ops/dashboard/sosSchema";
+import { firePushDispatch } from "@shared/supabase/push";
 
 export type SecurityRequest = {
   id: string;
@@ -269,12 +270,12 @@ export async function updateSecurityRequest(
     }),
   ]);
 
-  const unitParts = [prev.apartment, prev.building].filter(Boolean);
+  const unitParts = [prev?.apartment, prev?.building].filter(Boolean);
   return {
     ok: true,
     id: data.id,
     status: data.status,
-    request_type: prev.request_type as string,
+    request_type: prev?.request_type as string,
     unit_label: unitParts.length ? unitParts.join(" · ") : "Cư dân",
   };
 }
