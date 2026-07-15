@@ -6,7 +6,7 @@ import {
   shouldPresentFamilyOsNotification,
 } from "@mobile/lib/family-notification-present-state";
 import { presentFamilyNotificationRow } from "@mobile/lib/present-family-notification";
-import { shouldPresentOsNotification } from "@mobile/lib/notification-os";
+import { isScheduledReminderPushType, shouldPresentOsNotification } from "@mobile/lib/notification-os";
 import { shouldSkipLocalOsSecurityStatusNotification } from "@shared/utils/security-status-notify";
 import {
   markFamilyChatMessageNotified,
@@ -163,6 +163,11 @@ export async function pullAndPresentFamilyNotifications(): Promise<boolean> {
   if (fresh.length === 0) return false;
 
   for (const row of fresh) {
+    // Nhắc thuốc / việc con: foreground dùng realtime; background dùng FCM — tránh bắn OS 2–3 lần.
+    if (isScheduledReminderPushType(row.type)) {
+      seenIds.add(row.id);
+      continue;
+    }
     if (!(await shouldPresentFamilyOsNotification(row))) {
       seenIds.add(row.id);
       continue;
@@ -175,7 +180,6 @@ export async function pullAndPresentFamilyNotifications(): Promise<boolean> {
     }
 
     await presentFamilyNotificationRow(row);
-    await markFamilyOsNotificationPresented(row);
     seenIds.add(row.id);
   }
   await saveSeenIds(seenIds);

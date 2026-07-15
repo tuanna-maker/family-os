@@ -407,12 +407,7 @@ export function ChildrenCompanionScreen() {
                 )}
               </ScrollView>
 
-              <SectionHead
-                title={ch.aiTitle(childName)}
-                action={ch.seeDetail}
-                onAction={() => router.push(`/con-cai/ai?childId=${activeChildId ?? ""}`)}
-                styles={styles}
-              />
+              <SectionHead title={ch.aiTitle(childName)} styles={styles} />
               <View style={styles.aiCard}>
                 <View style={styles.aiIcon}>
                   <ExpoImage source={aiIcon} style={styles.aiIconImg} contentFit="contain" cachePolicy="memory-disk" />

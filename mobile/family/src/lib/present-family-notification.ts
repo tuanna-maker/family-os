@@ -8,10 +8,11 @@ import {
 } from "@shared/utils/security-status-notify";
 import { getLocaleRef } from "@mobile/i18n/localeRef";
 import {
+  familyOsPresentKey,
   markFamilyOsNotificationPresented,
   shouldPresentFamilyOsNotification,
 } from "@mobile/lib/family-notification-present-state";
-import { notificationChannelForType } from "@mobile/lib/notification-os";
+import { isScheduledReminderPushType, notificationChannelForType } from "@mobile/lib/notification-os";
 import { presentLocalNotification } from "@mobile/lib/push-native";
 import {
   markFamilySecurityStatusSeen,
@@ -94,11 +95,14 @@ export async function presentFamilyNotificationRow(
     return true;
   }
 
+  const osId = isScheduledReminderPushType(row.type)
+    ? `stos-os-${familyOsPresentKey(presentable)}`
+    : `notif-${row.id}`;
   await presentLocalNotification({
     title: row.title || "Thông báo mới",
     body: row.body,
     channelId: notificationChannelForType(row.type),
-    identifier: `notif-${row.id}`,
+    identifier: osId,
     data: { notificationId: row.id, type: row.type },
   });
   await markFamilyOsNotificationPresented(presentable);

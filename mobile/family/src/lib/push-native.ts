@@ -1,4 +1,5 @@
 import { AppState, PermissionsAndroid, Platform } from "react-native";
+import { isScheduledReminderPushType } from "@mobile/lib/notification-os";
 import {
   markOsPushPermissionRequested,
   wasOsPushPermissionRequested,
@@ -122,13 +123,15 @@ async function ensureNotificationHandler() {
         const chatMessageId = typeof data.chatMessageId === "string" ? data.chatMessageId : null;
         if (chatMessageId) await markFamilyChatMessageNotified(chatMessageId);
 
+        const type = typeof data.type === "string" ? data.type : undefined;
         const isChat =
           !!chatMessageId ||
           data.route === "/bao-an/chat" ||
-          data.type === "security.chat";
+          type === "security.chat";
         const isRemote = isRemotePushTrigger(notification.request.trigger);
-        // Chỉ ẩn push từ xa khi app mở — local (trigger null) vẫn hiện banner OS.
-        if (isChat && isRemote && AppState.currentState === "active") return hide;
+        const appActive = AppState.currentState === "active";
+        // Ẩn push trùng: chat + nhắc thuốc/việc con đã hiện qua realtime (foreground) hoặc poll.
+        if (isRemote && appActive && (isChat || isScheduledReminderPushType(type))) return hide;
         return show;
       },
     });

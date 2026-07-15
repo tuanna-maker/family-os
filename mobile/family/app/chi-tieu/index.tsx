@@ -217,17 +217,6 @@ export default function ChiTieuScreen() {
               <Image source={aiIcon} style={styles.aiIconImg} contentFit="contain" cachePolicy="memory-disk" />
             </View>
             <Text style={styles.aiTitle}>{dash.aiTitle}</Text>
-            <Pressable
-              onPress={() =>
-                router.push({
-                  pathname: "/chi-tieu/ai",
-                  params: { year: String(year), month: String(month) },
-                })
-              }
-              hitSlop={8}
-            >
-              <Text style={styles.aiDetail}>{dash.viewDetail} ›</Text>
-            </Pressable>
           </View>
           {insights.map((line, i) => (
             <Text key={i} style={styles.aiBullet}>

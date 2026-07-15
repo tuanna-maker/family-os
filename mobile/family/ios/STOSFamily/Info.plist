@@ -50,13 +50,13 @@
     <key>RCTPackagerPort</key>
     <integer>8081</integer>
     <key>NSCameraUsageDescription</key>
-    <string>Allow $(PRODUCT_NAME) to access your camera</string>
+    <string>We use the camera to let you take and upload photos (for example, adding a family memory/album photo or uploading an avatar).</string>
     <key>NSFaceIDUsageDescription</key>
     <string>Allow $(PRODUCT_NAME) to access your Face ID biometric data.</string>
     <key>NSMicrophoneUsageDescription</key>
-    <string>Allow $(PRODUCT_NAME) to access your microphone</string>
+    <string>We use the microphone to record and send voice messages to the building security team (for example, describing an emergency or assistance request).</string>
     <key>NSPhotoLibraryUsageDescription</key>
-    <string>Allow $(PRODUCT_NAME) to access your photos</string>
+    <string>We use your photo library to let you select and upload photos (for example, attaching a photo to a family memory/album or setting a profile picture).</string>
     <key>NSUserActivityTypes</key>
     <array>
       <string>$(PRODUCT_BUNDLE_IDENTIFIER).expo.index_route</string>

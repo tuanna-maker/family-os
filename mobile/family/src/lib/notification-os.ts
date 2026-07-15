@@ -1,5 +1,9 @@
 export const OS_PUSH_TYPES = new Set(["medicine", "parent_reminder"]);
 
+export function isScheduledReminderPushType(type: string | undefined) {
+  return !!type && OS_PUSH_TYPES.has(type);
+}
+
 export function isSecurityNotificationType(type: string | undefined) {
   if (!type) return false;
   return type.startsWith("security") || type === "sos";

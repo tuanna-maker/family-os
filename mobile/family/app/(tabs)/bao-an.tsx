@@ -18,7 +18,6 @@ import {
   securityMeta,
   getSecurityServiceCatalog,
   getSecurityServiceGrid,
-  getRequestTypeLabel,
   type SecurityCatalogGroup,
   type SecurityGridItem,
 } from "@mobile/constants/security";
@@ -157,15 +156,12 @@ export default function BaoAnScreen() {
 
   const confirmSos = () => {
     alert.confirm({
-      title: "Gọi SOS khẩn cấp?",
-      message: "Đội bảo an và BQL sẽ được thông báo ngay. Chỉ dùng khi thật sự cần hỗ trợ khẩn.",
-      confirmText: "Gọi SOS",
+      title: sec.sosCall,
+      message: sec.sosTap,
+      confirmText: sec.sosCall,
       destructive: true,
       onConfirm: () => {
-        void trigger("sos", getRequestTypeLabel("sos", locale), {
-          label: "SOS khẩn cấp",
-          submitted_at: new Date().toISOString(),
-        });
+        openPhoneDialer(securityMeta.hotline);
       },
     });
   };
@@ -241,11 +237,7 @@ export default function BaoAnScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: getTabBarBottomInset(insets) }}
       >
-        <Pressable
-          onPress={confirmSos}
-          disabled={pending === "sos"}
-          style={{ marginBottom: 4 }}
-        >
+        <Pressable onPress={confirmSos} style={{ marginBottom: 4 }}>
           <LinearGradient
             colors={[colors.emergency, colors.pink]}
             start={{ x: 0, y: 0 }}
@@ -256,7 +248,7 @@ export default function BaoAnScreen() {
               <Text style={styles.sosEmoji}>🆘</Text>
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={styles.sosTitle}>{pending === "sos" ? sec.sosSending : sec.sosCall}</Text>
+              <Text style={styles.sosTitle}>{sec.sosCall}</Text>
               <Text style={styles.sosSub}>{sec.sosTap}</Text>
             </View>
           </LinearGradient>
