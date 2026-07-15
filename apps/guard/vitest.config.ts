@@ -5,10 +5,13 @@ import viteConfig from "./vite.config";
 
 const dir = path.dirname(fileURLToPath(import.meta.url));
 
-export default mergeConfig(
-  viteConfig,
-  defineConfig({
-    test: {
+export default defineConfig(async (env) => {
+  const resolvedViteConfig = typeof viteConfig === "function" ? await viteConfig(env) : viteConfig;
+
+  return mergeConfig(
+    resolvedViteConfig,
+    defineConfig({
+      test: {
       name: "guard",
       environment: "jsdom",
       globals: true,
@@ -41,5 +44,6 @@ export default mergeConfig(
         "@shared/test-utils": path.resolve(dir, "../../packages/test-utils/src"),
       },
     },
-  }),
+  })
 );
+});
