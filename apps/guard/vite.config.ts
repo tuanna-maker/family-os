@@ -26,7 +26,7 @@ export default defineConfig(({ mode }) => {
       "@shared/utils": path.resolve(dir, "../../packages/shared-utils/src"),
     },
   },
-  plugins: [react(), tailwindcss()],
+  plugins: [react(), tailwindcss()] as any,
   server: { port: 5174 },
   build: { outDir: path.resolve(dir, "dist"), emptyOutDir: true },
   };

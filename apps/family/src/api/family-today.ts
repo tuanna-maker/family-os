@@ -87,7 +87,7 @@ export async function getFamilyToday(data: { family_id: string; locale?: string 
     for (const e of elderlyList) {
       const med = medList.find((m) => m.member_name === e.name);
       const appt = apptList.find((a) => a.member_name === e.name);
-      let status = t.normal;
+      let status: string = t.normal;
       let tone: StatusTone = "success";
       let detail: string | null = e.safe_note ?? null;
       let due: string | null = null;
@@ -132,7 +132,7 @@ export async function getFamilyToday(data: { family_id: string; locale?: string 
       const overdue = myHw.filter((h) => h.due_date && h.due_date < todayStr);
       const dueToday = myHw.filter((h) => h.due_date === todayStr);
 
-      let status = t.stable;
+      let status: string = t.stable;
       let tone: StatusTone = "success";
       let detail: string | null = null;
       let due: string | null = null;
@@ -173,7 +173,7 @@ export async function getFamilyToday(data: { family_id: string; locale?: string 
     for (const a of adultList) {
       const med = medList.find((m) => m.member_name === a.name);
       const appt = apptList.find((ap) => ap.member_name === a.name);
-      let status = t.normal;
+      let status: string = t.normal;
       let tone: StatusTone = "success";
       let detail: string | null = null;
       let due: string | null = null;

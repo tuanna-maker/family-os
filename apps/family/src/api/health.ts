@@ -47,7 +47,7 @@ export async function listHealth(data: any) {
   const { supabase, userId } = await requireUser();
 
         const [profiles, meds, appts, recs] = await Promise.all([
-      supabase.rpc("get_health_profiles", { _family_id: data.family_id }),
+      (supabase as any).rpc("get_health_profiles", { _family_id: data.family_id }),
       supabase.from("medicine_reminders").select("*").eq("family_id", data.family_id).order("created_at", { ascending: false }),
       supabase.from("medical_appointments").select("*").eq("family_id", data.family_id).order("scheduled_at"),
       supabase.from("health_records").select("*").eq("family_id", data.family_id).order("recorded_at", { ascending: false }).limit(50),
@@ -64,7 +64,7 @@ export async function listHealth(data: any) {
 // ============ PROFILES ============
 export async function upsertHealthProfile(data: any) {
   const { supabase, userId } = await requireUser();
-    const { data: id, error } = await supabase.rpc("upsert_health_profile_enc", {
+    const { data: id, error } = await (supabase as any).rpc("upsert_health_profile_enc", {
       _id: data.id ?? null,
       _family_id: data.family_id,
       _name: data.name,

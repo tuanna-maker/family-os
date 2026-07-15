@@ -27,7 +27,7 @@ export function MomentDetailPage({ momentId }: Props) {
   const [comment, setComment] = useState("");
 
   const ctxQ = useQuery({ queryKey: ["my-context"], queryFn: () => getMyContext() });
-  const myId = ctxQ.data?.user?.id;
+  const myId = ctxQ.data?.userId;
 
   const q = useQuery({
     queryKey: ["family-moment", momentId, familyId],

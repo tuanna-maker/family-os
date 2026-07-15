@@ -245,7 +245,7 @@ function PortalPage() {
           {/* Row 1: Members + Quick actions */}
           <div className="grid grid-cols-12 gap-5">
             <Card className="col-span-7">
-              <CardHeader title="Thành viên gia đình" action={<Link to="/admin/family" className="text-[13px] font-semibold text-brand">Xem tất cả</Link>} />
+              <CardHeader title="Thành viên gia đình" action={<Link to={"/admin/family" as any} className="text-[13px] font-semibold text-brand">Xem tất cả</Link>} />
               <div className="grid grid-cols-6 gap-4">
                 {MEMBERS.map((m) => (
                   <div key={m.name} className="flex flex-col items-center text-center">

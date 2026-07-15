@@ -144,7 +144,7 @@ function AccountPage() {
             );
             if (to) {
               return (
-                <Link key={label} to={to} className="block active:bg-muted/40">
+                <Link key={label} to={to as any} className="block active:bg-muted/40">
                   {content}
                 </Link>
               );

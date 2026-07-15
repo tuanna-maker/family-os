@@ -124,7 +124,7 @@ export async function updateElderlyProfile(data: {
   if (data.address !== undefined) payload.address = data.address;
   if (data.conditions !== undefined) payload.conditions = data.conditions;
   if (data.doctor !== undefined) payload.doctor = data.doctor;
-  const { error } = await supabase.from("elderly_profiles").update(payload).eq("id", data.id);
+  const { error } = await (supabase as any).from("elderly_profiles").update(payload).eq("id", data.id);
   if (error) throw new Error(error.message);
   return { ok: true };
 }

@@ -15,17 +15,17 @@ export type FamilyAlbum = {
 export async function listAlbums(data: { family_id: string }) {
   const { supabase } = await requireUser();
   const { family_id } = z.object({ family_id: z.string().uuid() }).parse(data);
-  const { data: rows, error } = await supabase
+  const { data: rows, error } = await (supabase as any)
     .from("family_albums")
     .select("id,family_id,title,category,cover_emoji,created_by,created_at")
     .eq("family_id", family_id)
     .order("created_at", { ascending: false })
     .limit(50);
   if (error) throw new Error(error.message);
-  const albums = (rows ?? []) as FamilyAlbum[];
+  const albums = (rows as any ?? []) as FamilyAlbum[];
   if (albums.length === 0) return { albums: [] as FamilyAlbum[] };
   const ids = albums.map((a) => a.id);
-  const { data: counts, error: cErr } = await supabase
+  const { data: counts, error: cErr } = await (supabase as any)
     .from("family_moments")
     .select("album_id")
     .in("album_id", ids);
@@ -55,7 +55,7 @@ export async function createAlbum(data: {
       cover_emoji: z.string().max(8).optional(),
     })
     .parse(data);
-  const { data: row, error } = await supabase
+  const { data: row, error } = await (supabase as any)
     .from("family_albums")
     .insert({
       family_id: parsed.family_id,
@@ -67,7 +67,7 @@ export async function createAlbum(data: {
     .select("id,family_id,title,category,cover_emoji,created_by,created_at")
     .single();
   if (error) throw new Error(error.message);
-  return { album: row as FamilyAlbum };
+  return { album: row as any as FamilyAlbum };
 }
 
 export async function getAlbum(data: { album_id: string; family_id: string }) {
@@ -75,7 +75,7 @@ export async function getAlbum(data: { album_id: string; family_id: string }) {
   const parsed = z
     .object({ album_id: z.string().uuid(), family_id: z.string().uuid() })
     .parse(data);
-  const { data: album, error } = await supabase
+  const { data: album, error } = await (supabase as any)
     .from("family_albums")
     .select("id,family_id,title,category,cover_emoji,created_by,created_at")
     .eq("id", parsed.album_id)
@@ -83,13 +83,13 @@ export async function getAlbum(data: { album_id: string; family_id: string }) {
     .maybeSingle();
   if (error) throw new Error(error.message);
   if (!album) throw new Error("Không tìm thấy album");
-  const { data: moments, error: mErr } = await supabase
+  const { data: moments, error: mErr } = await (supabase as any)
     .from("family_moments")
     .select("id,caption,media_url,thumbnail_url,media_type,taken_at,created_at")
     .eq("album_id", parsed.album_id)
     .order("taken_at", { ascending: false });
   if (mErr) throw new Error(mErr.message);
-  return { album: album as FamilyAlbum, moments: moments ?? [] };
+  return { album: album as any as FamilyAlbum, moments: (moments ?? []) as any[] };
 }
 
 export async function updateAlbum(data: {
@@ -109,7 +109,7 @@ export async function updateAlbum(data: {
       cover_emoji: z.string().max(8).optional(),
     })
     .parse(data);
-  const { error } = await supabase
+  const { error } = await (supabase as any)
     .from("family_albums")
     .update({
       title: parsed.title,
@@ -127,7 +127,7 @@ export async function deleteAlbum(data: { id: string; family_id: string }) {
   const parsed = z
     .object({ id: z.string().uuid(), family_id: z.string().uuid() })
     .parse(data);
-  const { error } = await supabase
+  const { error } = await (supabase as any)
     .from("family_albums")
     .delete()
     .eq("id", parsed.id)

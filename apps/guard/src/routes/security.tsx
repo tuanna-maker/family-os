@@ -7,7 +7,7 @@ const CLOUD_ALLOWED = ["super_admin", "saas_admin", "tenant_admin", "security_ad
 export const Route = createFileRoute("/security")({
   beforeLoad: async ({ location }) => {
     const { data } = await supabase.auth.getUser();
-    if (!data.user) throw redirect({ to: "/login", search: { redirect: location.href } });
+    if (!data.user) throw redirect({ to: "/login", search: { redirect: location.href } as any });
     const { data: roles } = await supabase
       .from("user_roles")
       .select("role")

@@ -22,7 +22,7 @@ async function defaultProjectId(supabase: Awaited<ReturnType<typeof requireUser>
 export async function listVisitorPasses(data: { family_id: string }) {
   const { supabase, userId } = await requireUser();
   const { family_id } = z.object({ family_id: z.string().uuid() }).parse(data);
-  const { data: rows, error } = await supabase
+  const { data: rows, error } = await (supabase as any)
     .from("visitor_passes")
     .select(
       "id,pass_code,guest_name,guest_phone,purpose,valid_from,valid_until,status,scanned_at,created_at",
@@ -54,7 +54,7 @@ export async function createVisitorPass(data: {
     .parse(data);
   const until = new Date(Date.now() + parsed.valid_hours * 3600000).toISOString();
   const project_id = await defaultProjectId(supabase);
-  const { data: row, error } = await supabase
+  const { data: row, error } = await (supabase as any)
     .from("visitor_passes")
     .insert({
       host_user_id: userId,
@@ -75,7 +75,7 @@ export async function createVisitorPass(data: {
 export async function revokeVisitorPass(data: { id: string }) {
   const { supabase } = await requireUser();
   const { id } = z.object({ id: z.string().uuid() }).parse(data);
-  const { error } = await supabase
+  const { error } = await (supabase as any)
     .from("visitor_passes")
     .update({ status: "revoked", updated_at: new Date().toISOString() })
     .eq("id", id);
@@ -87,7 +87,7 @@ export async function revokeVisitorPass(data: { id: string }) {
 export async function scanVisitorPass(data: { pass_code: string }) {
   const { supabase, userId } = await requireUser();
   const code = z.string().min(4).max(128).parse(data.pass_code).trim();
-  const { data: row, error } = await supabase
+  const { data: row, error } = await (supabase as any)
     .from("visitor_passes")
     .select("id,pass_code,guest_name,status,valid_until,valid_from")
     .eq("pass_code", code)
@@ -99,7 +99,7 @@ export async function scanVisitorPass(data: { pass_code: string }) {
   const now = Date.now();
   if (new Date(row.valid_until).getTime() < now) throw new Error("Mã đã hết hạn");
   if (new Date(row.valid_from).getTime() > now) throw new Error("Mã chưa có hiệu lực");
-  const { error: uErr } = await supabase
+  const { error: uErr } = await (supabase as any)
     .from("visitor_passes")
     .update({
       status: "used",

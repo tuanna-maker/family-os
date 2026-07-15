@@ -141,7 +141,7 @@ export async function createHouseholdInvite(data: {
   } catch (e) {
     const msg = (e as Error).message ?? "";
     if (!msg.includes("permission denied") && !msg.includes("schema")) throw e;
-    const { data: rows, error: rpcErr } = await supabase.rpc("create_household_invite", {
+    const { data: rows, error: rpcErr } = await (supabase as any).rpc("create_household_invite", {
       _household_id: parsed.household_id,
       _invited_email: parsed.invited_email ?? null,
       _invited_phone: parsed.invited_phone ?? null,
@@ -149,7 +149,7 @@ export async function createHouseholdInvite(data: {
       _role: parsed.role,
     });
     if (rpcErr) throw new Error(rpcErr.message);
-    const row = (rows ?? [])[0] as { invite_id: string; token: string; expires_at: string } | undefined;
+    const row = ((rows as any) ?? [])[0] as { invite_id: string; token: string; expires_at: string } | undefined;
     if (!row?.token) throw new Error("Không tạo được mã mời");
     inv = { id: row.invite_id, token: row.token, expires_at: row.expires_at };
   }

@@ -15,10 +15,10 @@ export async function initSentry(): Promise<boolean> {
       tracesSampleRate: 0.2,
       environment: import.meta.env.PROD ? "production" : "development",
       initialScope: { tags: { app: "family" } },
-      beforeSend(event: ErrorEvent, _hint: EventHint) {
-        return scrubSentryEvent(event as unknown as Record<string, unknown>) as ErrorEvent;
+      beforeSend(event: any, _hint: any) {
+        return scrubSentryEvent(event as unknown as Record<string, unknown>) as any;
       },
-    },
+    } as any,
     reactInit,
   );
   return true;

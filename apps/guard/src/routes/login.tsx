@@ -204,7 +204,7 @@ function LoginPage() {
         if (!loginEmail.includes("@")) {
           // Tra cứu username -> email. Server luôn trả null nếu sai format hoặc không tồn tại
           // để không lộ thông tin username nào tồn tại.
-          const res = await resolveLoginEmail({ username: loginEmail });
+          const res = await resolveLoginEmail({ username: loginEmail } as any);
           if (!res.email) throw new Error(GENERIC_AUTH_ERROR);
           loginEmail = res.email;
         }
@@ -215,7 +215,7 @@ function LoginPage() {
       } else {
 
         // Kiểm tra username có sẵn không
-        const check = await checkUsernameAvailable({ username: username.trim() });
+        const check = await checkUsernameAvailable({ username: username.trim() } as any);
         if (!check.available) {
           setFieldErrors((f) => ({ ...f, username: "Tên đăng nhập đã tồn tại." }));
           setBusy(false);
@@ -244,7 +244,7 @@ function LoginPage() {
             // bỏ qua – getMyContext sẽ được gọi lại khi vào /home
           }
           // Đăng ký từ Landing luôn là tài khoản Gia đình → vào thẳng app gia đình
-          navigate({ to: "/home", replace: true });
+          navigate({ to: "/", replace: true });
         } else {
           setInfo("Đã gửi email xác thực. Vui lòng kiểm tra hộp thư để hoàn tất đăng ký.");
         }
@@ -499,7 +499,7 @@ function LoginPage() {
             {mode === "signin" && (
               <div className="flex justify-end -mt-1">
                 <Link
-                  to="/forgot-password"
+                  to="/"
                   className="text-xs font-semibold text-brand hover:underline"
                 >
                   Quên mật khẩu?

@@ -66,9 +66,9 @@ const sendSchema = z.object({
 
 export async function listGuardChatThreads() {
   const { supabase } = await requireUser();
-  const { data, error } = await supabase.rpc("list_guard_security_chat_inbox");
+  const { data, error } = await (supabase as any).rpc("list_guard_security_chat_inbox");
   if (error) throw new Error(error.message);
-  return ((data ?? []) as GuardChatThread[]).map(sanitizeThreadPreview);
+  return ((data as any ?? []) as GuardChatThread[]).map(sanitizeThreadPreview);
 }
 
 export async function getResidentChatProfile(residentUserId: string) {
@@ -108,7 +108,7 @@ export async function listResidentChatMessages(residentUserId: string) {
   const parsed = z.string().uuid().parse(residentUserId);
   const { supabase } = await requireUser();
 
-  let { data, error } = await supabase
+  let { data, error } = await (supabase as any)
     .from("security_chat_messages")
     .select(MSG_COLS)
     .eq("user_id", parsed)
@@ -116,7 +116,7 @@ export async function listResidentChatMessages(residentUserId: string) {
     .limit(200);
 
   if (error && /column.*does not exist|42703/i.test(error.message ?? "")) {
-    const fallback = await supabase
+    const fallback = await (supabase as any)
       .from("security_chat_messages")
       .select("id,user_id,sender_role,sender_id,body,created_at")
       .eq("user_id", parsed)
@@ -127,7 +127,7 @@ export async function listResidentChatMessages(residentUserId: string) {
   }
 
   if (error) throw new Error(error.message);
-  return filterLegacyAutoReplies((data ?? []) as SecurityChatMessage[]);
+  return filterLegacyAutoReplies((data as any ?? []) as SecurityChatMessage[]);
 }
 
 export async function sendGuardChatMessage(data: z.infer<typeof sendSchema>) {
@@ -138,7 +138,7 @@ export async function sendGuardChatMessage(data: z.infer<typeof sendSchema>) {
   const messageType = parsed.message_type ?? "text";
   if (!body && !parsed.media_url) throw new Error("Tin nhắn trống");
 
-  const { data: lastRow } = await supabase
+  const { data: lastRow } = await (supabase as any)
     .from("security_chat_messages")
     .select("project_id,family_id")
     .eq("user_id", parsed.resident_user_id)
@@ -173,14 +173,14 @@ export async function sendGuardChatMessage(data: z.infer<typeof sendSchema>) {
     media_duration_ms: parsed.media_duration_ms ?? null,
   };
 
-  let { data: row, error } = await supabase
+  let { data: row, error } = await (supabase as any)
     .from("security_chat_messages")
     .insert(insertRow)
     .select(MSG_COLS)
     .single();
 
   if (error && /column.*does not exist|42703/i.test(error.message ?? "")) {
-    const fallback = await supabase
+    const fallback = await (supabase as any)
       .from("security_chat_messages")
       .insert({
         user_id: parsed.resident_user_id,
@@ -197,7 +197,7 @@ export async function sendGuardChatMessage(data: z.infer<typeof sendSchema>) {
   }
 
   if (error) throw new Error(error.message);
-  const sent = row as SecurityChatMessage;
+  const sent = row as any as SecurityChatMessage;
   fireChatPushDispatch(supabase, sent.id);
   return sent;
 }
@@ -206,7 +206,7 @@ export async function markGuardChatRead(residentUserId: string) {
   const parsed = z.string().uuid().parse(residentUserId);
   const { supabase, userId } = await requireUser();
   const now = new Date().toISOString();
-  const { error } = await supabase.from("security_chat_reads").upsert(
+  const { error } = await (supabase as any).from("security_chat_reads").upsert(
     { guard_id: userId, resident_user_id: parsed, last_read_at: now },
     { onConflict: "guard_id,resident_user_id" },
   );

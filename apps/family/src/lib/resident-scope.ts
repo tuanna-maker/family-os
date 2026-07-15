@@ -55,7 +55,7 @@ async function resolveResidentScopeFromTables(
   if (aptErr) throw new Error(aptErr.message);
   if (!apt?.project_id) throw new Error(UNLINKED_MSG);
 
-  const project = apt.projects as { tenant_id: string } | null;
+  const project = apt.projects as unknown as { tenant_id: string } | null;
 
   return {
     apartment_id: apt.id,

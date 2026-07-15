@@ -29,7 +29,7 @@ export type TripItem = {
 export async function listTrips(data: { family_id: string }) {
   const { supabase } = await requireUser();
   const { family_id } = z.object({ family_id: z.string().uuid() }).parse(data);
-  const { data: rows, error } = await supabase
+  const { data: rows, error } = await (supabase as any)
     .from("family_trips")
     .select(
       "id,family_id,title,destination,start_date,end_date,members_count,budget_planned,status,notes,created_at",
@@ -44,7 +44,7 @@ export async function listTrips(data: { family_id: string }) {
 export async function getTripBundle(data: { trip_id: string }) {
   const { supabase } = await requireUser();
   const { trip_id } = z.object({ trip_id: z.string().uuid() }).parse(data);
-  const { data: trip, error } = await supabase
+  const { data: trip, error } = await (supabase as any)
     .from("family_trips")
     .select(
       "id,family_id,title,destination,start_date,end_date,members_count,budget_planned,status,notes,created_at",
@@ -53,7 +53,7 @@ export async function getTripBundle(data: { trip_id: string }) {
     .maybeSingle();
   if (error) throw new Error(error.message);
   if (!trip) throw new Error("Không tìm thấy chuyến đi");
-  const { data: items, error: iErr } = await supabase
+  const { data: items, error: iErr } = await (supabase as any)
     .from("family_trip_items")
     .select("id,trip_id,kind,label,assignee,amount,done,position")
     .eq("trip_id", trip_id)
@@ -103,11 +103,11 @@ export async function upsertTrip(data: {
     created_by: userId,
   };
   if (parsed.id) {
-    const { error } = await supabase.from("family_trips").update(payload).eq("id", parsed.id);
+    const { error } = await (supabase as any).from("family_trips").update(payload).eq("id", parsed.id);
     if (error) throw new Error(error.message);
     return { id: parsed.id };
   }
-  const { data: row, error } = await supabase.from("family_trips").insert(payload).select("id").single();
+  const { data: row, error } = await (supabase as any).from("family_trips").insert(payload).select("id").single();
   if (error) throw new Error(error.message);
   return { id: row.id as string };
 }
@@ -115,7 +115,7 @@ export async function upsertTrip(data: {
 export async function deleteTrip(data: { id: string }) {
   const { supabase } = await requireUser();
   const { id } = z.object({ id: z.string().uuid() }).parse(data);
-  const { error } = await supabase.from("family_trips").delete().eq("id", id);
+  const { error } = await (supabase as any).from("family_trips").delete().eq("id", id);
   if (error) throw new Error(error.message);
   return { ok: true };
 }
@@ -147,11 +147,11 @@ export async function upsertTripItem(data: {
     amount: parsed.amount ?? null,
   };
   if (parsed.id) {
-    const { error } = await supabase.from("family_trip_items").update(payload).eq("id", parsed.id);
+    const { error } = await (supabase as any).from("family_trip_items").update(payload).eq("id", parsed.id);
     if (error) throw new Error(error.message);
     return { id: parsed.id };
   }
-  const { data: row, error } = await supabase
+  const { data: row, error } = await (supabase as any)
     .from("family_trip_items")
     .insert(payload)
     .select("id")
@@ -163,7 +163,7 @@ export async function upsertTripItem(data: {
 export async function toggleTripItem(data: { id: string; done: boolean }) {
   const { supabase } = await requireUser();
   const parsed = z.object({ id: z.string().uuid(), done: z.boolean() }).parse(data);
-  const { error } = await supabase.from("family_trip_items").update({ done: parsed.done }).eq("id", parsed.id);
+  const { error } = await (supabase as any).from("family_trip_items").update({ done: parsed.done }).eq("id", parsed.id);
   if (error) throw new Error(error.message);
   return { ok: true };
 }
@@ -171,7 +171,7 @@ export async function toggleTripItem(data: { id: string; done: boolean }) {
 export async function deleteTripItem(data: { id: string }) {
   const { supabase } = await requireUser();
   const { id } = z.object({ id: z.string().uuid() }).parse(data);
-  const { error } = await supabase.from("family_trip_items").delete().eq("id", id);
+  const { error } = await (supabase as any).from("family_trip_items").delete().eq("id", id);
   if (error) throw new Error(error.message);
   return { ok: true };
 }

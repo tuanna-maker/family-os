@@ -14,7 +14,7 @@ export type PlatformNotification = {
 
 export async function listPlatformNotifications() {
   const { supabase, userId } = await requireUser();
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .schema("platform")
     .from("notification")
     .select("id, topic, title, body, data, status, read_at, dismissed_at, created_at")
@@ -28,7 +28,7 @@ export async function listPlatformNotifications() {
 
 export async function unreadPlatformCount() {
   const { supabase, userId } = await requireUser();
-  const { count, error } = await supabase
+  const { count, error } = await (supabase as any)
     .schema("platform")
     .from("notification")
     .select("id", { count: "exact", head: true })
@@ -42,7 +42,7 @@ export async function unreadPlatformCount() {
 
 export async function markPlatformRead(data: { id: string }) {
   const { supabase, userId } = await requireUser();
-  const { error } = await supabase
+  const { error } = await (supabase as any)
     .schema("platform")
     .from("notification")
     .update({ read_at: new Date().toISOString(), status: "read" })
@@ -54,7 +54,7 @@ export async function markPlatformRead(data: { id: string }) {
 
 export async function markAllPlatformRead() {
   const { supabase, userId } = await requireUser();
-  const { error } = await supabase
+  const { error } = await (supabase as any)
     .schema("platform")
     .from("notification")
     .update({ read_at: new Date().toISOString(), status: "read" })
@@ -68,7 +68,7 @@ export async function markAllPlatformRead() {
 export async function deleteReadPlatformNotifications() {
   const { supabase, userId } = await requireUser();
   const now = new Date().toISOString();
-  const { error } = await supabase
+  const { error } = await (supabase as any)
     .schema("platform")
     .from("notification")
     .update({ dismissed_at: now })
@@ -83,7 +83,7 @@ export async function deletePlatformNotifications(ids: string[]) {
   if (ids.length === 0) return { ok: true as const };
   const { supabase, userId } = await requireUser();
   const now = new Date().toISOString();
-  const { error } = await supabase
+  const { error } = await (supabase as any)
     .schema("platform")
     .from("notification")
     .update({ dismissed_at: now })

@@ -31,7 +31,7 @@ function isMissingTable(err: { code?: string; message?: string }) {
 
 export async function listSecurityChatMessages(familyId?: string | null) {
   const { supabase, userId } = await requireUser();
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from("security_chat_messages")
     .select("id,sender_role,body,created_at")
     .eq("user_id", userId)
@@ -39,7 +39,7 @@ export async function listSecurityChatMessages(familyId?: string | null) {
     .limit(100);
   if (error && isMissingTable(error)) return loadLocal(userId);
   if (error) throw new Error(error.message);
-  const rows = (data ?? []) as SecurityChatMessage[];
+  const rows = (data ?? []) as unknown as SecurityChatMessage[];
   if (rows.length === 0 && familyId) {
     const welcome: SecurityChatMessage = {
       id: "welcome",
@@ -55,7 +55,7 @@ export async function listSecurityChatMessages(familyId?: string | null) {
 export async function sendSecurityChatMessage(data: { body: string; family_id?: string | null }) {
   const { supabase, userId } = await requireUser();
   const parsed = z.object({ body: z.string().min(1).max(2000), family_id: z.string().uuid().nullable().optional() }).parse(data);
-  const { data: row, error } = await supabase
+  const { data: row, error } = await (supabase as any)
     .from("security_chat_messages")
     .insert({
       user_id: userId,
@@ -77,5 +77,5 @@ export async function sendSecurityChatMessage(data: { body: string; family_id?: 
     return resident;
   }
   if (error) throw new Error(error.message);
-  return row as SecurityChatMessage;
+  return row as unknown as SecurityChatMessage;
 }

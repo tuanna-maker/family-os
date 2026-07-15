@@ -52,7 +52,7 @@ export function SideNav() {
 
   return (
     <aside className="hidden md:flex fixed inset-y-0 left-0 z-40 w-64 flex-col border-r border-border bg-card/80 backdrop-blur-xl px-4 py-6">
-      <Link to="/home" className="flex items-center gap-2 px-2 mb-8">
+      <Link to={"/home" as any} className="flex items-center gap-2 px-2 mb-8">
         <div className="h-10 w-10 rounded-2xl bg-gradient-to-br from-brand to-navy grid place-items-center shadow-[var(--shadow-soft)]">
           <ShieldCheck className="h-5 w-5 text-primary-foreground" fill="currentColor" />
         </div>
@@ -72,7 +72,7 @@ export function SideNav() {
             return (
               <li key={to}>
                 <Link
-                  to={to}
+                  to={to as any}
                   aria-current={active ? "page" : undefined}
                   data-active={active || undefined}
                   className={cn(

@@ -17,7 +17,7 @@ export async function registerPushToken(data: {
         ? "android"
         : "web";
 
-  const { error } = await supabase.schema("platform").from("device_token").upsert(
+  const { error } = await (supabase as any).schema("platform").from("device_token").upsert(
     {
       user_id: userId,
       token: data.token,
@@ -34,7 +34,7 @@ export async function registerPushToken(data: {
 
 export async function unregisterPushToken(token: string) {
   const { userId } = await requireUser();
-  const { error } = await supabase
+  const { error } = await (supabase as any)
     .schema("platform")
     .from("device_token")
     .delete()

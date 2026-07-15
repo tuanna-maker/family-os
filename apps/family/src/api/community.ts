@@ -3,20 +3,20 @@ import { requireUser } from "@shared/supabase/auth";
 
 export async function listCommunityServices() {
   const { supabase } = await requireUser();
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from("community_services")
     .select("id,slug,name,description,icon,tag,category,base_price")
     .eq("active", true)
     .order("sort_order", { ascending: true })
     .limit(50);
   if (error) throw new Error(error.message);
-  return data ?? [];
+  return (data ?? []) as any[];
 }
 
 export async function listCommunityEvents() {
   const { supabase } = await requireUser();
   const now = new Date().toISOString();
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from("community_events")
     .select("id,title,description,starts_at,ends_at,place,capacity,cover_url")
     .eq("active", true)
@@ -24,7 +24,7 @@ export async function listCommunityEvents() {
     .order("starts_at", { ascending: true })
     .limit(30);
   if (error) throw new Error(error.message);
-  return data ?? [];
+  return (data ?? []) as any[];
 }
 
 export async function registerCommunityEvent(data: { event_id: string; family_id?: string; guests_count?: number }) {
@@ -36,7 +36,7 @@ export async function registerCommunityEvent(data: { event_id: string; family_id
       guests_count: z.number().min(1).max(20).default(1),
     })
     .parse(data);
-  const { error } = await supabase.from("event_registrations").upsert(
+  const { error } = await (supabase as any).from("event_registrations").upsert(
     {
       event_id: parsed.event_id,
       user_id: userId,
@@ -67,8 +67,8 @@ export async function createServiceBooking(data: {
       notes: z.string().max(500).optional(),
     })
     .parse(data);
-  const { data: project } = await supabase.from("projects").select("id").limit(1).maybeSingle();
-  const { data: row, error } = await supabase
+  const { data: project } = await (supabase as any).from("projects").select("id").limit(1).maybeSingle();
+  const { data: row, error } = await (supabase as any)
     .from("service_bookings")
     .insert({
       service_id: parsed.service_id,
@@ -98,7 +98,7 @@ export type ServiceBookingRow = {
 
 export async function listMyServiceBookings() {
   const { supabase, userId } = await requireUser();
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from("service_bookings")
     .select("id,service_id,status,scheduled_at,notes,created_at,community_services(slug,name,icon)")
     .eq("requested_by", userId)
@@ -110,7 +110,7 @@ export async function listMyServiceBookings() {
 
 export async function cancelServiceBooking(data: { id: string }) {
   const { supabase, userId } = await requireUser();
-  const { error } = await supabase
+  const { error } = await (supabase as any)
     .from("service_bookings")
     .update({ status: "cancelled" })
     .eq("id", data.id)

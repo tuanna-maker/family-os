@@ -86,7 +86,7 @@ async function closeStaleOpenShifts(
   lookupGuardIds: string[],
   now = new Date(),
 ) {
-  const { data: openRows, error } = await supabase
+  const { data: openRows, error } = await (supabase as any)
     .from("guard_shifts")
     .select("id, end_at, shift_date, shift_type, notes, check_in_at")
     .in("guard_id", lookupGuardIds)
@@ -95,7 +95,7 @@ async function closeStaleOpenShifts(
   if (!openRows?.length) return;
 
   for (const row of openRows) {
-    const shift = row as GuardShift;
+    const shift = row as any as GuardShift;
     if (!isShiftPastEnd(shift, now)) continue;
 
     const merged = [shift.notes, STALE_AUTO_CLOSE_NOTE].filter(Boolean).join("\n");
@@ -103,7 +103,7 @@ async function closeStaleOpenShifts(
       shift.end_at ??
       resolveShiftEnd(shift).toISOString();
 
-    const { error: updErr } = await supabase
+    const { error: updErr } = await (supabase as any)
       .from("guard_shifts")
       .update({
         status: "checked_out",
@@ -120,7 +120,7 @@ async function findOpenOnDutyShift(
   lookupGuardIds: string[],
   now = new Date(),
 ): Promise<GuardShift | null> {
-  const { data: openRows, error } = await supabase
+  const { data: openRows, error } = await (supabase as any)
     .from("guard_shifts")
     .select("*")
     .in("guard_id", lookupGuardIds)
@@ -128,7 +128,7 @@ async function findOpenOnDutyShift(
     .order("check_in_at", { ascending: false });
   if (error) throw new Error(error.message);
   for (const row of openRows ?? []) {
-    const shift = row as GuardShift;
+    const shift = row as any as GuardShift;
     if (isOnDutyShift(shift, now)) return shift;
   }
   return null;
@@ -140,15 +140,15 @@ async function listMyShiftsRpc(
   scope: Awaited<ReturnType<typeof resolveGuardScope>>,
   range?: { from?: string; to?: string },
 ) {
-  const { data, error } = await supabase.rpc("list_my_guard_shifts", {
+  const { data, error } = await (supabase as any).rpc("list_my_guard_shifts", {
     _from: range?.from ?? null,
     _to: range?.to ?? null,
     _limit: 90,
   });
-  const rpcRows = (data ?? []) as GuardShift[];
+  const rpcRows = (data as any ?? []) as GuardShift[];
   if (!error && rpcRows.length > 0) return rpcRows;
 
-  const q = supabase
+  const q = (supabase as any)
     .from("guard_shifts")
     .select("*")
     .in("guard_id", scope.lookup_guard_ids)
@@ -159,7 +159,7 @@ async function listMyShiftsRpc(
   if (range?.to) q.lte("shift_date", range.to);
   const { data: rows, error: qErr } = await q;
   if (qErr) throw new Error(qErr.message);
-  return (rows ?? []) as GuardShift[];
+  return (rows as any ?? []) as GuardShift[];
 }
 
 export async function getActiveShift(): Promise<GuardShift | null> {
@@ -173,7 +173,7 @@ export async function getActiveShift(): Promise<GuardShift | null> {
   if (onDuty) return onDuty;
 
   const today = localDateIso(now);
-  const { data: scheduled, error: schedErr } = await supabase
+  const { data: scheduled, error: schedErr } = await (supabase as any)
     .from("guard_shifts")
     .select("*")
     .in("guard_id", scope.lookup_guard_ids)
@@ -183,9 +183,9 @@ export async function getActiveShift(): Promise<GuardShift | null> {
     .limit(1)
     .maybeSingle();
   if (schedErr) throw new Error(schedErr.message);
-  if (scheduled) return scheduled as GuardShift;
+  if (scheduled) return scheduled as any as GuardShift;
 
-  const { data: completed, error: doneErr } = await supabase
+  const { data: completed, error: doneErr } = await (supabase as any)
     .from("guard_shifts")
     .select("*")
     .in("guard_id", scope.lookup_guard_ids)
@@ -222,7 +222,7 @@ export async function checkInShift(input?: {
   const onDuty = await findOpenOnDutyShift(supabase, scope.lookup_guard_ids, now);
   if (onDuty) return { id: onDuty.id, reused: true };
 
-  const { data: scheduled } = await supabase
+  const { data: scheduled } = await (supabase as any)
     .from("guard_shifts")
     .select("id, project_id")
     .in("guard_id", scope.lookup_guard_ids)
@@ -233,7 +233,7 @@ export async function checkInShift(input?: {
     .maybeSingle();
 
   if (!scheduled) {
-    const { data: completed } = await supabase
+    const { data: completed } = await (supabase as any)
       .from("guard_shifts")
       .select("id")
       .in("guard_id", scope.lookup_guard_ids)
@@ -252,9 +252,9 @@ export async function checkInShift(input?: {
     );
   }
 
-  const projectId = data.project_id ?? scheduled.project_id ?? scope.project_id;
+  const projectId = data.project_id ?? (scheduled as any).project_id ?? scope.project_id;
 
-  const { error } = await supabase
+  const { error } = await (supabase as any)
     .from("guard_shifts")
     .update({
       status: "checked_in",
@@ -264,9 +264,9 @@ export async function checkInShift(input?: {
       project_id: projectId,
       guard_id: userId,
     })
-    .eq("id", scheduled.id);
+    .eq("id", (scheduled as any).id);
   if (error) throw new Error(error.message);
-  return { id: scheduled.id as string, reused: false };
+  return { id: (scheduled as any).id as string, reused: false };
 }
 
 export async function checkOutShift(input?: {
@@ -287,7 +287,7 @@ export async function checkOutShift(input?: {
   const onDuty = await findOpenOnDutyShift(supabase, scope.lookup_guard_ids, now);
   if (!onDuty) throw new Error("Bạn chưa có ca trực đang mở để kết thúc");
 
-  const { data: active, error: readErr } = await supabase
+  const { data: active, error: readErr } = await (supabase as any)
     .from("guard_shifts")
     .select("id, notes")
     .eq("id", onDuty.id)
@@ -296,9 +296,9 @@ export async function checkOutShift(input?: {
   if (!active) throw new Error("Bạn chưa có ca trực đang mở để kết thúc");
 
   const merged = data.notes
-    ? [active.notes, data.notes].filter(Boolean).join("\n")
-    : active.notes;
-  const { error } = await supabase
+    ? [(active as any).notes, data.notes].filter(Boolean).join("\n")
+    : (active as any).notes;
+  const { error } = await (supabase as any)
     .from("guard_shifts")
     .update({
       status: "checked_out",
@@ -308,7 +308,7 @@ export async function checkOutShift(input?: {
     })
     .eq("id", active.id);
   if (error) throw new Error(error.message);
-  return { id: active.id as string };
+  return { id: (active as any).id as string };
 }
 
 export async function listMyShifts(range?: {
@@ -343,7 +343,7 @@ export async function logPatrolCheckpoint(input: {
   const scope = await resolveGuardScope(supabase, userId);
   const active = await findOpenOnDutyShift(supabase, scope.lookup_guard_ids);
 
-  const { data: inserted, error } = await supabase
+  const { data: inserted, error } = await (supabase as any)
     .from("patrol_logs")
     .insert({
       guard_id: userId,
@@ -360,7 +360,7 @@ export async function logPatrolCheckpoint(input: {
     .select("*")
     .single();
   if (error) throw new Error(error.message);
-  return inserted as PatrolLog;
+  return inserted as any as PatrolLog;
 }
 
 export async function listPatrolLogs(input?: {
@@ -375,7 +375,7 @@ export async function listPatrolLogs(input?: {
     .parse(input ?? {});
 
   const { supabase, userId } = await requireUser();
-  let q = supabase
+  let q = (supabase as any)
     .from("patrol_logs")
     .select("*")
     .eq("guard_id", userId)
@@ -391,5 +391,5 @@ export async function listPatrolLogs(input?: {
   }
   const { error, data: rows } = await q;
   if (error) throw new Error(error.message);
-  return (rows ?? []) as PatrolLog[];
+  return (rows as any ?? []) as PatrolLog[];
 }

@@ -488,7 +488,7 @@ function FamilyPage() {
             return (
               <div key={m.id} className="shrink-0 w-[136px]">
                 {"momentId" in m && m.momentId ? (
-                  <Link to="/ky-niem-gia-dinh/$momentId" params={{ momentId: m.momentId }} className="block">
+                  <Link to="/ky-niem-gia-dinh/$momentId" params={{ momentId: m.momentId as string }} className="block">
                     {card}
                   </Link>
                 ) : (

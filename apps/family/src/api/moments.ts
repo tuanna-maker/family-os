@@ -39,7 +39,7 @@ export async function listMoments(data: { family_id: string; lite?: boolean }) {
   const parsed = z
     .object({ family_id: z.string().uuid(), lite: z.boolean().optional() })
     .parse(data);
-  const { data: moments, error } = await supabase
+  const { data: moments, error } = await (supabase as any)
     .from("family_moments")
     .select(
       parsed.lite
@@ -50,7 +50,7 @@ export async function listMoments(data: { family_id: string; lite?: boolean }) {
     .order("taken_at", { ascending: false })
     .limit(parsed.lite ? 60 : 100);
   if (error) throw new Error(error.message);
-  const rows = (moments ?? []).map((m) => ({
+  const rows = (moments ?? []).map((m: any) => ({
     ...m,
     tagged_member_ids: (m.tagged_member_ids as string[] | undefined) ?? [],
     created_by: (m.created_by as string | undefined) ?? "",
@@ -64,8 +64,8 @@ export async function listMoments(data: { family_id: string; lite?: boolean }) {
 
   const ids = rows.map((m) => m.id);
   const [reacs, coms] = await Promise.all([
-    supabase.from("moment_reactions").select("id,moment_id,user_id,emoji").in("moment_id", ids),
-    supabase
+    (supabase as any).from("moment_reactions").select("id,moment_id,user_id,emoji").in("moment_id", ids),
+    (supabase as any)
       .from("moment_comments")
       .select("id,moment_id,user_id,body,created_at")
       .in("moment_id", ids)
@@ -75,8 +75,8 @@ export async function listMoments(data: { family_id: string; lite?: boolean }) {
   if (coms.error) throw new Error(coms.error.message);
   return {
     moments: rows,
-    reactions: (reacs.data ?? []) as MomentReaction[],
-    comments: (coms.data ?? []) as MomentComment[],
+    reactions: (reacs.data ?? []) as unknown as MomentReaction[],
+    comments: (coms.data ?? []) as unknown as MomentComment[],
   };
 }
 
@@ -102,7 +102,7 @@ export async function getMoment(data: { moment_id: string; family_id: string }) 
   const parsed = z
     .object({ moment_id: z.string().uuid(), family_id: z.string().uuid() })
     .parse(data);
-  const { data: moment, error } = await supabase
+  const { data: moment, error } = await (supabase as any)
     .from("family_moments")
     .select(
       "id,family_id,created_by,album_id,caption,media_url,media_type,thumbnail_url,taken_at,tagged_member_ids,created_at",
@@ -113,11 +113,11 @@ export async function getMoment(data: { moment_id: string; family_id: string }) 
   if (error) throw new Error(error.message);
   if (!moment) throw new Error("Không tìm thấy kỷ niệm");
   const [reacs, coms] = await Promise.all([
-    supabase
+    (supabase as any)
       .from("moment_reactions")
       .select("id,moment_id,user_id,emoji")
       .eq("moment_id", parsed.moment_id),
-    supabase
+    (supabase as any)
       .from("moment_comments")
       .select("id,moment_id,user_id,body,created_at")
       .eq("moment_id", parsed.moment_id)
@@ -125,8 +125,8 @@ export async function getMoment(data: { moment_id: string; family_id: string }) 
   ]);
   if (reacs.error) throw new Error(reacs.error.message);
   if (coms.error) throw new Error(coms.error.message);
-  const reactions = (reacs.data ?? []) as MomentReaction[];
-  const comments = (coms.data ?? []) as MomentComment[];
+  const reactions = (reacs.data ?? []) as unknown as MomentReaction[];
+  const comments = (coms.data ?? []) as unknown as MomentComment[];
   const userIds = [
     ...new Set([
       moment.created_by as string,
@@ -141,7 +141,7 @@ export async function getMoment(data: { moment_id: string; family_id: string }) 
       ...moment,
       tagged_member_ids: (moment.tagged_member_ids as string[]) ?? [],
       album_id: (moment.album_id as string | null) ?? null,
-    } as Moment,
+    } as unknown as Moment,
     reactions,
     comments,
     profiles: userIds.map((id) => ({
@@ -170,7 +170,7 @@ export async function createMoment(data: {
       album_id: z.string().uuid().optional(),
     })
     .parse(data);
-  const { data: row, error } = await supabase
+  const { data: row, error } = await (supabase as any)
     .from("family_moments")
     .insert({
       family_id: parsed.family_id,
@@ -185,13 +185,13 @@ export async function createMoment(data: {
     .select()
     .single();
   if (error) throw new Error(error.message);
-  return { moment: row as Moment };
+  return { moment: row as unknown as Moment };
 }
 
 export async function deleteMoment(data: { id: string }) {
   const { supabase } = await requireUser();
   const { id } = z.object({ id: z.string().uuid() }).parse(data);
-  const { error } = await supabase.from("family_moments").delete().eq("id", id);
+  const { error } = await (supabase as any).from("family_moments").delete().eq("id", id);
   if (error) throw new Error(error.message);
   return { ok: true };
 }
@@ -209,7 +209,7 @@ export async function toggleReaction(data: {
       emoji: z.string().min(1).max(8),
     })
     .parse(data);
-  const { data: existing } = await supabase
+  const { data: existing } = await (supabase as any)
     .from("moment_reactions")
     .select("id")
     .eq("moment_id", parsed.moment_id)
@@ -217,11 +217,11 @@ export async function toggleReaction(data: {
     .eq("emoji", parsed.emoji)
     .maybeSingle();
   if (existing) {
-    const { error } = await supabase.from("moment_reactions").delete().eq("id", existing.id);
+    const { error } = await (supabase as any).from("moment_reactions").delete().eq("id", existing.id);
     if (error) throw new Error(error.message);
     return { added: false };
   }
-  const { error } = await supabase.from("moment_reactions").insert({
+  const { error } = await (supabase as any).from("moment_reactions").insert({
     moment_id: parsed.moment_id,
     family_id: parsed.family_id,
     user_id: userId,
@@ -244,7 +244,7 @@ export async function addMomentComment(data: {
       body: z.string().min(1).max(500),
     })
     .parse(data);
-  const { data: row, error } = await supabase
+  const { data: row, error } = await (supabase as any)
     .from("moment_comments")
     .insert({
       moment_id: parsed.moment_id,
@@ -255,5 +255,5 @@ export async function addMomentComment(data: {
     .select()
     .single();
   if (error) throw new Error(error.message);
-  return { comment: row as MomentComment };
+  return { comment: row as unknown as MomentComment };
 }

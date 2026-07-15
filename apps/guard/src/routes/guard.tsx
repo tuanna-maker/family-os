@@ -13,7 +13,7 @@ export const Route = createFileRoute("/guard")({
       .select("role")
       .eq("user_id", data.user.id)
       .in("role", ["super_admin", "security_admin", "security_staff"]);
-    if (!roles || roles.length === 0) throw redirect({ to: "/login" });
+    if (!roles || roles.length === 0) throw redirect({ to: "/login", search: { redirect: window.location.href } as any });
   },
   head: () => ({ meta: [{ title: "App Bảo vệ — STOS Guard" }] }),
   component: GuardLayout,

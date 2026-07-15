@@ -64,7 +64,7 @@ function CheckInPage() {
       <SubHeader title="VÀO CA (CHECK-IN)" back="/guard" />
 
       <section className="px-5 mt-2 flex flex-col items-center">
-        <motionCircle hasLocation={hasLocation} />
+        <MotionCircle hasLocation={hasLocation} />
         <p
           className={`mt-5 text-base font-semibold ${hasLocation ? "text-success" : "text-muted-foreground"}`}
         >
@@ -79,8 +79,8 @@ function CheckInPage() {
       </section>
 
       <section className="px-5 mt-6">
-        <motionClock time={time} date={date} tone="success" />
-        <motionInfo />
+        <MotionClock time={time} date={date} tone="success" />
+        <MotionInfo />
         <button
           onClick={handleSubmit}
           disabled={submitting}
@@ -93,7 +93,7 @@ function CheckInPage() {
   );
 }
 
-function motionCircle({ hasLocation }: { hasLocation: boolean }) {
+function MotionCircle({ hasLocation }: { hasLocation: boolean }) {
   return (
     <div
       className={`relative h-44 w-44 rounded-full bg-card border-4 ${hasLocation ? "border-success/30" : "border-muted"} grid place-items-center mt-4`}
@@ -109,7 +109,7 @@ function motionCircle({ hasLocation }: { hasLocation: boolean }) {
   );
 }
 
-function motionClock({
+function MotionClock({
   time,
   date,
   tone,
@@ -134,7 +134,7 @@ function motionClock({
   );
 }
 
-function motionInfo() {
+function MotionInfo() {
   return (
     <div className="mt-4 rounded-2xl bg-info/10 border border-info/30 p-4 flex items-start gap-2">
       <Info className="h-4 w-4 text-info shrink-0 mt-0.5" />

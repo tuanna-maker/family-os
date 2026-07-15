@@ -48,7 +48,7 @@ export function HelperLivePage() {
     enabled: !!activeId,
   });
 
-  const selected = useMemo(() => helpers.find((h) => h.id === activeId), [helpers, activeId]);
+  const selected = useMemo(() => helpers.find((h: any) => h.id === activeId), [helpers, activeId]);
 
   const issueQrMut = useMutation({
     mutationFn: (kind: "check_in" | "check_out") => issueHelperShiftToken({ helper_id: activeId!, kind }),
@@ -81,7 +81,7 @@ export function HelperLivePage() {
   });
 
   const today = new Date().toISOString().slice(0, 10);
-  const todayAtt = bundleQ.data?.attendance?.find((a: { att_date: string }) => a.att_date === today);
+  const todayAtt = (bundleQ.data as any)?.attendance?.find((a: { att_date: string }) => a.att_date === today);
 
   return (
     <MobileShell>
@@ -119,7 +119,7 @@ export function HelperLivePage() {
       ) : (
         <>
           <section className="px-4 mt-4 flex gap-2 overflow-x-auto pb-1">
-            {helpers.map((h) => (
+            {helpers.map((h: any) => (
               <button
                 key={h.id}
                 type="button"
@@ -210,7 +210,7 @@ export function HelperLivePage() {
                 }
               />
               <div className="space-y-2">
-                {(bundleQ.data?.tasks ?? []).map((t: { id: string; title: string; done: boolean }) => (
+                {((bundleQ.data as any)?.tasks ?? []).map((t: { id: string; title: string; done: boolean }) => (
                   <RoundedCard key={t.id} className="p-3 flex items-center gap-3">
                     <input
                       type="checkbox"
@@ -224,14 +224,14 @@ export function HelperLivePage() {
                     {t.done && <CheckCircle2 className="h-4 w-4 text-success" />}
                   </RoundedCard>
                 ))}
-                {(bundleQ.data?.tasks ?? []).length === 0 && (
+                {((bundleQ.data as any)?.tasks ?? []).length === 0 && (
                   <p className="text-sm text-muted-foreground">Chưa có việc hôm nay</p>
                 )}
               </div>
 
               <SectionHeader title="Nhật ký gần đây" />
               <div className="space-y-2">
-                {(bundleQ.data?.activity ?? []).slice(0, 8).map((a: { id: string; title: string; created_at: string }) => (
+                {((bundleQ.data as any)?.activity ?? []).slice(0, 8).map((a: { id: string; title: string; created_at: string }) => (
                   <RoundedCard key={a.id} className="p-3">
                     <p className="text-sm font-medium">{a.title}</p>
                     <p className="text-[11px] text-muted-foreground">
@@ -239,7 +239,7 @@ export function HelperLivePage() {
                     </p>
                   </RoundedCard>
                 ))}
-                {(bundleQ.data?.activity ?? []).length === 0 && (
+                {((bundleQ.data as any)?.activity ?? []).length === 0 && (
                   <p className="text-sm text-muted-foreground">Chưa có hoạt động</p>
                 )}
               </div>

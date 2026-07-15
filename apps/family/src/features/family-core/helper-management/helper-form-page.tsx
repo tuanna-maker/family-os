@@ -44,7 +44,7 @@ export function HelperFormPage({
 
   const existingHelper = useMemo(() => {
     if (type !== "helper" || !editId || !helpersQ.data) return null;
-    return helpersQ.data.find((h) => h.id === editId) ?? null;
+    return helpersQ.data.find((h: any) => h.id === editId) ?? null;
   }, [editId, helpersQ.data, type]);
 
   const [form, setForm] = useState<Record<string, unknown>>({

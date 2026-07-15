@@ -336,7 +336,7 @@ async function listProjectGuardsFallback(supabase: Awaited<ReturnType<typeof req
       .select("user_id, role, profiles(full_name, avatar_url, phone)")
       .eq("project_id", projectId)
       .in("role", ["security_admin", "security_staff"]),
-    supabase
+    (supabase as any)
       .from("guard_shifts")
       .select("guard_id, start_at, status")
       .eq("project_id", projectId)
@@ -348,8 +348,8 @@ async function listProjectGuardsFallback(supabase: Awaited<ReturnType<typeof req
 
   const onShiftToday = new Set(
     (shifts ?? [])
-      .filter((s) => s.status === "checked_in" || String(s.start_at).slice(0, 10) === today)
-      .map((s) => s.guard_id as string),
+      .filter((s: any) => s.status === "checked_in" || String(s.start_at).slice(0, 10) === today)
+      .map((s: any) => s.guard_id as string),
   );
   const nextByGuard = new Map<string, string>();
   for (const s of shifts ?? []) {
@@ -362,7 +362,7 @@ async function listProjectGuardsFallback(supabase: Awaited<ReturnType<typeof req
   }
 
   const guards: ProjectGuard[] = (roles ?? []).map((r) => {
-    const profile = r.profiles as { full_name: string | null; avatar_url: string | null; phone: string | null } | null;
+    const profile = r.profiles as unknown as { full_name: string | null; avatar_url: string | null; phone: string | null } | null;
     const gid = r.user_id as string;
     return {
       guard_id: gid,
@@ -381,7 +381,7 @@ async function listProjectGuardsFallback(supabase: Awaited<ReturnType<typeof req
 export async function listProjectGuards() {
   const { supabase, userId } = await requireUser();
   const scope = await resolveResidentScope(supabase, userId);
-  const { data, error } = await supabase.rpc("list_project_guards", {
+  const { data, error } = await (supabase as any).rpc("list_project_guards", {
     _project_id: scope.project_id,
   });
   if (!error) {
@@ -433,7 +433,7 @@ async function listProjectGuardScheduleFallback(
 
   let rows: Record<string, unknown>[] = [];
 
-  const byProject = await supabase
+  const byProject = await (supabase as any)
     .from("guard_shifts")
     .select("id, guard_id, shift_date, shift_type, start_at, end_at, status")
     .eq("project_id", projectId)
@@ -445,7 +445,7 @@ async function listProjectGuardScheduleFallback(
   rows = [...(byProject.data ?? [])];
 
   if (guardLookupIds.length > 0) {
-    const byGuards = await supabase
+    const byGuards = await (supabase as any)
       .from("guard_shifts")
       .select("id, guard_id, shift_date, shift_type, start_at, end_at, status")
       .in("guard_id", guardLookupIds)
@@ -499,7 +499,7 @@ async function listProjectGuardScheduleFallback(
 export async function listProjectGuardSchedule(range: { from: string; to: string }) {
   const { supabase, userId } = await requireUser();
   const scope = await resolveResidentScope(supabase, userId);
-  const { data, error } = await supabase.rpc("list_project_guard_shifts", {
+  const { data, error } = await (supabase as any).rpc("list_project_guard_shifts", {
     _project_id: scope.project_id,
     _from: range.from,
     _to: range.to,

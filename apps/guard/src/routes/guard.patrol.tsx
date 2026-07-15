@@ -74,7 +74,7 @@ function PatrolPage() {
           {shiftQ.data ? `Ca đang mở · ${shiftQ.data.shift_type}` : "Chưa có ca trực đang mở"}
         </p>
         <div className="mt-4 rounded-2xl bg-card border border-border p-4">
-          <motionPatrolStats logCount={logs.length} uniquePoints={uniquePoints} coords={coords} />
+          <MotionPatrolStats logCount={logs.length} uniquePoints={uniquePoints} coords={coords} />
         </div>
       </section>
 
@@ -159,7 +159,7 @@ function PatrolPage() {
   );
 }
 
-function motionPatrolStats({
+function MotionPatrolStats({
   logCount,
   uniquePoints,
   coords,

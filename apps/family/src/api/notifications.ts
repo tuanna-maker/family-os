@@ -68,7 +68,7 @@ export async function markAllRead() {
 export async function deleteReadNotifications() {
   const { supabase, userId } = await requireUser();
   const now = new Date().toISOString();
-  const { error } = await supabase
+  const { error } = await (supabase as any)
     .from("notifications")
     .update({ dismissed_at: now })
     .eq("user_id", userId)

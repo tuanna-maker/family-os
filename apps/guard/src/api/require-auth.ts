@@ -10,7 +10,7 @@ export async function requireAuth(opts?: { location?: { pathname: string } }) {
     throw redirect({
       to: "/login",
       search: opts?.location?.pathname
-        ? { redirect: opts.location.pathname }
+        ? { redirect: opts.location.pathname } as any
         : undefined,
     });
   }

@@ -52,13 +52,13 @@ function mapHelper(r: Record<string, unknown>): HelperRow {
 export async function listHelpers(data: { family_id: string }) {
   const { supabase } = await requireUser();
   const { family_id } = z.object({ family_id: z.string().uuid() }).parse(data);
-  const { data: rows, error } = await supabase
+  const { data: rows, error } = await (supabase as any)
     .from("family_helpers")
     .select("*")
     .eq("family_id", family_id)
     .order("created_at", { ascending: true });
   if (error) throw new Error(error.message);
-  return (rows ?? []).map((r) => mapHelper(r as Record<string, unknown>));
+  return (rows ?? []).map((r: any) => mapHelper(r as Record<string, unknown>));
 }
 
 export async function getHelperBundle(data: { helper_id: string }) {
@@ -67,25 +67,25 @@ export async function getHelperBundle(data: { helper_id: string }) {
   const today = new Date().toISOString().slice(0, 10);
   const weekAgo = new Date(Date.now() - 6 * 86400000).toISOString().slice(0, 10);
   const [tasks, att, pay, act] = await Promise.all([
-    supabase
+    (supabase as any)
       .from("family_helper_tasks")
       .select("id,title,time,icon,done,task_date")
       .eq("helper_id", helper_id)
       .eq("task_date", today)
       .order("created_at"),
-    supabase
+    (supabase as any)
       .from("family_helper_attendance")
       .select("id,att_date,status")
       .eq("helper_id", helper_id)
       .gte("att_date", weekAgo)
       .order("att_date"),
-    supabase
+    (supabase as any)
       .from("family_helper_payments")
       .select("id,month,amount,status,paid_at")
       .eq("helper_id", helper_id)
       .order("created_at", { ascending: false })
       .limit(6),
-    supabase
+    (supabase as any)
       .from("family_helper_activity")
       .select("id,title,detail,created_at")
       .eq("helper_id", helper_id)
@@ -123,7 +123,7 @@ export async function upsertHelper(data: {
     })
     .parse(data);
   if (parsed.id) {
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from("family_helpers")
       .update({
         name: parsed.name,
@@ -136,7 +136,7 @@ export async function upsertHelper(data: {
     if (error) throw new Error(error.message);
     return { id: parsed.id };
   }
-  const { data: row, error } = await supabase
+  const { data: row, error } = await (supabase as any)
     .from("family_helpers")
     .insert({
       family_id: parsed.family_id,
@@ -157,7 +157,7 @@ export async function upsertHelper(data: {
 export async function toggleHelperTask(data: { id: string; done: boolean }) {
   const { supabase } = await requireUser();
   const parsed = z.object({ id: z.string().uuid(), done: z.boolean() }).parse(data);
-  const { error } = await supabase.from("family_helper_tasks").update({ done: parsed.done }).eq("id", parsed.id);
+  const { error } = await (supabase as any).from("family_helper_tasks").update({ done: parsed.done }).eq("id", parsed.id);
   if (error) throw new Error(error.message);
   return { ok: true };
 }
@@ -190,11 +190,11 @@ export async function upsertHelperTask(data: {
     task_date: day,
   };
   if (parsed.id) {
-    const { error } = await supabase.from("family_helper_tasks").update(payload).eq("id", parsed.id);
+    const { error } = await (supabase as any).from("family_helper_tasks").update(payload).eq("id", parsed.id);
     if (error) throw new Error(error.message);
     return { id: parsed.id };
   }
-  const { data: row, error } = await supabase.from("family_helper_tasks").insert(payload).select("id").single();
+  const { data: row, error } = await (supabase as any).from("family_helper_tasks").insert(payload).select("id").single();
   if (error) throw new Error(error.message);
   return { id: row.id as string };
 }
@@ -212,7 +212,7 @@ export async function setHelperAttendance(data: {
       status: z.enum(["present", "leave", "absent"]),
     })
     .parse(data);
-  const { error } = await supabase.from("family_helper_attendance").upsert(
+  const { error } = await (supabase as any).from("family_helper_attendance").upsert(
     { helper_id: parsed.helper_id, att_date: parsed.att_date, status: parsed.status },
     { onConflict: "helper_id,att_date" },
   );
@@ -232,7 +232,7 @@ export async function issueHelperShiftToken(data: { helper_id: string; kind: "ch
   const day = new Date().toISOString().slice(0, 10);
   const token = `HLP-${parsed.helper_id.slice(0, 8)}-${day}-${parsed.kind === "check_in" ? "IN" : "OUT"}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
   const title = parsed.kind === "check_in" ? "Phát mã vào ca" : "Phát mã kết ca";
-  const { error } = await supabase.from("family_helper_activity").insert({
+  const { error } = await (supabase as any).from("family_helper_activity").insert({
     helper_id: parsed.helper_id,
     title,
     detail: JSON.stringify({ token, kind: parsed.kind, issued_by: userId, valid_date: day }),
@@ -251,9 +251,9 @@ export async function redeemHelperShiftToken(data: { token: string }) {
   const day = parts[2];
   const kind = parts[3] === "IN" ? "check_in" : parts[3] === "OUT" ? "check_out" : null;
   if (!kind) throw new Error("Mã QR không hợp lệ");
-  const { data: helpers, error: hErr } = await supabase.from("family_helpers").select("id,family_id").limit(200);
+  const { data: helpers, error: hErr } = await (supabase as any).from("family_helpers").select("id,family_id").limit(200);
   if (hErr) throw new Error(hErr.message);
-  const helper = (helpers ?? []).find((h) => (h.id as string).startsWith(helperPrefix));
+  const helper = (helpers ?? []).find((h: any) => (h.id as string).startsWith(helperPrefix));
   if (!helper) throw new Error("Không tìm thấy hồ sơ giúp việc");
   const today = new Date().toISOString().slice(0, 10);
   if (day !== today) throw new Error("Mã QR đã hết hạn (khác ngày)");
@@ -262,7 +262,7 @@ export async function redeemHelperShiftToken(data: { token: string }) {
     att_date: today,
     status: kind === "check_in" ? "present" : "present",
   });
-  await supabase.from("family_helper_activity").insert({
+  await (supabase as any).from("family_helper_activity").insert({
     helper_id: helper.id,
     title: kind === "check_in" ? "Check-in QR" : "Check-out QR",
     detail: `Token ${token}`,

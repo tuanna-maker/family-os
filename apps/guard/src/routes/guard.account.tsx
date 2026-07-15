@@ -43,7 +43,7 @@ function AccountPage() {
         <button
           onClick={async () => {
             await supabase.auth.signOut();
-            nav({ to: "/login" });
+            nav({ to: "/login", search: { redirect: window.location.href } as any });
           }}
           className="mt-4 w-full h-12 rounded-2xl bg-emergency/10 text-emergency font-semibold flex items-center justify-center gap-2"
         >

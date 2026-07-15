@@ -51,7 +51,7 @@ export function SecurityRequestsTracker() {
   
   const q = useQuery({
     queryKey: ["security-requests", session?.user?.id ?? "anon"],
-    queryFn: () => fetchList(),
+    queryFn: () => listSecurityRequests(),
     enabled: !!session,
     staleTime: 15_000,
     refetchInterval: 30_000,
@@ -61,7 +61,7 @@ export function SecurityRequestsTracker() {
     const all = q.data ?? [];
     // Lọc riêng yêu cầu của chính mình (RLS đã giới hạn, đây chỉ là cẩn thận với staff)
     return session
-      ? all.filter((r) => r.requester_id === session.user.id).slice(0, 5)
+      ? all.filter((r: any) => r.requester_id === session.user.id).slice(0, 5)
       : [];
   }, [q.data, session]);
 

@@ -191,12 +191,12 @@ export async function listOpenResidentRequests() {
 /** Yêu cầu cư dân đã ẩn khỏi hộp thông báo (lưu server — không hiện lại sau cài app). */
 export async function listDismissedInboxRequestIds() {
   const { supabase, userId } = await requireUser();
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from("guard_inbox_dismissals")
     .select("request_id")
     .eq("user_id", userId);
   if (error) throw new Error(error.message);
-  return (data ?? []).map((row) => row.request_id as string);
+  return (data ?? []).map((row: any) => row.request_id as string);
 }
 
 export async function dismissInboxSecurityRequests(ids: string[]) {
@@ -204,7 +204,7 @@ export async function dismissInboxSecurityRequests(ids: string[]) {
   const { supabase, userId } = await requireUser();
   const now = new Date().toISOString();
   const rows = ids.map((request_id) => ({ user_id: userId, request_id, dismissed_at: now }));
-  const { error } = await supabase
+  const { error } = await (supabase as any)
     .from("guard_inbox_dismissals")
     .upsert(rows, { onConflict: "user_id,request_id", ignoreDuplicates: true });
   if (error) throw new Error(error.message);

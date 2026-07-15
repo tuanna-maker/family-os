@@ -31,7 +31,7 @@ import {
 
 export const Route = createFileRoute("/login")({
   head: () => ({ meta: [{ title: "Đăng nhập — STOS Life" }] }),
-  validateSearch: (s: Record<string, unknown>) => ({
+  validateSearch: (s: Record<string, unknown>): { redirect?: string; source?: string } => ({
     redirect: typeof s.redirect === "string" ? s.redirect : undefined,
     source: typeof s.source === "string" ? s.source : undefined,
   }),
@@ -204,7 +204,7 @@ function LoginPage() {
         if (!loginEmail.includes("@")) {
           // Tra cứu username -> email. Server luôn trả null nếu sai format hoặc không tồn tại
           // để không lộ thông tin username nào tồn tại.
-          const res = await resolveLoginEmail({ username: loginEmail });
+          const res = await resolveLoginEmail(loginEmail);
           if (!res.email) throw new Error(GENERIC_AUTH_ERROR);
           loginEmail = res.email;
         }
@@ -215,7 +215,7 @@ function LoginPage() {
       } else {
 
         // Kiểm tra username có sẵn không
-        const check = await checkUsernameAvailable({ username: username.trim() });
+        const check = await checkUsernameAvailable(username.trim());
         if (!check.available) {
           setFieldErrors((f) => ({ ...f, username: "Tên đăng nhập đã tồn tại." }));
           setBusy(false);

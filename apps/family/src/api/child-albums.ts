@@ -24,7 +24,7 @@ export async function listChildAlbums(data: {
     .parse(data);
 
   const { supabase } = await requireUser();
-  const { data: rows, error } = await supabase
+  const { data: rows, error } = await (supabase as any)
     .from("child_albums")
     .select("id,family_id,child_id,title,cover_url,created_by,created_at")
     .eq("family_id", parsed.family_id)
@@ -41,11 +41,11 @@ export async function listChildAlbums(data: {
     }
     throw new Error(msg);
   }
-  const albums = (rows ?? []) as ChildAlbum[];
+  const albums = (rows as any ?? []) as ChildAlbum[];
   if (albums.length === 0) return { albums: [] as ChildAlbum[] };
 
   const ids = albums.map((a) => a.id);
-  const { data: counts, error: cErr } = await supabase
+  const { data: counts, error: cErr } = await (supabase as any)
     .from("child_moments")
     .select("album_id")
     .in("album_id", ids);
@@ -76,7 +76,7 @@ export async function createChildAlbum(data: {
     .parse(data);
 
   const { supabase, userId } = await requireUser();
-  const { data: row, error } = await supabase
+  const { data: row, error } = await (supabase as any)
     .from("child_albums")
     .insert({
       family_id: parsed.family_id,
@@ -96,7 +96,7 @@ export async function createChildAlbum(data: {
     }
     throw new Error(msg);
   }
-  return { album: row as ChildAlbum };
+  return { album: row as any as ChildAlbum };
 }
 
 export async function getChildAlbum(data: {
@@ -108,7 +108,7 @@ export async function getChildAlbum(data: {
     .parse(data);
 
   const { supabase } = await requireUser();
-  const { data: album, error } = await supabase
+  const { data: album, error } = await (supabase as any)
     .from("child_albums")
     .select("id,family_id,child_id,title,cover_url,created_by,created_at")
     .eq("id", parsed.album_id)
@@ -126,14 +126,14 @@ export async function getChildAlbum(data: {
   }
   if (!album) throw new Error("Không tìm thấy album");
 
-  const { data: moments, error: mErr } = await supabase
+  const { data: moments, error: mErr } = await (supabase as any)
     .from("child_moments")
     .select("id,title,caption,media_url,thumbnail_url,taken_at,created_at")
     .eq("album_id", parsed.album_id)
     .order("taken_at", { ascending: false });
 
   if (mErr) throw new Error(mErr.message);
-  return { album: album as ChildAlbum, moments: moments ?? [] };
+  return { album: album as any as ChildAlbum, moments: moments ?? [] };
 }
 
 export async function updateChildAlbum(data: {
@@ -155,7 +155,7 @@ export async function updateChildAlbum(data: {
   const patch: { title: string; cover_url?: string | null } = { title: parsed.title.trim() };
   if (parsed.cover_url !== undefined) patch.cover_url = parsed.cover_url;
 
-  const { error } = await supabase
+  const { error } = await (supabase as any)
     .from("child_albums")
     .update(patch)
     .eq("id", parsed.id)
@@ -171,7 +171,7 @@ export async function deleteChildAlbum(data: { id: string; family_id: string }) 
     .parse(data);
 
   const { supabase } = await requireUser();
-  const { error } = await supabase
+  const { error } = await (supabase as any)
     .from("child_albums")
     .delete()
     .eq("id", parsed.id)

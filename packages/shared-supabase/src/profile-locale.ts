@@ -9,7 +9,7 @@ export async function syncProfileUiLocale(locale: UiLocale) {
       data: { user },
     } = await supabase.auth.getUser();
     if (!user) return;
-    const { error } = await supabase.from("profiles").update({ ui_locale: locale }).eq("id", user.id);
+    const { error } = await (supabase as any).from("profiles").update({ ui_locale: locale }).eq("id", user.id);
     if (error) {
       // Cột ui_locale chưa migrate — bỏ qua, app vẫn dùng locale local.
       console.warn("[syncProfileUiLocale]", error.message);

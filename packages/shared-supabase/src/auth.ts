@@ -38,7 +38,7 @@ export async function getMyContext(): Promise<MyContext> {
   ]);
 
   let uiLocale: string | null = null;
-  const { data: localeRow, error: localeErr } = await supabase
+  const { data: localeRow, error: localeErr } = await (supabase as any)
     .from("profiles")
     .select("ui_locale")
     .eq("id", userId)

@@ -30,7 +30,7 @@ export async function listChildMoments(data: {
     .parse(data);
 
   const { supabase } = await requireUser();
-  let q = supabase
+  let q: any = (supabase as any)
     .from("child_moments")
     .select("id,family_id,child_id,album_id,title,caption,media_url,thumbnail_url,taken_at,created_at")
     .eq("family_id", parsed.family_id)
@@ -42,7 +42,7 @@ export async function listChildMoments(data: {
 
   const { data: rows, error } = await q;
   if (error) throw new Error(error.message);
-  return { moments: (rows ?? []) as ChildMoment[] };
+  return { moments: (rows as any ?? []) as ChildMoment[] };
 }
 
 export async function createChildMoment(data: {
@@ -69,7 +69,7 @@ export async function createChildMoment(data: {
     .parse(data);
 
   const { supabase, userId } = await requireUser();
-  const { data: row, error } = await supabase
+  const { data: row, error } = await (supabase as any)
     .from("child_moments")
     .insert({
       family_id: parsed.family_id,
@@ -88,14 +88,14 @@ export async function createChildMoment(data: {
   if (error) throw new Error(error.message);
 
   const coverUrl = parsed.thumbnail_url ?? parsed.media_url;
-  await supabase.from("child_albums").update({ cover_url: coverUrl }).eq("id", parsed.album_id);
+  await (supabase as any).from("child_albums").update({ cover_url: coverUrl }).eq("id", parsed.album_id);
 
-  return row as ChildMoment;
+  return row as any as ChildMoment;
 }
 
 export async function deleteChildMoment(data: { id: string }) {
   const { supabase } = await requireUser();
-  const { error } = await supabase.from("child_moments").delete().eq("id", data.id);
+  const { error } = await (supabase as any).from("child_moments").delete().eq("id", data.id);
   if (error) throw new Error(error.message);
   return { ok: true as const };
 }

@@ -96,7 +96,7 @@ function CheckOutPage() {
 
       <section className="px-5 mt-6">
         <div className="rounded-3xl bg-card border border-border p-5">
-          <motionClockHeader />
+          <MotionClockHeader />
           <p className="mt-2 text-3xl font-bold text-emergency tracking-wider tabular-nums">{time}</p>
           <p className="text-[11px] text-muted-foreground mt-1">{date}</p>
         </div>
@@ -127,7 +127,7 @@ function CheckOutPage() {
   );
 }
 
-function motionClockHeader() {
+function MotionClockHeader() {
   return (
     <div className="flex items-center gap-2 text-muted-foreground text-xs">
       <Clock className="h-3.5 w-3.5" />

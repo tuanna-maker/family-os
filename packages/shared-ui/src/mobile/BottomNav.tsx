@@ -57,7 +57,7 @@ export function BottomNav() {
             return (
               <li key={to} className={cn(isFeatured && "relative")}>
                 <Link
-                  to={to}
+                  to={to as any}
                   onClick={handleTap(to)}
                   aria-current={active ? "page" : undefined}
                   aria-label={label}

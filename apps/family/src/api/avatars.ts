@@ -71,7 +71,7 @@ export async function updateProfileAvatar(data: { avatar_url: string }) {
     .eq("owner_id", userId)
     .maybeSingle();
   if (ownedFamily?.id) {
-    const { error: familyErr } = await supabase
+    const { error: familyErr } = await (supabase as any)
       .from("families")
       .update({ avatar_url: parsed.avatar_url })
       .eq("id", ownedFamily.id);

@@ -384,7 +384,7 @@ export async function getSecurityStatus(data: { family_id: string; locale?: stri
         candidates.push(e.safe_last_at);
       }
     }
-    let updated_at = candidates.sort().reverse()[0] ?? null;
+    let updated_at: string | null = candidates.sort().reverse()[0] ?? null;
 
     // 5) Build chips
     const countByType = new Map<string, number>();
@@ -398,7 +398,7 @@ export async function getSecurityStatus(data: { family_id: string; locale?: stri
         (sum, typ) => sum + (countByType.get(typ) ?? 0),
         0,
       );
-      const meta = labels[def.key];
+      const meta = labels[def.key as keyof typeof labels];
       // Camera chip also reflects SOS / intrusion alarms
       const effective = def.key === "camera" ? count + sosCount : count;
       if (effective > 0) {
@@ -429,8 +429,8 @@ export async function getSecurityStatus(data: { family_id: string; locale?: stri
       openReqs.length > 0 || elderAlerts.length > 0;
 
     let overall: SecurityTone = "success";
-    let headline = t.allNormal;
-    let subline = t.noOpenAlerts;
+    let headline: string = t.allNormal;
+    let subline: string = t.noOpenAlerts;
     if (hasEmergency) {
       overall = "emergency";
       headline = t.emergency;
