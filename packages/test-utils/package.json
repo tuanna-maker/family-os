@@ -10,6 +10,7 @@
     "./capacitor-mocks": "./src/capacitor-mocks.ts"
   },
   "devDependencies": {
-    "vitest": "^3.2.4"
+    "vite": "^6.4.3",
+    "vitest": "^3.2.7"
   }
 }

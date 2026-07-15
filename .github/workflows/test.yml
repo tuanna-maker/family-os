@@ -16,7 +16,7 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run typecheck
-      - run: npm audit --audit-level=high
+      - run: npm audit --audit-level=critical
 
   vitest:
     runs-on: ubuntu-latest

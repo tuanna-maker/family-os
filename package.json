@@ -54,18 +54,23 @@
   "engines": {
     "node": ">=20.19.0"
   },
-  "overrides": {
-    "react": "19.2.3",
-    "react-dom": "19.2.3"
-  },
   "devDependencies": {
+    "@babel/core": "^7.29.7",
     "@playwright/test": "^1.52.0",
-    "babel-plugin-module-resolver": "^5.0.2"
+    "babel-plugin-module-resolver": "^5.0.2",
+    "esbuild": "^0.28.1",
+    "tar": "^7.5.20",
+    "tmp": "^0.2.7",
+    "vite": "^7.3.6"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.107.0",
     "expo-audio": "~56.0.12",
     "lucide-react-native": "^0.475.0",
+    "react": "19.2.3",
+    "react-dom": "19.2.3"
+  },
+  "overrides": {
     "react": "19.2.3",
     "react-dom": "19.2.3"
   }
